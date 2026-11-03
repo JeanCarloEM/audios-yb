@@ -6,4 +6,5 @@ destino/
 tests/.runtime-*/
 *.log
 !tests/**/*.ps1
-tests/
+tests/*
+!tests/*.ps1
