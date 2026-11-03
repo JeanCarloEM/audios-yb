@@ -25,355 +25,355 @@ Registros: 372 | Aprovacoes: 0 | Destino: C:\LOCAL\jcem\audios\destino
 [22] Joe Sample - Rainbow Seeker: pendente_auditoria | Busca ambigua ou sem faixa exata unica em canal do artista/Topic; revisar candidatos e vocais
 [23] Larry Carlton - Room 335: pendente_acesso | confirmacao_anti_bot: ERROR: [youtube] 79Q-SmsLi8o: Sign in to confirm you’re not a bot. This helps protect our community. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
 
-[24] Yellowjackets - Matinee Idol: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[25] Casiopea - Asayake: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[26] T-Square - Truth: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[24] Yellowjackets - Matinee Idol: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[25] Casiopea - Asayake: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[26] T-Square - Truth: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 [27] Estado anterior preservado; use -ReavaliarPendentes para reconsultar.
-[28] George Duke - Brazilian Love Affair: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[28] George Duke - Brazilian Love Affair: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 [29] Stan Getz - Desafinado: existente | Reexecucao: arquivo validado por tamanho, assinatura e SHA-256
-[30] Charlie Byrd - Meditation: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[31] Kenny Burrell - Chitlins Con Carne: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[30] Charlie Byrd - Meditation: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[31] Kenny Burrell - Chitlins Con Carne: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 [32] Wes Montgomery - Bumpin on Sunset: existente | Reexecucao: arquivo validado por tamanho, assinatura e SHA-256
-[33] Vince Guaraldi Trio - Cast Your Fate to the Wind: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[34] Cal Tjader - Soul Sauce: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[35] Grant Green - Sookie Sookie: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[36] Horace Silver - Song for My Father: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[33] Vince Guaraldi Trio - Cast Your Fate to the Wind: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[34] Cal Tjader - Soul Sauce: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[35] Grant Green - Sookie Sookie: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[36] Horace Silver - Song for My Father: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 [37] Roy Ayers Ubiquity - Everybody Loves the Sunshine: existente | Reexecucao: arquivo validado por tamanho, assinatura e SHA-256
 [38] Boney James - After the Rain: existente | Reexecucao: arquivo validado por tamanho, assinatura e SHA-256
 [39] Najee - Najee’s Theme: existente | Reexecucao: arquivo validado por tamanho, assinatura e SHA-256
-[40] David Benoit - Linus and Lucy: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[41] Kenny G - Songbird: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[42] Brian Culbertson - Get It On: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[40] David Benoit - Linus and Lucy: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[41] Kenny G - Songbird: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[42] Brian Culbertson - Get It On: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 [43] Estado anterior preservado; use -ReavaliarPendentes para reconsultar.
-[44] Jeff Lorber Fusion - Rain Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[45] The Crusaders - Put It Where You Want It: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[46] Young-Holt Unlimited - Soulful Strut: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[47] Booker T. & the M.G.’s - Green Onions: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[48] Mongo Santamaria - Watermelon Man: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[49] Poncho Sanchez - Besame Mama: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[50] George Benson - Affirmation: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[51] Bob James - Westchester Lady: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[52] Spyro Gyra - Shaker Song: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[53] Fourplay - Bali Run: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[54] Earl Klugh - Dr Macumba: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[55] Lee Ritenour - Captain Fingers: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[56] Grover Washington Jr. - Mister Magic: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[57] Herb Alpert - Rotation: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[58] Pat Metheny Group - Phase Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[59] Acoustic Alchemy - Red Dust and Spanish Lace: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[60] The Rippingtons - Pacific Coast Highway: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[61] Chuck Mangione - Children of Sanchez: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[62] Dave Brubeck Quartet - Blue Rondo a la Turk: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[63] Walter Wanderley - Samba de Verão: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[64] Antonio Carlos Jobim - Triste: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[65] Luiz Bonfa - Manha de Carnaval: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[66] Paul Hardcastle - 19: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[67] Ramsey Lewis - Wade in the Water: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[68] Herbie Hancock - Watermelon Man: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[69] David Sanborn - The Dream: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[70] Dave Grusin - Early A.M. Attitude: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[71] Joe Sample - Carmel: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[72] Larry Carlton - Morning Magic: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[73] Yellowjackets - Imperial Strut: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[74] Casiopea - Midnight Rendezvous: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[75] T-Square - Omens of Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[76] Sadao Watanabe - California Shower: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[77] George Duke - Reach for It: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[78] Stan Getz - Samba Triste: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[79] Charlie Byrd - Samba de Uma Nota So: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[80] Kenny Burrell - Midnight Blue: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[81] Wes Montgomery - West Coast Blues: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[82] Vince Guaraldi Trio - Linus and Lucy: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[83] Cal Tjader - Morning: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[84] Grant Green - Idle Moments: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[85] Horace Silver - Sister Sadie: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[86] Roy Ayers Ubiquity - Searching: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[87] Boney James - Sweet Thing: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[88] Najee - Tokyo Blue: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[89] David Benoit - Kei’s Song: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[90] Kenny G - Midnight Motion: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[91] Brian Culbertson - Hookin Up: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[92] Peter White - Bueno Funk: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[93] Jeff Lorber Fusion - Tune 88: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[94] The Crusaders - Street Life: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[95] Young-Holt Unlimited - Wack Wack: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[96] Booker T. & the M.G.’s - Time Is Tight: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[97] Mongo Santamaria - Afro Blue: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[98] Poncho Sanchez - Watermelon Man: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[99] George Benson - Six to Four: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[100] Bob James - Nautilus: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[101] Spyro Gyra - Catching the Sun: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[102] Fourplay - Max-O-Man: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[103] Earl Klugh - Dance with Me: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[104] Lee Ritenour - Is It You: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[105] Grover Washington Jr. - East River Drive: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[106] Herb Alpert - Tijuana Taxi: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[107] Pat Metheny Group - Are You Going with Me: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[108] Acoustic Alchemy - Lazeez: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[109] The Rippingtons - Welcome to the St James Club: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[110] Chuck Mangione - Bellavia: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[111] Dave Brubeck Quartet - Unsquare Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[112] Walter Wanderley - Call Me: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[113] Antonio Carlos Jobim - Chovendo na Roseira: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[114] Luiz Bonfa - Sambolero: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[115] Paul Hardcastle - Bird Island: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[116] Ramsey Lewis - Sun Goddess: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[117] Herbie Hancock - Chameleon: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[118] David Sanborn - Straight to the Heart: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[119] Dave Grusin - Bossa Baroque: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[120] Joe Sample - Melodies of Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[121] Larry Carlton - Sleepwalk: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[122] Yellowjackets - Revelation: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[123] Casiopea - Galactic Funk: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[124] T-Square - Takarajima: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[125] Sadao Watanabe - Nice Shot: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[126] George Duke - Dukey Stick: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[127] Stan Getz - O Pato: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[128] Charlie Byrd - Bossa Nova Pelos Passaros: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[129] Kenny Burrell - Mule: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[130] Wes Montgomery - Four on Six: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[131] Vince Guaraldi Trio - Ginza Samba: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[132] Cal Tjader - Guachi Guaro: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[133] Grant Green - The Windjammer: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[134] Horace Silver - The Jody Grind: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[135] Roy Ayers Ubiquity - Running Away: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[136] Boney James - East Bay: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[137] Najee - Day by Day: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[138] David Benoit - Freedom at Midnight: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[139] Kenny G - Silhouette: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[140] Brian Culbertson - So Good: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[141] Peter White - Midnight in Manhattan: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[142] Jeff Lorber Fusion - Wizard Island: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[143] The Crusaders - Chain Reaction: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[144] Young-Holt Unlimited - Just Ain’t No Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[145] Booker T. & the M.G.’s - Hip Hug-Her: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[146] Mongo Santamaria - Cloud Nine: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[147] Poncho Sanchez - Soul Sauce: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[148] George Benson - Lady: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[149] Bob James - Take Me to the Mardi Gras: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[150] Spyro Gyra - Heliopolis: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[151] Fourplay - Chant: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[152] Earl Klugh - Living Inside Your Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[153] Lee Ritenour - A Little Bumpin: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[154] Grover Washington Jr. - Black Frost: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[155] Herb Alpert - Spanish Flea: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[156] Pat Metheny Group - James: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[157] Acoustic Alchemy - Catalina Kiss: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[158] The Rippingtons - She Likes to Watch: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[159] Chuck Mangione - Land of Make Believe: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[160] Dave Brubeck Quartet - Three to Get Ready: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[161] Walter Wanderley - The Girl from Ipanema: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[162] Antonio Carlos Jobim - Stone Flower: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[163] Luiz Bonfa - The Gentle Rain: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[164] Paul Hardcastle - Jazzmasters: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[165] Ramsey Lewis - Hang on Sloopy: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[166] Herbie Hancock - Maiden Voyage: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[167] David Sanborn - Maputo: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[168] Dave Grusin - Modaji: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[169] Joe Sample - In All My Wildest Dreams: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[170] Larry Carlton - Smiles and Smiles to Go: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[171] Yellowjackets - And You Know That: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[172] Casiopea - Domino Line: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[173] T-Square - All About You: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[174] Sadao Watanabe - Orange Express: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[175] George Duke - Shine On: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[176] Stan Getz - Samba de Uma Nota So: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[177] Charlie Byrd - The Girl from Ipanema: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[178] Kenny Burrell - Soul Lament: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[179] Wes Montgomery - Road Song: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[180] Vince Guaraldi Trio - Samba de Orpheus: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[181] Cal Tjader - Mambo Mindoro: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[182] Grant Green - Jean de Fleur: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[183] Horace Silver - The Preacher: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[184] Roy Ayers Ubiquity - Mystic Voyage: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[185] Boney James - Grazing in the Grass: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[186] Najee - Sweet Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[187] David Benoit - Every Step of the Way: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[188] Kenny G - Going Home: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[189] Brian Culbertson - Back in the Day: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[190] Peter White - Who’s That Lady: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[191] Jeff Lorber Fusion - Galaxian: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[192] The Crusaders - Keep That Same Old Feeling: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[193] Young-Holt Unlimited - California Montage: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[194] Booker T. & the M.G.’s - Melting Pot: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[195] Mongo Santamaria - Yeh Yeh: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[196] Poncho Sanchez - I Showed Them: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[197] George Benson - California Dreamin: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[198] Bob James - Night Crawler: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[199] Spyro Gyra - Freetime: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[200] Fourplay - Between the Sheets: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[201] Earl Klugh - Heart String: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[202] Lee Ritenour - Night Rhythms: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[203] Grover Washington Jr. - Knucklehead: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[204] Herb Alpert - A Taste of Honey: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[205] Pat Metheny Group - First Circle: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[206] Acoustic Alchemy - Jamaica Heartbeat: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[207] The Rippingtons - Aspen: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[208] Chuck Mangione - Chase the Clouds Away: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[209] Dave Brubeck Quartet - Strange Meadow Lark: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[210] Walter Wanderley - A Certain Smile: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[211] Antonio Carlos Jobim - Tide: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[212] Luiz Bonfa - Bossa Nova Cha Cha: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[213] Paul Hardcastle - Lost Summer: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[214] Ramsey Lewis - Soul Man: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[215] Herbie Hancock - Dolphin Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[216] David Sanborn - Rikki Don’t Lose That Number: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[217] Dave Grusin - Thankful N Thoughtful: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[218] Joe Sample - The Hunter: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[219] Larry Carlton - Minute by Minute: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[220] Yellowjackets - Geraldine: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[221] Casiopea - Eyes of the Mind: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[222] T-Square - Control: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[223] Sadao Watanabe - My Dear Life: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[224] George Duke - I Love You More: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[225] Stan Getz - Corcovado: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[226] Charlie Byrd - Corcovado: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[227] Kenny Burrell - Saturday Night Blues: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[228] Wes Montgomery - Tequila: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[229] Vince Guaraldi Trio - Manha de Carnaval: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[230] Cal Tjader - Afro Blue: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[231] Grant Green - Cantaloupe Woman: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[232] Horace Silver - Filthy McNasty: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[233] Roy Ayers Ubiquity - Lifeline: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[234] Boney James - All Night Long: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[235] Najee - Morning Tenderness: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[236] David Benoit - Drive Time: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[237] Kenny G - Havana: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[238] Brian Culbertson - Always Remember: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[239] Peter White - Promenade: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[240] Jeff Lorber Fusion - The Samba: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[241] The Crusaders - Spiral: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[242] Booker T. & the M.G.’s - Soul Limbo: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[243] Mongo Santamaria - El Pussy Cat: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[244] Poncho Sanchez - Baila Mi Gente: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[245] George Benson - The World Is a Ghetto: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[246] Bob James - Feel Like Making Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[247] Spyro Gyra - Shakedown: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[248] Fourplay - The Closer I Get to You: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[249] Earl Klugh - Wishful Thinking: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[250] Lee Ritenour - Wes Bound: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[251] Grover Washington Jr. - Let It Flow: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[252] Herb Alpert - The Lonely Bull: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[253] Pat Metheny Group - Minuano (Six Eight): pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[254] Acoustic Alchemy - Reference Point: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[255] The Rippingtons - Morocco: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[256] Chuck Mangione - Give It All You Got: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[257] Dave Brubeck Quartet - Kathy’s Waltz: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[258] Walter Wanderley - Crickets Sing for Anamaria: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[259] Antonio Carlos Jobim - Captain Bacardi: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[260] Luiz Bonfa - Batucada: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[261] Paul Hardcastle - Valley of the Harps: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[262] Ramsey Lewis - Jade East: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[263] Herbie Hancock - Actual Proof: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[264] David Sanborn - Lisa: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[265] Dave Grusin - Sun Song: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[266] Joe Sample - Fly with Wings of Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[267] Larry Carlton - Bubble Shuffle: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[268] Yellowjackets - Greenhouse: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[269] Casiopea - Black Joke: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[270] T-Square - Sunnyside Cruise: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[271] Sadao Watanabe - Good Time for Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[272] George Duke - The Black Messiah: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[273] Stan Getz - So Danco Samba: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[274] Charlie Byrd - Samba Triste: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[275] Kenny Burrell - Wavy Gravy: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[276] Wes Montgomery - California Dreaming: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[277] Vince Guaraldi Trio - O Tannenbaum: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[278] Cal Tjader - Curacao: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[279] Grant Green - Ain’t It Funky Now: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[280] Horace Silver - Cape Verdean Blues: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[281] Boney James - The Total Experience: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[282] Najee - The Smooth Side of Soul: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[283] David Benoit - The Key to You: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[284] Kenny G - G-Bop: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[285] Brian Culbertson - On My Mind: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[286] Peter White - Dreamwalk: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[287] Jeff Lorber Fusion - The Underground: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[288] The Crusaders - Stomp and Buck Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[289] Booker T. & the M.G.’s - Hang Em High: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[290] George Benson - Theme from Good King Bad: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[291] Bob James - Tappan Zee: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[292] Spyro Gyra - Old San Juan: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[293] Fourplay - Foreplay: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[294] Earl Klugh - Midnight in San Juan: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[295] Lee Ritenour - The Village: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[296] Grover Washington Jr. - Reed Seed: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[297] Herb Alpert - Zorba the Greek: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[298] Pat Metheny Group - Slip Away: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[299] Acoustic Alchemy - Playing for Time: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[300] The Rippingtons - Weekend in Monaco: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[301] Chuck Mangione - Hill Where the Lord Hides: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[302] Dave Brubeck Quartet - Pick Up Sticks: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[303] Walter Wanderley - Batucada: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[304] Antonio Carlos Jobim - One Note Samba: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[305] Luiz Bonfa - The Shade of the Mango Tree: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[306] Paul Hardcastle - Serene: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[307] Ramsey Lewis - Slipping into Darkness: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[308] Herbie Hancock - Butterfly: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[309] David Sanborn - Hideaway: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[310] Dave Grusin - Friends and Strangers: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[311] Joe Sample - There Are Many Stops Along the Way: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[312] Larry Carlton - Blues Bird: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[313] Yellowjackets - Freedomland: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[314] Casiopea - Space Road: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[315] T-Square - Little Mermaid: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[316] Sadao Watanabe - Fill Up the Night: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[317] George Duke - Au-Right: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[318] Stan Getz - E Luxo So: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[319] Wes Montgomery - A Day in the Life: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[320] Cal Tjader - Leyte: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[321] Kenny G - Forever in Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[322] George Benson - El Mar: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[323] Bob James - Sign of the Times: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[324] Spyro Gyra - Jubilee: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[325] Fourplay - Flying East: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[326] Earl Klugh - Jamaica Farewell: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[327] Lee Ritenour - The Rit Variations: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[328] Grover Washington Jr. - Bright Moments: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[329] Herb Alpert - Casino Royale: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[330] Pat Metheny Group - Better Days Ahead: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[331] Acoustic Alchemy - The Beautiful Game: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[332] The Rippingtons - Highroller: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[333] Chuck Mangione - Fun and Games: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[334] Dave Brubeck Quartet - It’s a Raggy Waltz: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[335] Walter Wanderley - Music to Watch Girls By: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[336] Antonio Carlos Jobim - Desafinado: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[337] Paul Hardcastle - The Circle: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[338] Ramsey Lewis - Brazilica: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[339] Herbie Hancock - Gentle Thoughts: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[340] David Sanborn - Anything You Want: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[341] Dave Grusin - The Heart Is a Lonely Hunter: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[342] Larry Carlton - Point It Up: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[343] Yellowjackets - The Spin: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[344] Casiopea - Take Me: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[345] T-Square - Explorer: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[346] Stan Getz - Menina Moca: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[347] George Benson - White Rabbit: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[348] Bob James - Touchdown: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[349] Spyro Gyra - Summer Strut: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[350] Fourplay - After the Dance: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[351] Earl Klugh - Soda Fountain Shuffle: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[352] Lee Ritenour - Water to Drink: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[353] Grover Washington Jr. - In the Name of Love: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[354] Herb Alpert - Route 101: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[355] Pat Metheny Group - Third Wind: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[356] Acoustic Alchemy - Caravan of Dreams: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[357] The Rippingtons - Dream of the Sirens: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[358] Antonio Carlos Jobim - Meditation: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[359] Paul Hardcastle - Desire: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[360] Herbie Hancock - Hang Up Your Hang Ups: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[361] Casiopea - Time Limit: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[362] Bob James - Maputo: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[363] Spyro Gyra - Incognito: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[364] Fourplay - Play Lady Play: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[365] Earl Klugh - Just Between Friends: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[366] Lee Ritenour - Sugarloaf Express: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[367] Grover Washington Jr. - The Sea Lion: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[368] Herb Alpert - Fandango: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[369] Pat Metheny Group - Have You Heard: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[370] Acoustic Alchemy - Natural Elements: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[371] The Rippingtons - Indian Summer: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
-[372] Antonio Carlos Jobim - Corcovado: pendente_acesso | Circuit breaker: 429 repetidos; evitar intensificar bloqueio
+[44] Jeff Lorber Fusion - Rain Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[45] The Crusaders - Put It Where You Want It: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[46] Young-Holt Unlimited - Soulful Strut: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[47] Booker T. & the M.G.’s - Green Onions: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[48] Mongo Santamaria - Watermelon Man: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[49] Poncho Sanchez - Besame Mama: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[50] George Benson - Affirmation: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[51] Bob James - Westchester Lady: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[52] Spyro Gyra - Shaker Song: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[53] Fourplay - Bali Run: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[54] Earl Klugh - Dr Macumba: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[55] Lee Ritenour - Captain Fingers: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[56] Grover Washington Jr. - Mister Magic: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[57] Herb Alpert - Rotation: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[58] Pat Metheny Group - Phase Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[59] Acoustic Alchemy - Red Dust and Spanish Lace: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[60] The Rippingtons - Pacific Coast Highway: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[61] Chuck Mangione - Children of Sanchez: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[62] Dave Brubeck Quartet - Blue Rondo a la Turk: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[63] Walter Wanderley - Samba de Verão: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[64] Antonio Carlos Jobim - Triste: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[65] Luiz Bonfa - Manha de Carnaval: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[66] Paul Hardcastle - 19: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[67] Ramsey Lewis - Wade in the Water: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[68] Herbie Hancock - Watermelon Man: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[69] David Sanborn - The Dream: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[70] Dave Grusin - Early A.M. Attitude: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[71] Joe Sample - Carmel: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[72] Larry Carlton - Morning Magic: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[73] Yellowjackets - Imperial Strut: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[74] Casiopea - Midnight Rendezvous: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[75] T-Square - Omens of Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[76] Sadao Watanabe - California Shower: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[77] George Duke - Reach for It: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[78] Stan Getz - Samba Triste: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[79] Charlie Byrd - Samba de Uma Nota So: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[80] Kenny Burrell - Midnight Blue: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[81] Wes Montgomery - West Coast Blues: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[82] Vince Guaraldi Trio - Linus and Lucy: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[83] Cal Tjader - Morning: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[84] Grant Green - Idle Moments: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[85] Horace Silver - Sister Sadie: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[86] Roy Ayers Ubiquity - Searching: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[87] Boney James - Sweet Thing: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[88] Najee - Tokyo Blue: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[89] David Benoit - Kei’s Song: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[90] Kenny G - Midnight Motion: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[91] Brian Culbertson - Hookin Up: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[92] Peter White - Bueno Funk: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[93] Jeff Lorber Fusion - Tune 88: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[94] The Crusaders - Street Life: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[95] Young-Holt Unlimited - Wack Wack: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[96] Booker T. & the M.G.’s - Time Is Tight: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[97] Mongo Santamaria - Afro Blue: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[98] Poncho Sanchez - Watermelon Man: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[99] George Benson - Six to Four: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[100] Bob James - Nautilus: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[101] Spyro Gyra - Catching the Sun: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[102] Fourplay - Max-O-Man: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[103] Earl Klugh - Dance with Me: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[104] Lee Ritenour - Is It You: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[105] Grover Washington Jr. - East River Drive: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[106] Herb Alpert - Tijuana Taxi: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[107] Pat Metheny Group - Are You Going with Me: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[108] Acoustic Alchemy - Lazeez: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[109] The Rippingtons - Welcome to the St James Club: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[110] Chuck Mangione - Bellavia: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[111] Dave Brubeck Quartet - Unsquare Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[112] Walter Wanderley - Call Me: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[113] Antonio Carlos Jobim - Chovendo na Roseira: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[114] Luiz Bonfa - Sambolero: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[115] Paul Hardcastle - Bird Island: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[116] Ramsey Lewis - Sun Goddess: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[117] Herbie Hancock - Chameleon: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[118] David Sanborn - Straight to the Heart: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[119] Dave Grusin - Bossa Baroque: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[120] Joe Sample - Melodies of Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[121] Larry Carlton - Sleepwalk: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[122] Yellowjackets - Revelation: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[123] Casiopea - Galactic Funk: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[124] T-Square - Takarajima: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[125] Sadao Watanabe - Nice Shot: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[126] George Duke - Dukey Stick: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[127] Stan Getz - O Pato: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[128] Charlie Byrd - Bossa Nova Pelos Passaros: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[129] Kenny Burrell - Mule: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[130] Wes Montgomery - Four on Six: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[131] Vince Guaraldi Trio - Ginza Samba: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[132] Cal Tjader - Guachi Guaro: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[133] Grant Green - The Windjammer: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[134] Horace Silver - The Jody Grind: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[135] Roy Ayers Ubiquity - Running Away: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[136] Boney James - East Bay: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[137] Najee - Day by Day: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[138] David Benoit - Freedom at Midnight: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[139] Kenny G - Silhouette: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[140] Brian Culbertson - So Good: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[141] Peter White - Midnight in Manhattan: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[142] Jeff Lorber Fusion - Wizard Island: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[143] The Crusaders - Chain Reaction: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[144] Young-Holt Unlimited - Just Ain’t No Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[145] Booker T. & the M.G.’s - Hip Hug-Her: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[146] Mongo Santamaria - Cloud Nine: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[147] Poncho Sanchez - Soul Sauce: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[148] George Benson - Lady: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[149] Bob James - Take Me to the Mardi Gras: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[150] Spyro Gyra - Heliopolis: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[151] Fourplay - Chant: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[152] Earl Klugh - Living Inside Your Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[153] Lee Ritenour - A Little Bumpin: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[154] Grover Washington Jr. - Black Frost: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[155] Herb Alpert - Spanish Flea: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[156] Pat Metheny Group - James: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[157] Acoustic Alchemy - Catalina Kiss: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[158] The Rippingtons - She Likes to Watch: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[159] Chuck Mangione - Land of Make Believe: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[160] Dave Brubeck Quartet - Three to Get Ready: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[161] Walter Wanderley - The Girl from Ipanema: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[162] Antonio Carlos Jobim - Stone Flower: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[163] Luiz Bonfa - The Gentle Rain: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[164] Paul Hardcastle - Jazzmasters: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[165] Ramsey Lewis - Hang on Sloopy: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[166] Herbie Hancock - Maiden Voyage: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[167] David Sanborn - Maputo: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[168] Dave Grusin - Modaji: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[169] Joe Sample - In All My Wildest Dreams: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[170] Larry Carlton - Smiles and Smiles to Go: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[171] Yellowjackets - And You Know That: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[172] Casiopea - Domino Line: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[173] T-Square - All About You: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[174] Sadao Watanabe - Orange Express: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[175] George Duke - Shine On: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[176] Stan Getz - Samba de Uma Nota So: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[177] Charlie Byrd - The Girl from Ipanema: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[178] Kenny Burrell - Soul Lament: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[179] Wes Montgomery - Road Song: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[180] Vince Guaraldi Trio - Samba de Orpheus: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[181] Cal Tjader - Mambo Mindoro: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[182] Grant Green - Jean de Fleur: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[183] Horace Silver - The Preacher: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[184] Roy Ayers Ubiquity - Mystic Voyage: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[185] Boney James - Grazing in the Grass: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[186] Najee - Sweet Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[187] David Benoit - Every Step of the Way: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[188] Kenny G - Going Home: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[189] Brian Culbertson - Back in the Day: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[190] Peter White - Who’s That Lady: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[191] Jeff Lorber Fusion - Galaxian: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[192] The Crusaders - Keep That Same Old Feeling: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[193] Young-Holt Unlimited - California Montage: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[194] Booker T. & the M.G.’s - Melting Pot: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[195] Mongo Santamaria - Yeh Yeh: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[196] Poncho Sanchez - I Showed Them: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[197] George Benson - California Dreamin: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[198] Bob James - Night Crawler: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[199] Spyro Gyra - Freetime: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[200] Fourplay - Between the Sheets: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[201] Earl Klugh - Heart String: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[202] Lee Ritenour - Night Rhythms: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[203] Grover Washington Jr. - Knucklehead: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[204] Herb Alpert - A Taste of Honey: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[205] Pat Metheny Group - First Circle: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[206] Acoustic Alchemy - Jamaica Heartbeat: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[207] The Rippingtons - Aspen: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[208] Chuck Mangione - Chase the Clouds Away: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[209] Dave Brubeck Quartet - Strange Meadow Lark: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[210] Walter Wanderley - A Certain Smile: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[211] Antonio Carlos Jobim - Tide: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[212] Luiz Bonfa - Bossa Nova Cha Cha: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[213] Paul Hardcastle - Lost Summer: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[214] Ramsey Lewis - Soul Man: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[215] Herbie Hancock - Dolphin Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[216] David Sanborn - Rikki Don’t Lose That Number: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[217] Dave Grusin - Thankful N Thoughtful: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[218] Joe Sample - The Hunter: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[219] Larry Carlton - Minute by Minute: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[220] Yellowjackets - Geraldine: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[221] Casiopea - Eyes of the Mind: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[222] T-Square - Control: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[223] Sadao Watanabe - My Dear Life: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[224] George Duke - I Love You More: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[225] Stan Getz - Corcovado: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[226] Charlie Byrd - Corcovado: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[227] Kenny Burrell - Saturday Night Blues: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[228] Wes Montgomery - Tequila: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[229] Vince Guaraldi Trio - Manha de Carnaval: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[230] Cal Tjader - Afro Blue: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[231] Grant Green - Cantaloupe Woman: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[232] Horace Silver - Filthy McNasty: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[233] Roy Ayers Ubiquity - Lifeline: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[234] Boney James - All Night Long: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[235] Najee - Morning Tenderness: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[236] David Benoit - Drive Time: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[237] Kenny G - Havana: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[238] Brian Culbertson - Always Remember: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[239] Peter White - Promenade: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[240] Jeff Lorber Fusion - The Samba: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[241] The Crusaders - Spiral: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[242] Booker T. & the M.G.’s - Soul Limbo: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[243] Mongo Santamaria - El Pussy Cat: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[244] Poncho Sanchez - Baila Mi Gente: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[245] George Benson - The World Is a Ghetto: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[246] Bob James - Feel Like Making Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[247] Spyro Gyra - Shakedown: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[248] Fourplay - The Closer I Get to You: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[249] Earl Klugh - Wishful Thinking: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[250] Lee Ritenour - Wes Bound: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[251] Grover Washington Jr. - Let It Flow: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[252] Herb Alpert - The Lonely Bull: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[253] Pat Metheny Group - Minuano (Six Eight): pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[254] Acoustic Alchemy - Reference Point: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[255] The Rippingtons - Morocco: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[256] Chuck Mangione - Give It All You Got: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[257] Dave Brubeck Quartet - Kathy’s Waltz: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[258] Walter Wanderley - Crickets Sing for Anamaria: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[259] Antonio Carlos Jobim - Captain Bacardi: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[260] Luiz Bonfa - Batucada: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[261] Paul Hardcastle - Valley of the Harps: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[262] Ramsey Lewis - Jade East: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[263] Herbie Hancock - Actual Proof: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[264] David Sanborn - Lisa: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[265] Dave Grusin - Sun Song: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[266] Joe Sample - Fly with Wings of Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[267] Larry Carlton - Bubble Shuffle: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[268] Yellowjackets - Greenhouse: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[269] Casiopea - Black Joke: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[270] T-Square - Sunnyside Cruise: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[271] Sadao Watanabe - Good Time for Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[272] George Duke - The Black Messiah: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[273] Stan Getz - So Danco Samba: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[274] Charlie Byrd - Samba Triste: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[275] Kenny Burrell - Wavy Gravy: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[276] Wes Montgomery - California Dreaming: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[277] Vince Guaraldi Trio - O Tannenbaum: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[278] Cal Tjader - Curacao: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[279] Grant Green - Ain’t It Funky Now: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[280] Horace Silver - Cape Verdean Blues: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[281] Boney James - The Total Experience: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[282] Najee - The Smooth Side of Soul: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[283] David Benoit - The Key to You: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[284] Kenny G - G-Bop: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[285] Brian Culbertson - On My Mind: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[286] Peter White - Dreamwalk: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[287] Jeff Lorber Fusion - The Underground: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[288] The Crusaders - Stomp and Buck Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[289] Booker T. & the M.G.’s - Hang Em High: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[290] George Benson - Theme from Good King Bad: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[291] Bob James - Tappan Zee: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[292] Spyro Gyra - Old San Juan: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[293] Fourplay - Foreplay: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[294] Earl Klugh - Midnight in San Juan: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[295] Lee Ritenour - The Village: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[296] Grover Washington Jr. - Reed Seed: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[297] Herb Alpert - Zorba the Greek: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[298] Pat Metheny Group - Slip Away: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[299] Acoustic Alchemy - Playing for Time: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[300] The Rippingtons - Weekend in Monaco: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[301] Chuck Mangione - Hill Where the Lord Hides: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[302] Dave Brubeck Quartet - Pick Up Sticks: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[303] Walter Wanderley - Batucada: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[304] Antonio Carlos Jobim - One Note Samba: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[305] Luiz Bonfa - The Shade of the Mango Tree: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[306] Paul Hardcastle - Serene: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[307] Ramsey Lewis - Slipping into Darkness: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[308] Herbie Hancock - Butterfly: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[309] David Sanborn - Hideaway: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[310] Dave Grusin - Friends and Strangers: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[311] Joe Sample - There Are Many Stops Along the Way: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[312] Larry Carlton - Blues Bird: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[313] Yellowjackets - Freedomland: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[314] Casiopea - Space Road: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[315] T-Square - Little Mermaid: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[316] Sadao Watanabe - Fill Up the Night: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[317] George Duke - Au-Right: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[318] Stan Getz - E Luxo So: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[319] Wes Montgomery - A Day in the Life: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[320] Cal Tjader - Leyte: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[321] Kenny G - Forever in Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[322] George Benson - El Mar: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[323] Bob James - Sign of the Times: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[324] Spyro Gyra - Jubilee: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[325] Fourplay - Flying East: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[326] Earl Klugh - Jamaica Farewell: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[327] Lee Ritenour - The Rit Variations: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[328] Grover Washington Jr. - Bright Moments: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[329] Herb Alpert - Casino Royale: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[330] Pat Metheny Group - Better Days Ahead: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[331] Acoustic Alchemy - The Beautiful Game: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[332] The Rippingtons - Highroller: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[333] Chuck Mangione - Fun and Games: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[334] Dave Brubeck Quartet - It’s a Raggy Waltz: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[335] Walter Wanderley - Music to Watch Girls By: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[336] Antonio Carlos Jobim - Desafinado: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[337] Paul Hardcastle - The Circle: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[338] Ramsey Lewis - Brazilica: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[339] Herbie Hancock - Gentle Thoughts: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[340] David Sanborn - Anything You Want: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[341] Dave Grusin - The Heart Is a Lonely Hunter: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[342] Larry Carlton - Point It Up: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[343] Yellowjackets - The Spin: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[344] Casiopea - Take Me: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[345] T-Square - Explorer: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[346] Stan Getz - Menina Moca: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[347] George Benson - White Rabbit: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[348] Bob James - Touchdown: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[349] Spyro Gyra - Summer Strut: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[350] Fourplay - After the Dance: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[351] Earl Klugh - Soda Fountain Shuffle: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[352] Lee Ritenour - Water to Drink: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[353] Grover Washington Jr. - In the Name of Love: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[354] Herb Alpert - Route 101: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[355] Pat Metheny Group - Third Wind: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[356] Acoustic Alchemy - Caravan of Dreams: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[357] The Rippingtons - Dream of the Sirens: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[358] Antonio Carlos Jobim - Meditation: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[359] Paul Hardcastle - Desire: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[360] Herbie Hancock - Hang Up Your Hang Ups: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[361] Casiopea - Time Limit: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[362] Bob James - Maputo: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[363] Spyro Gyra - Incognito: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[364] Fourplay - Play Lady Play: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[365] Earl Klugh - Just Between Friends: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[366] Lee Ritenour - Sugarloaf Express: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[367] Grover Washington Jr. - The Sea Lion: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[368] Herb Alpert - Fandango: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[369] Pat Metheny Group - Have You Heard: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[370] Acoustic Alchemy - Natural Elements: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[371] The Rippingtons - Indian Summer: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
+[372] Antonio Carlos Jobim - Corcovado: pendente_acesso | Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot
 --- RESUMO ---
 baixado: 0
 existente: 14
