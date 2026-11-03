@@ -5,7 +5,7 @@
 .EXAMPLE
     pwsh -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
 .EXAMPLE
-    .\baixar_audios_ytdlp.ps1 -Csv '.\coletanea_uber_instrumental_candidatas(3).csv' -AprovacoesCsv '.\aprovacoes.csv' -ReavaliarPendentes
+    .\baixar_audios_ytdlp.ps1 -Csv '.\coletanea_uber_instrumental_candidatas.csv' -AprovacoesCsv '.\destino\.controle\sugestoes_aprovacao.csv' -ReavaliarPendentes
 .NOTES
     Coloque yt-dlp.exe junto deste .ps1. Os arquivos ficam em .\destino.
     Sem auditoria de audio, metadados NAO comprovam ausencia de vocais.
@@ -16,7 +16,7 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true, Position=0)][ValidateNotNullOrEmpty()][string]$Csv,
+    [Parameter(Mandatory = $true, Position = 0)][ValidateNotNullOrEmpty()][string]$Csv,
     [string]$AprovacoesCsv,
     [string]$EvidenciasJson,
     [switch]$SomenteAuditarExistentes,
@@ -78,7 +78,7 @@ function To-Hashtable($Item) {
     if ($null -eq $Item) { return $null }
     # No Windows PowerShell, arrays JSON podem manter o wrapper PSObject.
     # Testar arrays antes de PSCustomObject evita serializar suas propriedades CLR.
-    if ($Item -is [array]) { return ,@($Item | ForEach-Object { To-Hashtable $_ }) }
+    if ($Item -is [array]) { return , @($Item | ForEach-Object { To-Hashtable $_ }) }
     if ($Item -is [System.Collections.IDictionary]) {
         $h = @{}; foreach ($k in $Item.Keys) { $h[[string]$k] = To-Hashtable $Item[$k] }; return $h
     }
@@ -95,7 +95,8 @@ function Save-State {
         # PowerShell 7/.NET atual rejeita backup nulo em File.Replace.
         if ([IO.File]::Exists($script:StateFile)) { [IO.File]::Replace($tmp, $script:StateFile, $backup) }
         else { [IO.File]::Move($tmp, $script:StateFile) }
-    } finally {
+    }
+    finally {
         if ([IO.File]::Exists($tmp)) { [IO.File]::Delete($tmp) }
         if ([IO.File]::Exists($backup)) { [IO.File]::Delete($backup) }
     }
@@ -136,7 +137,8 @@ function Invoke-Ytdlp([string[]]$Arguments, [int]$TimeoutSeconds = 90, [string]$
         }
         $p.WaitForExit()
         return @{ code = $p.ExitCode; out = $outTask.GetAwaiter().GetResult(); err = $errTask.GetAwaiter().GetResult(); timeout = $false }
-    } finally { $p.Dispose() }
+    }
+    finally { $p.Dispose() }
 }
 function Base-Args {
     # Restringir configuracoes externas e nao ativar qualquer pos-processamento.
@@ -147,24 +149,24 @@ function Base-Args {
         '--fixup', 'never', '--no-embed-metadata')
 }
 function Diagnose([string]$ErrorText, [bool]$TimedOut) {
-    if ($TimedOut) { return @{ tipo='timeout'; transiente=$true } }
+    if ($TimedOut) { return @{ tipo = 'timeout'; transiente = $true } }
     $e = $ErrorText.ToLowerInvariant()
-    if ($e -match 'private video|is private|video is private|this video is unavailable|video unavailable|not available anymore|has been removed|copyright|does not exist|video has been deleted') { return @{ tipo='indisponivel'; transiente=$false } }
-    if ($e -match 'geo.restrict|not available in your country|not available in your region|geo.block') { return @{ tipo='restricao_geografica'; transiente=$false } }
-    if ($e -match 'confirm you.re not a bot|unusual traffic|automated queries') { return @{ tipo='confirmacao_anti_bot'; transiente=$false } }
-    if ($e -match 'sign in|login|members.only|age.restrict|authentication|required.*cookie|confirm you.re not a bot') { return @{ tipo='autenticacao_ou_controle_de_acesso'; transiente=$false } }
-    if ($e -match '429|too many requests|rate.limit') { return @{ tipo='http_429'; transiente=$true } }
-    if ($e -match 'http error 5\d\d|server error|bad gateway|service unavailable|gateway timeout') { return @{ tipo='http_5xx'; transiente=$true } }
-    if ($e -match 'timed out|timeout|connection reset|connection aborted|temporary failure|network is unreachable|remote end closed|connection refused|ssl.*error') { return @{ tipo='rede_ou_timeout'; transiente=$true } }
-    if ($e -match 'name or service not known|dns|name resolution|nodename nor servname|getaddrinfo|no such host') { return @{ tipo='dns'; transiente=$true } }
-    if ($e -match 'requested format is not available|no video formats|no audio formats|format is not available') { return @{ tipo='formato_indisponivel'; transiente=$false } }
-    if ($e -match '403|forbidden|access denied') { return @{ tipo='acesso_limitado_http_403'; transiente=$false } }
-    if ($e -match 'permission denied|access is denied|no space left|disk full|file name too long|filename too long|path too long') { return @{ tipo='erro_local'; transiente=$false } }
-    return @{ tipo='falha_nao_classificada'; transiente=$false }
+    if ($e -match 'private video|is private|video is private|this video is unavailable|video unavailable|not available anymore|has been removed|copyright|does not exist|video has been deleted') { return @{ tipo = 'indisponivel'; transiente = $false } }
+    if ($e -match 'geo.restrict|not available in your country|not available in your region|geo.block') { return @{ tipo = 'restricao_geografica'; transiente = $false } }
+    if ($e -match 'confirm you.re not a bot|unusual traffic|automated queries') { return @{ tipo = 'confirmacao_anti_bot'; transiente = $false } }
+    if ($e -match 'sign in|login|members.only|age.restrict|authentication|required.*cookie|confirm you.re not a bot') { return @{ tipo = 'autenticacao_ou_controle_de_acesso'; transiente = $false } }
+    if ($e -match '429|too many requests|rate.limit') { return @{ tipo = 'http_429'; transiente = $true } }
+    if ($e -match 'http error 5\d\d|server error|bad gateway|service unavailable|gateway timeout') { return @{ tipo = 'http_5xx'; transiente = $true } }
+    if ($e -match 'timed out|timeout|connection reset|connection aborted|temporary failure|network is unreachable|remote end closed|connection refused|ssl.*error') { return @{ tipo = 'rede_ou_timeout'; transiente = $true } }
+    if ($e -match 'name or service not known|dns|name resolution|nodename nor servname|getaddrinfo|no such host') { return @{ tipo = 'dns'; transiente = $true } }
+    if ($e -match 'requested format is not available|no video formats|no audio formats|format is not available') { return @{ tipo = 'formato_indisponivel'; transiente = $false } }
+    if ($e -match '403|forbidden|access denied') { return @{ tipo = 'acesso_limitado_http_403'; transiente = $false } }
+    if ($e -match 'permission denied|access is denied|no space left|disk full|file name too long|filename too long|path too long') { return @{ tipo = 'erro_local'; transiente = $false } }
+    return @{ tipo = 'falha_nao_classificada'; transiente = $false }
 }
 function Invoke-Checked([string[]]$Arguments, [int]$Timeout = 100) {
     $last = $null
-    for ($a=1; $a -le $MaxTentativas; $a++) {
+    for ($a = 1; $a -le $MaxTentativas; $a++) {
         $last = Invoke-Ytdlp -Arguments $Arguments -TimeoutSeconds $Timeout
         $last['tentativas'] = $a
         if ($last.code -eq 0) { $script:RateLimitStreak = 0; return $last }
@@ -185,7 +187,7 @@ function Get-UrlInfo([string]$Text) {
     if (-not [uri]::TryCreate($Text, [UriKind]::Absolute, [ref]$uri)) { throw 'URL sem sintaxe valida' }
     $hostName = $uri.Host.ToLowerInvariant()
     if ($uri.Scheme -ne 'https' -or $uri.UserInfo -or $uri.Port -ne 443 -or
-        $hostName -notin @('www.youtube.com','youtube.com','m.youtube.com','music.youtube.com','youtu.be')) {
+        $hostName -notin @('www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be')) {
         throw 'URL rejeitada: exigir HTTPS em dominio oficial YouTube, sem credenciais/porta alternativa'
     }
     $params = @{}
@@ -203,10 +205,10 @@ function Get-UrlInfo([string]$Text) {
     elseif ($uri.AbsolutePath -eq '/results' -and $params.ContainsKey('search_query')) {
         $q = [string]$params['search_query']
         if ($q.Length -lt 3 -or $q.Length -gt 220 -or $q -match '[\x00-\x1F]') { throw 'Termo de pesquisa invalido/abusivo' }
-        return @{ tipo='busca'; query=$q; url=$Text }
+        return @{ tipo = 'busca'; query = $q; url = $Text }
     }
     if ($id -notmatch '^[a-zA-Z0-9_-]{11}$') { throw 'Pagina de pesquisa sem search_query ou URL sem ID de video valido' }
-    return @{ tipo='video'; id=$id; url=('https://www.youtube.com/watch?v=' + $id) }
+    return @{ tipo = 'video'; id = $id; url = ('https://www.youtube.com/watch?v=' + $id) }
 }
 function File-Base([string]$Order, [string]$Artist, [string]$Song, [string]$Id) {
     $value = "$Order - $Artist - $Song [$Id]"
@@ -218,7 +220,7 @@ function File-Base([string]$Order, [string]$Artist, [string]$Song, [string]$Id) 
     if ($maxLength -lt 38) { throw 'Caminho ate destino muito longo para escrita segura em Windows' }
     if ($value.Length -gt $maxLength) {
         $reserve = (' [' + $Id + ']').Length
-        $value = $value.Substring(0, $maxLength - $reserve).TrimEnd(' ','.') + ' [' + $Id + ']'
+        $value = $value.Substring(0, $maxLength - $reserve).TrimEnd(' ', '.') + ' [' + $Id + ']'
     }
     if ($value -match '^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])($|\.)') { $value = '_' + $value }
     return $value
@@ -232,23 +234,25 @@ function Verify-Signature([string]$File, [string]$Ext) {
             [void]$f.Read($b, 0, 16)
             $head = [Text.Encoding]::ASCII.GetString($b)
             switch ($Ext.ToLowerInvariant()) {
-                { $_ -in @('m4a','mp4') } { return ($head.Substring(4,4) -eq 'ftyp') }
-                { $_ -in @('webm','mka') } { return (($b[0] -eq 0x1A) -and ($b[1] -eq 0x45) -and ($b[2] -eq 0xDF) -and ($b[3] -eq 0xA3)) }
-                { $_ -in @('opus','ogg','oga') } { return ($head.StartsWith('OggS') -or (($b[0] -eq 0x1A) -and ($b[1] -eq 0x45))) }
+                { $_ -in @('m4a', 'mp4') } { return ($head.Substring(4, 4) -eq 'ftyp') }
+                { $_ -in @('webm', 'mka') } { return (($b[0] -eq 0x1A) -and ($b[1] -eq 0x45) -and ($b[2] -eq 0xDF) -and ($b[3] -eq 0xA3)) }
+                { $_ -in @('opus', 'ogg', 'oga') } { return ($head.StartsWith('OggS') -or (($b[0] -eq 0x1A) -and ($b[1] -eq 0x45))) }
                 'mp3' { return ($head.StartsWith('ID3') -or ($b[0] -eq 0xFF -and ($b[1] -band 0xE0) -eq 0xE0)) }
                 'aac' { return ($b[0] -eq 0xFF -and ($b[1] -band 0xF0) -eq 0xF0) }
                 'flac' { return $head.StartsWith('fLaC') }
-                'wav' { return ($head.StartsWith('RIFF') -and $head.Substring(8,4) -eq 'WAVE') }
+                'wav' { return ($head.StartsWith('RIFF') -and $head.Substring(8, 4) -eq 'WAVE') }
                 default { return $false }
             }
-        } finally { $f.Dispose() }
-    } catch { return $false }
+        }
+        finally { $f.Dispose() }
+    }
+    catch { return $false }
 }
 function Probe-Audio([string]$File) {
-    $run = Invoke-Ytdlp -Executable $script:Ffprobe -Arguments @('-v','error','-protocol_whitelist','file',
-        '-show_streams','-show_format','-show_packets','-show_entries',
+    $run = Invoke-Ytdlp -Executable $script:Ffprobe -Arguments @('-v', 'error', '-protocol_whitelist', 'file',
+        '-show_streams', '-show_format', '-show_packets', '-show_entries',
         'packet=size,duration_time:stream=codec_type,codec_name,sample_rate,channels,bit_rate:format=format_name,duration,bit_rate',
-        '-of','json','-i',$File) -TimeoutSeconds 180
+        '-of', 'json', '-i', $File) -TimeoutSeconds 180
     if ($run.code -ne 0) { throw ('ffprobe: ' + $run.err) }
     $p = $run.out | ConvertFrom-Json
     $streams = @($p.streams)
@@ -265,94 +269,100 @@ function Probe-Audio([string]$File) {
     if ($seconds -le 0 -or [double]$p.format.duration -le 0) { throw 'Duracao de audio invalida' }
     $stream = $streams[0]
     $codec = [string]$stream.codec_name
-    $lossless = $codec -in @('flac','alac','wavpack','ape') -or $codec.StartsWith('pcm_')
-    $decode = Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin','-v','error','-xerror',
-        '-protocol_whitelist','file','-i',$File,'-map','0:a:0','-f','null','-') -TimeoutSeconds 300
+    $lossless = $codec -in @('flac', 'alac', 'wavpack', 'ape') -or $codec.StartsWith('pcm_')
+    $decode = Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin', '-v', 'error', '-xerror',
+        '-protocol_whitelist', 'file', '-i', $File, '-map', '0:a:0', '-f', 'null', '-') -TimeoutSeconds 300
     if ($decode.code -ne 0 -or $decode.err.Trim()) { throw ('Decodificacao integral falhou: ' + $decode.err) }
-    return @{ codec=$codec; container=[string]$p.format.format_name; lossless=$lossless;
-        bitrate_medido_kbps=($bytes * 8 / $seconds / 1000); bitrate_nominal_bps=[string]$stream.bit_rate;
-        variacao_pacotes=($rates.Count -gt 1); duracao=[double]$p.format.duration;
-        canais=[int]$stream.channels; amostragem=[int]$stream.sample_rate; integridade='decodificacao_integral_ok' }
+    return @{ codec = $codec; container = [string]$p.format.format_name; lossless = $lossless;
+        bitrate_medido_kbps = ($bytes * 8 / $seconds / 1000); bitrate_nominal_bps = [string]$stream.bit_rate;
+        variacao_pacotes = ($rates.Count -gt 1); duracao = [double]$p.format.duration;
+        canais = [int]$stream.channels; amostragem = [int]$stream.sample_rate; integridade = 'decodificacao_integral_ok' 
+    }
 }
 function Test-FinalAudio([string]$File, $Probe) {
     $ext = [IO.Path]::GetExtension($File).ToLowerInvariant()
-    $compatible = ($ext -eq '.m4a' -and $Probe.container -match '(^|,)mov(,|$)' -and $Probe.codec -in @('aac','alac')) -or
-                  ($ext -eq '.mp3' -and $Probe.container -eq 'mp3' -and $Probe.codec -eq 'mp3')
+    $compatible = ($ext -eq '.m4a' -and $Probe.container -match '(^|,)mov(,|$)' -and $Probe.codec -in @('aac', 'alac')) -or
+    ($ext -eq '.mp3' -and $Probe.container -eq 'mp3' -and $Probe.codec -eq 'mp3')
     # O resultado final tambem obedece ao piso absoluto; nao adicionar padding.
     return ($compatible -and $Probe.bitrate_medido_kbps -ge 128)
 }
 function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Probe) {
-    if (-not $Probe.lossless -and $Probe.bitrate_medido_kbps -lt 128) { return @{ok=$false; motivo='Fonte comprimida medida abaixo de 128 kbps; proibido inflar bitrate'} }
-    $nominal=0.0
-    if (-not $Probe.lossless -and [double]::TryParse([string]$Probe.bitrate_nominal_bps,[ref]$nominal) -and $nominal -gt 0 -and $nominal -lt 128000) {
-        return @{ok=$false; motivo='Bitrate nominal inferior ao minimo contradiz a admissibilidade da fonte'}
+    if (-not $Probe.lossless -and $Probe.bitrate_medido_kbps -lt 128) { return @{ok = $false; motivo = 'Fonte comprimida medida abaixo de 128 kbps; proibido inflar bitrate' } }
+    $nominal = 0.0
+    if (-not $Probe.lossless -and [double]::TryParse([string]$Probe.bitrate_nominal_bps, [ref]$nominal) -and $nominal -gt 0 -and $nominal -lt 128000) {
+        return @{ok = $false; motivo = 'Bitrate nominal inferior ao minimo contradiz a admissibilidade da fonte' }
     }
     $key = $Id + '|' + $FormatId + '|' + $Hash
-    if (-not $script:Evidencias.ContainsKey($key)) { return @{ok=$false; motivo='Procedencia/historico da fonte nao comprovados; bitrate e analise tecnica isolados nao atestam fidelidade'} }
+    if (-not $script:Evidencias.ContainsKey($key)) { return @{ok = $false; motivo = 'Procedencia/historico da fonte nao comprovados; bitrate e analise tecnica isolados nao atestam fidelidade' } }
     $e = $script:Evidencias[$key]
     if ([double]$e.bitrate_minimo_historico_kbps -gt 0 -and [double]$e.bitrate_minimo_historico_kbps -lt 128) {
-        return @{ok=$false; motivo='Historico inclui etapa comprimida inferior a 128 kbps; contêiner sem perdas nao recupera qualidade'}
+        return @{ok = $false; motivo = 'Historico inclui etapa comprimida inferior a 128 kbps; contêiner sem perdas nao recupera qualidade' }
     }
     if ($e.qualidade -eq 'sem_perdas_verificada') {
-        if (-not $Probe.lossless) { return @{ok=$false; motivo='Evidencia sem perdas contradiz o codec real da fonte'} }
-    } elseif ($e.qualidade -ne 'perdas_verificadas' -or [double]$e.bitrate_minimo_historico_kbps -lt 128) {
-        return @{ok=$false; motivo='Historico documentado indica fonte inferior ou qualidade nao comprovada'}
+        if (-not $Probe.lossless) { return @{ok = $false; motivo = 'Evidencia sem perdas contradiz o codec real da fonte' } }
     }
-    return @{ok=$true; evidencia=$e; motivo='Evidencia externa vinculada ao hash; validacao tecnica independente concluida'}
+    elseif ($e.qualidade -ne 'perdas_verificadas' -or [double]$e.bitrate_minimo_historico_kbps -lt 128) {
+        return @{ok = $false; motivo = 'Historico documentado indica fonte inferior ou qualidade nao comprovada' }
+    }
+    return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
 function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt) {
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
-        return @{ok=$false; motivo='Duracao da fonte diverge dos metadados; possivel truncamento ou fonte incorreta';
-            auditoria=@{politica=$script:Policy; validado=$false; origem=$sourceProbe; duracao_esperada=$Fmt.duracao_origem}}
+        return @{ok = $false; motivo = 'Duracao da fonte diverge dos metadados; possivel truncamento ou fonte incorreta';
+            auditoria = @{politica = $script:Policy; validado = $false; origem = $sourceProbe; duracao_esperada = $Fmt.duracao_origem }
+        }
     }
     $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
     $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
-    $audit = @{ politica=$script:Policy; origem_sha256=$sourceHash; origem_formato_id=$Fmt.id;
-        origem_url=('https://www.youtube.com/watch?v=' + $Id); origem=$sourceProbe; conversao='nenhuma';
-        evidencia=$evidence; validado=$false }
-    if (-not $evidence.ok) { return @{ok=$false; motivo=$evidence.motivo; auditoria=$audit} }
+    $audit = @{ politica = $script:Policy; origem_sha256 = $sourceHash; origem_formato_id = $Fmt.id;
+        origem_url = ('https://www.youtube.com/watch?v=' + $Id); origem = $sourceProbe; conversao = 'nenhuma';
+        evidencia = $evidence; validado = $false 
+    }
+    if (-not $evidence.ok) { return @{ok = $false; motivo = $evidence.motivo; auditoria = $audit } }
     $ext = [IO.Path]::GetExtension($Source).ToLowerInvariant()
     if ($Fmt.operacao -eq 'nativo') {
-        if (-not (Test-FinalAudio $Source $sourceProbe)) { return @{ok=$false; motivo='Formato nativo contradiz codec, extensao ou minimo medido'; auditoria=$audit} }
+        if (-not (Test-FinalAudio $Source $sourceProbe)) { return @{ok = $false; motivo = 'Formato nativo contradiz codec, extensao ou minimo medido'; auditoria = $audit } }
         $ready = $Source
-    } else {
+    }
+    else {
         $work = Join-Path ([IO.Path]::GetDirectoryName($Source)) ('resultado-' + [guid]::NewGuid().ToString('N') + '.m4a')
         $ready = $null
-        if ($sourceProbe.codec -in @('aac','alac','mp3')) {
+        if ($sourceProbe.codec -in @('aac', 'alac', 'mp3')) {
             if ($sourceProbe.codec -eq 'mp3') { $work = [IO.Path]::ChangeExtension($work, 'mp3') }
-            $encoding = @('-c:a','copy'); $audit.conversao='remux_sem_recodificacao'
+            $encoding = @('-c:a', 'copy'); $audit.conversao = 'remux_sem_recodificacao'
             $rates = @(0)
-        } else {
-            $rates = @(128,136,160); $audit.conversao='transcodificacao_excepcional_aac'
+        }
+        else {
+            $rates = @(128, 136, 160); $audit.conversao = 'transcodificacao_excepcional_aac'
         }
         foreach ($rate in $rates) {
-            if ($rate -gt 0) { $encoding = @('-c:a','aac','-b:a',([string]$rate + 'k')) }
-            $convert = Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments (@('-nostdin','-v','error','-xerror','-n',
-                '-protocol_whitelist','file','-i',$Source,'-map','0:a:0','-map_metadata','-1','-vn','-sn','-dn') + $encoding + @($work)) -TimeoutSeconds 600
+            if ($rate -gt 0) { $encoding = @('-c:a', 'aac', '-b:a', ([string]$rate + 'k')) }
+            $convert = Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments (@('-nostdin', '-v', 'error', '-xerror', '-n',
+                    '-protocol_whitelist', 'file', '-i', $Source, '-map', '0:a:0', '-map_metadata', '-1', '-vn', '-sn', '-dn') + $encoding + @($work)) -TimeoutSeconds 600
             if ($convert.code -eq 0) {
                 $resultProbe = Probe-Audio $work
-                if (Test-FinalAudio $work $resultProbe) { $ready=$work; break }
+                if (Test-FinalAudio $work $resultProbe) { $ready = $work; break }
             }
             if ([IO.File]::Exists($work)) { [IO.File]::Delete($work) }
             if ($rate -eq 0) { break }
         }
-        if (-not $ready) { return @{ok=$false; motivo='Conversao/remux nao produziu resultado admissivel; fonte preservada'; auditoria=$audit} }
+        if (-not $ready) { return @{ok = $false; motivo = 'Conversao/remux nao produziu resultado admissivel; fonte preservada'; auditoria = $audit } }
     }
     $resultProbe = Probe-Audio $ready
     if (-not (Test-FinalAudio $ready $resultProbe) -or
         [Math]::Abs($resultProbe.duracao - $sourceProbe.duracao) -gt [Math]::Max(0.25, $sourceProbe.duracao * 0.005) -or
         $resultProbe.canais -ne $sourceProbe.canais -or $resultProbe.amostragem -ne $sourceProbe.amostragem) {
-        return @{ok=$false; motivo='Resultado diverge de duracao, canais, amostragem ou formato exigido'; auditoria=$audit}
+        return @{ok = $false; motivo = 'Resultado diverge de duracao, canais, amostragem ou formato exigido'; auditoria = $audit }
     }
     $target = $TargetBase + [IO.Path]::GetExtension($ready).ToLowerInvariant()
-    if ([IO.File]::Exists($target)) { return @{ok=$false; motivo='Colisao: arquivo final existente preservado'; auditoria=$audit} }
-    $audit.resultado=$resultProbe; $audit.validado=$true
-    $audit.resultado_sha256=(Get-FileHash -LiteralPath $ready -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([IO.File]::Exists($target)) { return @{ok = $false; motivo = 'Colisao: arquivo final existente preservado'; auditoria = $audit } }
+    $audit.resultado = $resultProbe; $audit.validado = $true
+    $audit.resultado_sha256 = (Get-FileHash -LiteralPath $ready -Algorithm SHA256).Hash.ToLowerInvariant()
     # Publicar apenas depois de todas as verificacoes. A fonte excepcional fica no controle.
     [IO.File]::Move($ready, $target)
-    return @{ok=$true; arquivo=[IO.Path]::GetFileName($target); auditoria=$audit; probe=$resultProbe}
+    return @{ok = $true; arquivo = [IO.Path]::GetFileName($target); auditoria = $audit; probe = $resultProbe }
 }
 function Audit-Legacy {
     foreach ($id in @($script:State.videos.Keys)) {
@@ -370,7 +380,7 @@ function Audit-Legacy {
                 if ([IO.File]::Exists($archive)) { throw ('Colisao ao preservar legado: ' + $name) }
                 $v.arquivo_legado = 'legado/' + [IO.Path]::GetFileName($archive)
                 $v.sha256_legado = $hash
-                $v.auditoria_legado = @{ motivo='Historico/procedencia nao comprovados na politica atual' }
+                $v.auditoria_legado = @{ motivo = 'Historico/procedencia nao comprovados na politica atual' }
                 try { $v.auditoria_legado.tecnica = Probe-Audio $file } catch { $v.auditoria_legado.erro = $_.Exception.Message }
                 # Persistir a intencao antes do movimento permite recuperar interrupcoes.
                 Save-State
@@ -379,30 +389,31 @@ function Audit-Legacy {
             }
         }
         foreach ($record in $script:State.registros.Values) {
-            if ($record.video_id -eq $id -and $record.resultado -in @('baixado','existente')) {
-                $record.resultado='pendente_qualidade'; $record.arquivo=''
-                $record.motivo='Legado preservado no controle; falta comprovar procedencia e conformidade com a politica de 128 kbps'
-                $record.auditoria=$v.auditoria_legado
+            if ($record.video_id -eq $id -and $record.resultado -in @('baixado', 'existente')) {
+                $record.resultado = 'pendente_qualidade'; $record.arquivo = ''
+                $record.motivo = 'Legado preservado no controle; falta comprovar procedencia e conformidade com a politica de 128 kbps'
+                $record.auditoria = $v.auditoria_legado
             }
         }
         Save-State
     }
     # Arquivos sem estado tambem nao podem herdar uma conformidade presumida.
-    $trusted=@{}
+    $trusted = @{}
     foreach ($v in $script:State.videos.Values) {
-        if ($v.arquivo -and $v.auditoria -and $v.auditoria.validado -and $v.auditoria.politica -eq $script:Policy) { $trusted[[string]$v.arquivo]=$true }
+        if ($v.arquivo -and $v.auditoria -and $v.auditoria.validado -and $v.auditoria.politica -eq $script:Policy) { $trusted[[string]$v.arquivo] = $true }
     }
     foreach ($file in @(Get-ChildItem -LiteralPath $script:Out -File)) {
-        if ($trusted.ContainsKey($file.Name) -or $file.Extension.ToLowerInvariant() -notin @('.m4a','.mp3','.webm','.mp4','.opus','.ogg','.oga','.aac','.flac','.wav','.mka')) { continue }
-        $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        $dir=Join-Path $script:Control 'nao_rastreados'
+        if ($trusted.ContainsKey($file.Name) -or $file.Extension.ToLowerInvariant() -notin @('.m4a', '.mp3', '.webm', '.mp4', '.opus', '.ogg', '.oga', '.aac', '.flac', '.wav', '.mka')) { continue }
+        $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $dir = Join-Path $script:Control 'nao_rastreados'
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
-        $name=[guid]::NewGuid().ToString('N') + $file.Extension.ToLowerInvariant()
-        if (-not $script:State.ContainsKey('arquivos_preservados')) { $script:State.arquivos_preservados=@{} }
-        $script:State.arquivos_preservados[$name]=@{nome_original=$file.Name;sha256=$hash;
-            caminho=('nao_rastreados/'+$name);motivo='Arquivo sem estado de conformidade; preservado sem atestar qualidade'}
+        $name = [guid]::NewGuid().ToString('N') + $file.Extension.ToLowerInvariant()
+        if (-not $script:State.ContainsKey('arquivos_preservados')) { $script:State.arquivos_preservados = @{} }
+        $script:State.arquivos_preservados[$name] = @{nome_original = $file.Name; sha256 = $hash;
+            caminho = ('nao_rastreados/' + $name); motivo = 'Arquivo sem estado de conformidade; preservado sem atestar qualidade'
+        }
         Save-State
-        [IO.File]::Move($file.FullName,(Join-Path $dir $name))
+        [IO.File]::Move($file.FullName, (Join-Path $dir $name))
     }
 }
 function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$Song) {
@@ -410,14 +421,14 @@ function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$S
     $v = $script:State.videos[$Id]
     if (-not $v.auditoria -or $v.auditoria.politica -ne $script:Policy -or -not $v.auditoria.validado) {
         if ($EvidenciasJson -and -not $SomenteAuditarExistentes) { return $null }
-        return @{conflito=$true; qualidade=$true; motivo='Download legado sem validacao da procedencia e do minimo de 128 kbps; arquivo preservado no controle'}
+        return @{conflito = $true; qualidade = $true; motivo = 'Download legado sem validacao da procedencia e do minimo de 128 kbps; arquivo preservado no controle' }
     }
     if ([string]$v.artista -ne $Artist -or [string]$v.musica -ne $Song) {
-        return @{ conflito = $true; motivo='Mesmo ID aprovado para artistas/musicas diferentes; revisar identificacao' }
+        return @{ conflito = $true; motivo = 'Mesmo ID aprovado para artistas/musicas diferentes; revisar identificacao' }
     }
     $name = [string]$v.arquivo
     if ($name -ne [IO.Path]::GetFileName($name) -or [string]::IsNullOrWhiteSpace($name)) {
-        return @{ conflito = $true; motivo='Entrada de estado com caminho inseguro' }
+        return @{ conflito = $true; motivo = 'Entrada de estado com caminho inseguro' }
     }
     $file = Join-Path $script:Out $name
     if (-not [IO.File]::Exists($file)) { return $null }
@@ -425,15 +436,15 @@ function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$S
     if ($fi.Length -ne [long]$v.tamanho -or -not (Verify-Signature $file ([IO.Path]::GetExtension($file).TrimStart('.')))) { return $null }
     if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$v.sha256) { return $null }
     $probe = Probe-Audio $file
-    if (-not (Test-FinalAudio $file $probe)) { return @{conflito=$true; qualidade=$true; motivo='Arquivo existente reprovado na politica de qualidade atual'} }
-    return @{ conflito = $false; arquivo=$name; formato=[string]$v.formato }
+    if (-not (Test-FinalAudio $file $probe)) { return @{conflito = $true; qualidade = $true; motivo = 'Arquivo existente reprovado na politica de qualidade atual' } }
+    return @{ conflito = $false; arquivo = $name; formato = [string]$v.formato }
 }
 function Get-Formats($Info) {
     $formats = New-Object 'System.Collections.Generic.List[object]'
     foreach ($f in @($Info.formats)) {
         if ($null -eq $f) { continue }
         $ext = [string]$f.ext
-        if ($ext -notin @('m4a','mp3','webm','opus','ogg','oga','aac','flac','wav','mp4','mka')) { continue }
+        if ($ext -notin @('m4a', 'mp3', 'webm', 'opus', 'ogg', 'oga', 'aac', 'flac', 'wav', 'mp4', 'mka')) { continue }
         if ([string]$f.vcodec -ne 'none' -or -not $f.acodec -or [string]$f.acodec -eq 'none') { continue }
         # -f aceita expressoes (+,/,...): permitir apenas IDs literais.
         if (-not $f.format_id -or [string]$f.format_id -notmatch '^[A-Za-z0-9_-]{1,45}$') { continue }
@@ -444,29 +455,31 @@ function Get-Formats($Info) {
         # Declaracoes baixas sao rejeitadas antes do download; desconhecidas exigem medicao.
         if (-not $lossless -and $abr -gt 0 -and $abr -lt 128) { continue }
         $native = ($ext -eq 'm4a' -and [string]$f.acodec -match '^(mp4a|aac|alac)') -or
-                  ($ext -eq 'mp3' -and [string]$f.acodec -match '^mp3')
+        ($ext -eq 'mp3' -and [string]$f.acodec -match '^mp3')
         $operation = if ($native) { 'nativo' } elseif ([string]$f.acodec -match '^(mp4a|aac|alac|mp3)') { 'remux' } else { 'transcodificacao' }
         $tier = if ($native) { 0 } elseif ($operation -eq 'remux') { 1 } else { 2 }
         $distance = if ($lossless) { 0 } elseif ($abr -ge 128) { $abr - 128 } else { [double]::MaxValue }
-        $formats.Add([pscustomobject]@{ id=[string]$f.format_id; ext=$ext; codec=[string]$f.acodec;
-                    abr=$abr; tier=$tier; quality=$distance; operacao=$operation; filesize=$f.filesize; duracao_origem=$Info.duration })
+        $formats.Add([pscustomobject]@{ id = [string]$f.format_id; ext = $ext; codec = [string]$f.acodec;
+                abr = $abr; tier = $tier; quality = $distance; operacao = $operation; filesize = $f.filesize; duracao_origem = $Info.duration 
+            })
     }
-    return @($formats | Sort-Object -Property @{Expression='tier';Ascending=$true}, @{Expression='quality';Ascending=$true})
+    return @($formats | Sort-Object -Property @{Expression = 'tier'; Ascending = $true }, @{Expression = 'quality'; Ascending = $true })
 }
 function Get-Info([string]$Id) {
     $url = 'https://www.youtube.com/watch?v=' + $Id
     $requestArgs = @(Base-Args) + @('--dump-single-json', '--skip-download', '--', $url)
     $result = Invoke-Checked -Arguments $requestArgs -Timeout 105
-    if ($result.code -ne 0) { return @{ ok=$false; run=$result } }
+    if ($result.code -ne 0) { return @{ ok = $false; run = $result } }
     try {
         $info = $result.out | ConvertFrom-Json
         if ([string]$info.id -ne $Id -or $info.is_live -eq $true -or $info.live_status -eq 'is_live') {
-            return @{ ok=$false; run=@{ diagnostico='metadados_inconsistentes_ou_live'; err='ID/live incompativel'; tentativas=$result.tentativas } }
+            return @{ ok = $false; run = @{ diagnostico = 'metadados_inconsistentes_ou_live'; err = 'ID/live incompativel'; tentativas = $result.tentativas } }
         }
         $formats = @(Get-Formats $info)
-        if ($formats.Count -eq 0) { return @{ ok=$false; run=@{ diagnostico='sem_fonte_admissivel'; err='Nenhuma fonte de audio admissivel: formatos ausentes ou comprimidos declarados abaixo de 128 kbps'; tentativas=$result.tentativas } } }
-        return @{ ok=$true; info=$info; formats=$formats; run=$result }
-    } catch { return @{ ok=$false; run=@{ diagnostico='json_ou_metadados_invalidos'; err=$_.Exception.Message; tentativas=$result.tentativas } } }
+        if ($formats.Count -eq 0) { return @{ ok = $false; run = @{ diagnostico = 'sem_fonte_admissivel'; err = 'Nenhuma fonte de audio admissivel: formatos ausentes ou comprimidos declarados abaixo de 128 kbps'; tentativas = $result.tentativas } } }
+        return @{ ok = $true; info = $info; formats = $formats; run = $result }
+    }
+    catch { return @{ ok = $false; run = @{ diagnostico = 'json_ou_metadados_invalidos'; err = $_.Exception.Message; tentativas = $result.tentativas } } }
 }
 function Identity-Matches($Info, [string]$Artist, [string]$Song) {
     $title = [string]$Info.title
@@ -497,7 +510,7 @@ function Is-ExactArtistAudio([string]$Title, [string]$Channel, [string]$Artist, 
     $c = Normal $Channel; $t = Normal $Title
     if ($c -notin @($a, ($a + ' topic'))) { return $false }
     return ($t -in @($s, ($s + ' audio'), ($a + ' ' + $s),
-        ($a + ' ' + $s + ' audio'), ($a + ' ' + $s + ' official audio')))
+            ($a + ' ' + $s + ' audio'), ($a + ' ' + $s + ' official audio')))
 }
 function Select-AutoCandidate($Items, [string]$Artist, [string]$Song) {
     $exact = @($Items | Where-Object { Is-ExactArtistAudio ([string]$_.titulo) ([string]$_.canal) $Artist $Song })
@@ -507,15 +520,15 @@ function Select-AutoCandidate($Items, [string]$Artist, [string]$Song) {
 function Search-Candidates([string]$Query, [string]$Artist, [string]$Song) {
     $cacheKey = Hash-Text ($Query + '|' + $Artist + '|' + $Song)
     if (-not $ReavaliarPendentes -and $script:State.buscas.ContainsKey($cacheKey)) {
-        return @{ ok=$true; items=@($script:State.buscas[$cacheKey]); tentativas=0; cache=$true }
+        return @{ ok = $true; items = @($script:State.buscas[$cacheKey]); tentativas = 0; cache = $true }
     }
     $search = 'ytsearch' + $ResultadosPorBusca + ':' + $Query
-    $requestArgs = @('--ignore-config','--no-plugin-dirs','--encoding','utf-8','--no-warnings',
-        '--cache-dir', (Join-Path $script:Control 'cache')) + $script:JsArgs + @('--flat-playlist','--dump-single-json',
-              '--socket-timeout','20','--retries','2','--extractor-retries','2',
-              '--retry-sleep','http:exp=2:10','--', $search)
+    $requestArgs = @('--ignore-config', '--no-plugin-dirs', '--encoding', 'utf-8', '--no-warnings',
+        '--cache-dir', (Join-Path $script:Control 'cache')) + $script:JsArgs + @('--flat-playlist', '--dump-single-json',
+        '--socket-timeout', '20', '--retries', '2', '--extractor-retries', '2',
+        '--retry-sleep', 'http:exp=2:10', '--', $search)
     $result = Invoke-Checked -Arguments $requestArgs -Timeout 105
-    if ($result.code -ne 0) { return @{ ok=$false; run=$result; tentativas=$result.tentativas } }
+    if ($result.code -ne 0) { return @{ ok = $false; run = $result; tentativas = $result.tentativas } }
     try {
         $data = $result.out | ConvertFrom-Json
         $found = New-Object 'System.Collections.Generic.List[object]'
@@ -523,31 +536,34 @@ function Search-Candidates([string]$Query, [string]$Artist, [string]$Song) {
             if ($null -eq $c -or [string]$c.id -notmatch '^[a-zA-Z0-9_-]{11}$') { continue }
             $score = Candidate-Score $c $Artist $Song
             if ($score -lt 0) { continue }
-            $found.Add(@{ id=[string]$c.id; titulo=[string]$c.title; canal=[string]$c.channel;
-                          pontuacao=$score; url=('https://www.youtube.com/watch?v=' + [string]$c.id) })
+            $found.Add(@{ id = [string]$c.id; titulo = [string]$c.title; canal = [string]$c.channel;
+                    pontuacao = $score; url = ('https://www.youtube.com/watch?v=' + [string]$c.id) 
+                })
         }
-        $items = @($found | Sort-Object -Property @{Expression='pontuacao';Descending=$true}, @{Expression='id';Ascending=$true})
+        $items = @($found | Sort-Object -Property @{Expression = 'pontuacao'; Descending = $true }, @{Expression = 'id'; Ascending = $true })
         $script:State.buscas[$cacheKey] = $items
-        return @{ ok=$true; items=$items; tentativas=$result.tentativas; cache=$false }
-    } catch { return @{ ok=$false; run=@{diagnostico='json_de_busca_invalido';err=$_.Exception.Message;tentativas=$result.tentativas}; tentativas=$result.tentativas } }
+        return @{ ok = $true; items = $items; tentativas = $result.tentativas; cache = $false }
+    }
+    catch { return @{ ok = $false; run = @{diagnostico = 'json_de_busca_invalido'; err = $_.Exception.Message; tentativas = $result.tentativas }; tentativas = $result.tentativas } }
 }
 function Approved($Row, $Approvals) {
     $order = [string]$Row.Ordem
     if (-not $Approvals.ContainsKey($order)) { return $null }
     $r = $Approvals[$order]
     $id = ([string]$r.VideoId).Trim()
-    $flags = @('ArtistaMusicaConferidos','VersaoConferida','SemVocaisConferido')
+    $flags = @('ArtistaMusicaConferidos', 'VersaoConferida', 'SemVocaisConferido')
     $valid = ($id -match '^[a-zA-Z0-9_-]{11}$')
-    foreach ($f in $flags) { if (([string]$r[$f]).Trim().ToUpperInvariant() -notin @('SIM','S','TRUE','1')) { $valid = $false } }
-    return @{ id=$id; valid=$valid }
+    foreach ($f in $flags) { if (([string]$r[$f]).Trim().ToUpperInvariant() -notin @('SIM', 'S', 'TRUE', '1')) { $valid = $false } }
+    return @{ id = $id; valid = $valid }
 }
 function New-Record($Row, [string]$Key) {
-    return @{ chave=$Key; ordem=[string]$Row.Ordem; artista=[string]$Row.Artista;
-        musica=[string]$Row.Musica; url_original=[string]$Row.Link_YouTube;
-        tipo_link=[string]$Row.Tipo_link; verificacao_csv=[string]$Row.Verificacao;
-        observacoes=[string]$Row.Observacoes; video_id=''; url_video=''; titulo_video='';
-        auditoria=@{}; rejeicoes=@(); candidatos=@(); criterio_selecao=''; formato=''; codec=''; bitrate_kbps=''; arquivo='';
-        tentativas=0; tentativas_download=0; resultado=''; motivo=''; atualizado_utc='' }
+    return @{ chave = $Key; ordem = [string]$Row.Ordem; artista = [string]$Row.Artista;
+        musica = [string]$Row.Musica; url_original = [string]$Row.Link_YouTube;
+        tipo_link = [string]$Row.Tipo_link; verificacao_csv = [string]$Row.Verificacao;
+        observacoes = [string]$Row.Observacoes; video_id = ''; url_video = ''; titulo_video = '';
+        auditoria = @{}; rejeicoes = @(); candidatos = @(); criterio_selecao = ''; formato = ''; codec = ''; bitrate_kbps = ''; arquivo = '';
+        tentativas = 0; tentativas_download = 0; resultado = ''; motivo = ''; atualizado_utc = '' 
+    }
 }
 function Finalize-Record($R, [string]$Result, [string]$Reason) {
     $R.resultado = $Result; $R.motivo = $Reason
@@ -572,21 +588,21 @@ function Export-Reports {
             Ordem = $r.ordem; Artista = (Safe-Cell $r.artista); Musica = (Safe-Cell $r.musica)
             URL_original = (Safe-Cell $r.url_original); Tipo_link = (Safe-Cell $r.tipo_link)
             Verificacao_csv = (Safe-Cell $r.verificacao_csv); Observacoes = (Safe-Cell $r.observacoes)
-            VideoId = $r.video_id; URL_video_resolvida=$r.url_video; Titulo_video_resolvido=(Safe-Cell $r.titulo_video)
-            Auditoria=(Safe-Cell ($r.auditoria | ConvertTo-Json -Depth 15 -Compress)); Rejeicoes=(Safe-Cell ($r.rejeicoes | ConvertTo-Json -Depth 15 -Compress)); Criterio_selecao=$r.criterio_selecao; Formato=$r.formato; Codec=$r.codec; Bitrate_kbps=$r.bitrate_kbps; Arquivo=$r.arquivo
-            Tentativas=$r.tentativas; Tentativas_download=$r.tentativas_download; Resultado=$r.resultado
-            Motivo=(Safe-Cell $r.motivo); Candidatos=($urls -join ' | '); Atualizado_UTC=$r.atualizado_utc
+            VideoId = $r.video_id; URL_video_resolvida = $r.url_video; Titulo_video_resolvido = (Safe-Cell $r.titulo_video)
+            Auditoria = (Safe-Cell ($r.auditoria | ConvertTo-Json -Depth 15 -Compress)); Rejeicoes = (Safe-Cell ($r.rejeicoes | ConvertTo-Json -Depth 15 -Compress)); Criterio_selecao = $r.criterio_selecao; Formato = $r.formato; Codec = $r.codec; Bitrate_kbps = $r.bitrate_kbps; Arquivo = $r.arquivo
+            Tentativas = $r.tentativas; Tentativas_download = $r.tentativas_download; Resultado = $r.resultado
+            Motivo = (Safe-Cell $r.motivo); Candidatos = ($urls -join ' | '); Atualizado_UTC = $r.atualizado_utc
         }
         $report.Add($rec)
-        if ($r.resultado -notin @('baixado','existente')) {
+        if ($r.resultado -notin @('baixado', 'existente')) {
             $pending.Add([pscustomobject][ordered]@{
-                Ordem=$r.ordem; Artista=(Safe-Cell $r.artista); Musica=(Safe-Cell $r.musica);
-                VideoId_sugerido=$(if ($r.video_id) { $r.video_id } elseif (@($r.candidatos).Count -gt 0) { [string]$r.candidatos[0].id } else { '' });
-                Candidato_1=$(if ($urls.Count -gt 0) { $urls[0] } else { '' });
-                Candidato_2=$(if ($urls.Count -gt 1) { $urls[1] } else { '' });
-                Candidato_3=$(if ($urls.Count -gt 2) { $urls[2] } else { '' });
-                Motivo=(Safe-Cell $r.motivo)
-            })
+                    Ordem = $r.ordem; Artista = (Safe-Cell $r.artista); Musica = (Safe-Cell $r.musica);
+                    VideoId_sugerido = $(if ($r.video_id) { $r.video_id } elseif (@($r.candidatos).Count -gt 0) { [string]$r.candidatos[0].id } else { '' });
+                    Candidato_1 = $(if ($urls.Count -gt 0) { $urls[0] } else { '' });
+                    Candidato_2 = $(if ($urls.Count -gt 1) { $urls[1] } else { '' });
+                    Candidato_3 = $(if ($urls.Count -gt 2) { $urls[2] } else { '' });
+                    Motivo = (Safe-Cell $r.motivo)
+                })
         }
     }
     if ($report.Count -gt 0) { $report | Export-Csv -LiteralPath $script:ReportFile -NoTypeInformation -Encoding UTF8 }
@@ -597,18 +613,18 @@ function Export-Reports {
     $suggestions = New-Object 'System.Collections.Generic.List[object]'
     foreach ($r in $pending) {
         $suggestions.Add([pscustomobject][ordered]@{
-            Ordem=$r.Ordem; VideoId=$r.VideoId_sugerido;
-            ArtistaMusicaConferidos=''; VersaoConferida=''; SemVocaisConferido='';
-            URL_para_ouvir=$r.Candidato_1; Artista=$r.Artista; Musica=$r.Musica
-        })
+                Ordem = $r.Ordem; VideoId = $r.VideoId_sugerido;
+                ArtistaMusicaConferidos = ''; VersaoConferida = ''; SemVocaisConferido = '';
+                URL_para_ouvir = $r.Candidato_1; Artista = $r.Artista; Musica = $r.Musica
+            })
     }
     if ($suggestions.Count -gt 0) {
         $suggestions | Export-Csv -LiteralPath (Join-Path $script:Control 'sugestoes_aprovacao.csv') -NoTypeInformation -Encoding UTF8
     }
     $exampleFile = Join-Path $script:Control 'aprovacoes_modelo.csv'
     if (-not [IO.File]::Exists($exampleFile)) {
-        @([pscustomobject][ordered]@{Ordem='';VideoId='';ArtistaMusicaConferidos='';VersaoConferida='';SemVocaisConferido=''}) |
-           Export-Csv -LiteralPath $exampleFile -NoTypeInformation -Encoding UTF8
+        @([pscustomobject][ordered]@{Ordem = ''; VideoId = ''; ArtistaMusicaConferidos = ''; VersaoConferida = ''; SemVocaisConferido = '' }) |
+        Export-Csv -LiteralPath $exampleFile -NoTypeInformation -Encoding UTF8
     }
 }
 
@@ -623,9 +639,9 @@ try {
     catch { throw 'Outra instancia esta usando este destino (ou lock indisponivel).' }
     if ([IO.File]::Exists($script:StateFile)) {
         $script:State = To-Hashtable (Get-Content -LiteralPath $script:StateFile -Raw -Encoding UTF8 | ConvertFrom-Json)
-        foreach ($section in @('registros','videos','buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
+        foreach ($section in @('registros', 'videos', 'buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
     }
-    foreach ($tool in @($script:Ffmpeg,$script:Ffprobe)) {
+    foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
     }
     if ($EvidenciasJson) {
@@ -633,28 +649,29 @@ try {
         foreach ($e in $document) {
             if ([string]$e.video_id -notmatch '^[A-Za-z0-9_-]{11}$' -or [string]$e.formato_id -notmatch '^[A-Za-z0-9_-]{1,45}$' -or
                 [string]$e.sha256 -notmatch '^[a-fA-F0-9]{64}$' -or ([string]$e.origem).Length -lt 15 -or
-                ([string]$e.historico).Length -lt 20 -or $e.qualidade -notin @('perdas_verificadas','sem_perdas_verificada')) {
+                ([string]$e.historico).Length -lt 20 -or $e.qualidade -notin @('perdas_verificadas', 'sem_perdas_verificada')) {
                 throw 'Evidencia invalida: exigir video_id, formato_id, SHA256, origem, historico documentado e qualidade conhecida'
             }
             if ([string]$e.documento_sha256 -notmatch '^[a-fA-F0-9]{64}$' -or -not $e.documento) { throw 'Evidencia exige documento de procedencia e seu SHA256' }
-            $docPath=Resolve-Input ([string]$e.documento)
+            $docPath = Resolve-Input ([string]$e.documento)
             if (-not (Test-Path -LiteralPath $docPath -PathType Leaf) -or
                 (Get-FileHash -LiteralPath $docPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne ([string]$e.documento_sha256).ToLowerInvariant()) {
                 throw 'Documento de procedencia ausente ou hash divergente'
             }
-            $key=[string]$e.video_id + '|' + [string]$e.formato_id + '|' + ([string]$e.sha256).ToLowerInvariant()
+            $key = [string]$e.video_id + '|' + [string]$e.formato_id + '|' + ([string]$e.sha256).ToLowerInvariant()
             if ($script:Evidencias.ContainsKey($key)) { throw 'Evidencia duplicada' }
             $script:Evidencias[$key] = To-Hashtable $e
         }
     }
     Audit-Legacy
-    $version = Invoke-Ytdlp -Arguments @('--ignore-config','--version') -TimeoutSeconds 15
+    $version = Invoke-Ytdlp -Arguments @('--ignore-config', '--version') -TimeoutSeconds 15
     if ($version.code -ne 0) { throw "yt-dlp.exe nao executou: $($version.err)" }
     Write-Host ('yt-dlp: ' + $version.out.Trim())
     if (Get-Command node.exe -ErrorAction SilentlyContinue) {
         $script:JsArgs = @('--js-runtimes', 'node')
         Write-Host 'Runtime JavaScript local: Node.js'
-    } else {
+    }
+    else {
         Write-Warning 'Node.js ausente; o YouTube pode oferecer menos formatos de audio.'
     }
     $first = [IO.File]::ReadLines($csvPath, [Text.Encoding]::UTF8) | Select-Object -First 1
@@ -662,7 +679,7 @@ try {
     $delim = if ($first.Contains('Ordem;')) { ';' } elseif ($first.Contains("Ordem`t")) { "`t" } else { ',' }
     $rows = @(Import-Csv -LiteralPath $csvPath -Delimiter $delim -Encoding UTF8)
     if ($rows.Count -eq 0) { throw 'CSV vazio' }
-    $expected = @('Ordem','Artista','Musica','Link_YouTube','Tipo_link','Verificacao','Observacoes')
+    $expected = @('Ordem', 'Artista', 'Musica', 'Link_YouTube', 'Tipo_link', 'Verificacao', 'Observacoes')
     foreach ($col in $expected) {
         if ($col -notin @($rows[0].PSObject.Properties.Name)) { throw ('Coluna obrigatoria ausente: ' + $col) }
     }
@@ -678,13 +695,14 @@ try {
         $appPath = Resolve-Input $AprovacoesCsv
         if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) { throw ('Arquivo de aprovacoes inexistente: ' + $appPath) }
         foreach ($item in @(Import-Csv -LiteralPath $appPath -Encoding UTF8)) {
-            foreach ($col in @('Ordem','VideoId','ArtistaMusicaConferidos','VersaoConferida','SemVocaisConferido')) {
+            foreach ($col in @('Ordem', 'VideoId', 'ArtistaMusicaConferidos', 'VersaoConferida', 'SemVocaisConferido')) {
                 if ($col -notin @($item.PSObject.Properties.Name)) { throw ('Coluna ausente em aprovacoes: ' + $col) }
             }
             $order = ([string]$item.Ordem).Trim()
             if ($approvals.ContainsKey($order)) { throw ('Aprovacao duplicada para ordem ' + $order) }
-            $approvals[$order] = @{ VideoId=$item.VideoId; ArtistaMusicaConferidos=$item.ArtistaMusicaConferidos;
-                VersaoConferida=$item.VersaoConferida; SemVocaisConferido=$item.SemVocaisConferido }
+            $approvals[$order] = @{ VideoId = $item.VideoId; ArtistaMusicaConferidos = $item.ArtistaMusicaConferidos;
+                VersaoConferida = $item.VersaoConferida; SemVocaisConferido = $item.SemVocaisConferido 
+            }
         }
     }
     Write-Host ("Registros: $($rows.Count) | Aprovacoes: $($approvals.Count) | Destino: $script:Out")
@@ -708,21 +726,21 @@ try {
             }
             $urlInfo = Get-UrlInfo $url
             if ($SomenteAuditarExistentes) {
-                if ($rec.resultado -notin @('baixado','existente')) {
+                if ($rec.resultado -notin @('baixado', 'existente')) {
                     if (-not $rec.resultado) { Finalize-Record $rec 'pendente_qualidade' 'Auditoria local: nenhuma consulta remota realizada' }
                     else { Finalize-Record $rec $rec.resultado $rec.motivo }
                     continue
                 }
             }
             # Um estado de sucesso so pode ser reutilizado se o arquivo continuar integro.
-            if ($rec.resultado -in @('baixado','existente') -and $rec.video_id -match '^[a-zA-Z0-9_-]{11}$') {
+            if ($rec.resultado -in @('baixado', 'existente') -and $rec.video_id -match '^[a-zA-Z0-9_-]{11}$') {
                 $prior = Existing-Video $rec.video_id $order $artist $song
                 if ($prior -and -not $prior.conflito) {
                     $rec.arquivo = $prior.arquivo; $rec.formato = $prior.formato
                     Finalize-Record $rec 'existente' 'Reexecucao: arquivo validado por tamanho, assinatura e SHA-256'
                     continue
                 }
-                $reason=if($prior -and $prior.qualidade){$prior.motivo}else{'Registro anterior sem arquivo integro; investigar antes de baixar novamente'}
+                $reason = if ($prior -and $prior.qualidade) { $prior.motivo }else { 'Registro anterior sem arquivo integro; investigar antes de baixar novamente' }
                 Finalize-Record $rec 'pendente_qualidade' $reason
                 continue
             }
@@ -736,8 +754,8 @@ try {
             }
             # Candidatos em cache podem ser reavaliados sem nova consulta remota.
             # Pendencias de acesso e falhas locais devem ser recuperaveis na reexecucao.
-            $preserve = $rec.resultado -in @('nao_identificado','indisponivel') -or
-                        ($rec.resultado -eq 'pendente_auditoria' -and @($rec.candidatos).Count -eq 0)
+            $preserve = $rec.resultado -in @('nao_identificado', 'indisponivel') -or
+            ($rec.resultado -eq 'pendente_auditoria' -and @($rec.candidatos).Count -eq 0)
             if (-not $ReavaliarPendentes -and $null -eq $approval -and $preserve) {
                 Write-Host "[$order] Estado anterior preservado; use -ReavaliarPendentes para reconsultar."
                 continue
@@ -750,10 +768,12 @@ try {
                 if ($urlInfo.tipo -eq 'video' -and $urlInfo.id -ne $videoId) {
                     Finalize-Record $rec 'falha' 'Aprovacao nao corresponde ao ID da URL direta'; continue
                 }
-            } elseif ($urlInfo.tipo -eq 'video') {
+            }
+            elseif ($urlInfo.tipo -eq 'video') {
                 $videoId = $urlInfo.id
                 $rec.criterio_selecao = 'url_direta_metadados'
-            } else {
+            }
+            else {
                 if (-not (Is-SameText $urlInfo.query $artist) -or -not (Is-SameText $urlInfo.query $song)) {
                     Finalize-Record $rec 'nao_identificado' 'Pesquisa fornecida nao corresponde claramente a artista e musica'; continue
                 }
@@ -762,7 +782,7 @@ try {
                 $rec.tentativas = [int]$rec.tentativas + [int]$search.tentativas
                 if (-not $search.ok) {
                     $reason = [string]$search.run.diagnostico + ': ' + [string]$search.run.err
-                    $status = if ($search.run.diagnostico -in @('http_429','dns','rede_ou_timeout','timeout','http_5xx','confirmacao_anti_bot','autenticacao_ou_controle_de_acesso','acesso_limitado_http_403')) { 'pendente_acesso' } else { 'falha' }
+                    $status = if ($search.run.diagnostico -in @('http_429', 'dns', 'rede_ou_timeout', 'timeout', 'http_5xx', 'confirmacao_anti_bot', 'autenticacao_ou_controle_de_acesso', 'acesso_limitado_http_403')) { 'pendente_acesso' } else { 'falha' }
                     Finalize-Record $rec $status $reason; continue
                 }
                 $rec.candidatos = @($search.items)
@@ -781,10 +801,10 @@ try {
             $rec.url_video = 'https://www.youtube.com/watch?v=' + $videoId
             if ($urlInfo.tipo -eq 'busca' -and $approval) {
                 # O usuario atesta a escolha; nao tratar resultado de busca como video.
-                $rec.candidatos = @(@{id=$videoId; url=$rec.url_video; titulo='Aprovado pelo usuario'})
+                $rec.candidatos = @(@{id = $videoId; url = $rec.url_video; titulo = 'Aprovado pelo usuario' })
             }
             $prev = Existing-Video $videoId $order $artist $song
-            if ($prev -and $prev.conflito) { $status=if($prev.qualidade){'pendente_qualidade'}else{'falha'}; Finalize-Record $rec $status $prev.motivo; continue }
+            if ($prev -and $prev.conflito) { $status = if ($prev.qualidade) { 'pendente_qualidade' }else { 'falha' }; Finalize-Record $rec $status $prev.motivo; continue }
             if ($prev) {
                 $rec.arquivo = $prev.arquivo; $rec.formato = $prev.formato
                 Finalize-Record $rec 'existente' 'Arquivo auditado, tamanho e SHA-256 preservados; download dispensado'; continue
@@ -794,9 +814,9 @@ try {
             $rec.tentativas = [int]$rec.tentativas + [int]$infoCheck.run.tentativas
             if (-not $infoCheck.ok) {
                 $diag = [string]$infoCheck.run.diagnostico
-                $status = if ($diag -in @('indisponivel','restricao_geografica','sem_audio_nativo')) {'indisponivel'}
-                          elseif ($diag -eq 'sem_fonte_admissivel') {'pendente_qualidade'}
-                          elseif ($diag -in @('http_429','dns','rede_ou_timeout','timeout','http_5xx','confirmacao_anti_bot','autenticacao_ou_controle_de_acesso','acesso_limitado_http_403')) {'pendente_acesso'} else {'falha'}
+                $status = if ($diag -in @('indisponivel', 'restricao_geografica', 'sem_audio_nativo')) { 'indisponivel' }
+                elseif ($diag -eq 'sem_fonte_admissivel') { 'pendente_qualidade' }
+                elseif ($diag -in @('http_429', 'dns', 'rede_ou_timeout', 'timeout', 'http_5xx', 'confirmacao_anti_bot', 'autenticacao_ou_controle_de_acesso', 'acesso_limitado_http_403')) { 'pendente_acesso' } else { 'falha' }
                 Finalize-Record $rec $status ($diag + ': ' + [string]$infoCheck.run.err); continue
             }
             $rec.titulo_video = [string]$infoCheck.info.title
@@ -838,7 +858,7 @@ try {
                     $lastError = [string]$dl.diagnostico + ': ' + [string]$dl.err
                     # 403 apos metadados validos pode ser especifico do formato/CDN.
                     # Tentar outros formatos nativos, sem credenciais nem contorno de acesso.
-                    if ($dl.diagnostico -in @('formato_indisponivel','acesso_limitado_http_403') -and -not $refreshed) {
+                    if ($dl.diagnostico -in @('formato_indisponivel', 'acesso_limitado_http_403') -and -not $refreshed) {
                         $refreshed = $true
                         $fresh = Get-Info $videoId
                         $rec.tentativas = [int]$rec.tentativas + [int]$fresh.run.tentativas
@@ -846,14 +866,14 @@ try {
                             foreach ($candidateFmt in @($fresh.formats)) {
                                 if (-not $attemptedFormats.ContainsKey($candidateFmt.id)) { $formatQueue.Add($candidateFmt) }
                             }
-                            $sorted = @($formatQueue | Sort-Object tier,quality)
+                            $sorted = @($formatQueue | Sort-Object tier, quality)
                             $formatQueue.Clear()
                             foreach ($candidateFmt in $sorted) { $formatQueue.Add($candidateFmt) }
-                            $fiIndex=0
+                            $fiIndex = 0
                         }
-                        if ($script:NetworkSuspended) { $lastDiagnostic=[string]$fresh.run.diagnostico; $lastError=[string]$fresh.run.err; break }
+                        if ($script:NetworkSuspended) { $lastDiagnostic = [string]$fresh.run.diagnostico; $lastError = [string]$fresh.run.err; break }
                     }
-                    if ($dl.diagnostico -notin @('formato_indisponivel','acesso_limitado_http_403')) { break }
+                    if ($dl.diagnostico -notin @('formato_indisponivel', 'acesso_limitado_http_403')) { break }
                     continue
                 }
                 if (-not [IO.File]::Exists($target) -or -not (Verify-Signature $target $fmt.ext)) {
@@ -867,22 +887,26 @@ try {
                     break
                 }
                 try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt }
-                catch { $result=@{ok=$false; motivo=('Validacao/conversao rejeitada: '+$_.Exception.Message);
-                    auditoria=@{politica=$script:Policy; validado=$false; origem_formato_id=$fmt.id; erro=$_.Exception.Message}} }
+                catch {
+                    $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
+                        auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
+                    } 
+                }
                 $rec.auditoria = $result.auditoria
                 if (-not $result.ok) {
-                    $lastDiagnostic='qualidade'; $lastError=$result.motivo
-                    $rec.rejeicoes += @(@{formato_id=$fmt.id; motivo=$lastError; auditoria=$result.auditoria})
+                    $lastDiagnostic = 'qualidade'; $lastError = $result.motivo
+                    $rec.rejeicoes += @(@{formato_id = $fmt.id; motivo = $lastError; auditoria = $result.auditoria })
                     continue
                 }
                 $filename = $result.arquivo
                 $target = Join-Path $script:Out $filename
                 $size = (Get-Item -LiteralPath $target).Length
                 $sha = $result.auditoria.resultado_sha256
-                $script:State.videos[$videoId] = @{ artista=$artist; musica=$song; arquivo=$filename;
-                     tamanho=$size; sha256=$sha; formato=[IO.Path]::GetExtension($filename).TrimStart('.');
-                     codec=$result.probe.codec; bitrate_kbps=$result.probe.bitrate_medido_kbps;
-                     auditoria=$result.auditoria; verificado_utc=[DateTime]::UtcNow.ToString('o') }
+                $script:State.videos[$videoId] = @{ artista = $artist; musica = $song; arquivo = $filename;
+                    tamanho = $size; sha256 = $sha; formato = [IO.Path]::GetExtension($filename).TrimStart('.');
+                    codec = $result.probe.codec; bitrate_kbps = $result.probe.bitrate_medido_kbps;
+                    auditoria = $result.auditoria; verificado_utc = [DateTime]::UtcNow.ToString('o') 
+                }
                 $rec.formato = [IO.Path]::GetExtension($filename).TrimStart('.'); $rec.codec = $result.probe.codec
                 $rec.bitrate_kbps = [string]$result.probe.bitrate_medido_kbps; $rec.arquivo = $filename
                 $completed = $true
@@ -890,18 +914,21 @@ try {
                 break
             }
             if (-not $completed) {
-                $finalStatus = if ($lastDiagnostic -in @('acesso_limitado_http_403','confirmacao_anti_bot','autenticacao_ou_controle_de_acesso','http_429','http_5xx','dns','rede_ou_timeout','timeout')) { 'pendente_acesso' } elseif ($lastDiagnostic -eq 'qualidade') { 'pendente_qualidade' } else { 'falha' }
+                $finalStatus = if ($lastDiagnostic -in @('acesso_limitado_http_403', 'confirmacao_anti_bot', 'autenticacao_ou_controle_de_acesso', 'http_429', 'http_5xx', 'dns', 'rede_ou_timeout', 'timeout')) { 'pendente_acesso' } elseif ($lastDiagnostic -eq 'qualidade') { 'pendente_qualidade' } else { 'falha' }
                 Finalize-Record $rec $finalStatus $lastError
             }
-        } catch {
+        }
+        catch {
             try { Finalize-Record $rec 'falha' ('Excecao isolada: ' + $_.Exception.Message) }
             catch { Write-Warning ('Falha ao registrar ordem ' + $order + ': ' + $_.Exception.Message) }
         }
     }
-} catch {
+}
+catch {
     Write-Error ('Erro de inicializacao ou de integridade do lote: ' + $_.Exception.Message) -ErrorAction Continue
     $script:Fatal = $true
-} finally {
+}
+finally {
     Write-Progress -Activity 'Auditoria/download de audio original' -Completed
     try { if ($script:Lock) { Export-Reports } } catch { Write-Warning ('Falha ao exportar relatorio: ' + $_.Exception.Message) }
     if ($script:Lock) { $script:Lock.Dispose() }
@@ -913,7 +940,7 @@ try {
             $counts[$status]++
         }
         Write-Host '--- RESUMO ---'
-        foreach ($s in @('baixado','existente','nao_identificado','indisponivel','pendente_auditoria','pendente_acesso','pendente_qualidade','falha')) {
+        foreach ($s in @('baixado', 'existente', 'nao_identificado', 'indisponivel', 'pendente_auditoria', 'pendente_acesso', 'pendente_qualidade', 'falha')) {
             $n = if ($counts.ContainsKey($s)) { $counts[$s] } else { 0 }
             Write-Host (('{0}: {1}' -f $s, $n))
         }
