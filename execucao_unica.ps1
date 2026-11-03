@@ -23,29 +23,38 @@ function Read-InRunValue {
 function Request-InRunApproval {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)][int]$Order,
+        [Parameter(Mandatory = $true)][string]$Order,
         [Parameter(Mandatory = $true)][string]$Artist,
         [Parameter(Mandatory = $true)][string]$Song,
-        [Parameter(Mandatory = $true)][array]$Candidates,
+        [array]$Candidates = @(),
         [string]$VideoId,
         [switch]$NonInteractive,
         [scriptblock]$ReadInput = $null
     )
 
     $selected = $null
+    $idx = 0
 
-    if ($NonInteractive -or $null -eq $ReadInput) {
+    if ($NonInteractive) {
         return $null
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($VideoId) -and $VideoId -match '^[A-Za-z0-9_-]{11}$') {
-        $selected = $Candidates | Where-Object { $_.id -eq $VideoId }
-        if ($null -eq $selected) {
+    if (-not [string]::IsNullOrWhiteSpace($VideoId)) {
+        if (-not ($VideoId -match '^[A-Za-z0-9_-]{11}$')) {
             return $null
+        }
+        $selected = @{
+            id = $VideoId
+            titulo = "$Artist - $Song"
+            url = "https://www.youtube.com/watch?v=$VideoId"
         }
         Write-Host "ID fixo [$VideoId] selecionado automaticamente."
         Write-Host "Título: $($selected.titulo)"
     } else {
+        if ($Candidates.Count -eq 0) {
+            return $null
+        }
+
         Write-Host "`n[$Order] $Artist - $Song"
         Write-Host "Candidatos:"
         for ($i = 0; $i -lt $Candidates.Count; $i++) {
@@ -65,7 +74,7 @@ function Request-InRunApproval {
                 return $null
             }
 
-            if ($input.Length -eq 11 -and $input -match '^[A-Za-z0-9_-]+$') {
+            if ($input.Length -eq 11 -and $input -match '^[A-Za-z0-9_-]{11}$') {
                 $selected = $Candidates | Where-Object { $_.id -eq $input }
                 if ($null -ne $selected) {
                     break
@@ -91,6 +100,10 @@ function Request-InRunApproval {
         if ($null -eq $selected) {
             return $null
         }
+    }
+
+    if ($null -eq $selected -or -not ($selected.id -match '^[A-Za-z0-9_-]{11}$')) {
+        return $null
     }
 
     Write-Host "`nSelecionado: $($selected.titulo)"
@@ -132,7 +145,7 @@ function Request-InRunEvidencePath {
         [scriptblock]$ReadInput = $null
     )
 
-    if ($NonInteractive -or $null -eq $ReadInput) {
+    if ($NonInteractive) {
         return ''
     }
 
