@@ -19,6 +19,7 @@ param(
     [Parameter(Mandatory = $true, Position = 0)][ValidateNotNullOrEmpty()][string]$Csv,
     [string]$AprovacoesCsv,
     [string]$EvidenciasJson,
+    [switch]$NaoInterativo,
     [switch]$SomenteAuditarExistentes,
     [switch]$ReavaliarPendentes,
     [ValidateRange(3, 12)][int]$ResultadosPorBusca = 7,
@@ -28,6 +29,9 @@ param(
 Set-StrictMode -Version 1.0
 $ErrorActionPreference = 'Stop'
 $script:Root = $PSScriptRoot
+# Fluxo interativo na mesma execucao.
+. (Join-Path $script:Root 'execucao_unica.ps1')
+. (Join-Path $script:Root 'evidencias_fonte.ps1')
 $script:Out = Join-Path $script:Root 'destino'
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
@@ -293,7 +297,7 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
         return @{ok = $false; motivo = 'Bitrate nominal inferior ao minimo contradiz a admissibilidade da fonte' }
     }
     $key = $Id + '|' + $FormatId + '|' + $Hash
-    if (-not $script:Evidencias.ContainsKey($key)) { return @{ok = $false; motivo = 'Procedencia/historico da fonte nao comprovados; bitrate e analise tecnica isolados nao atestam fidelidade' } }
+    if (-not $script:Evidencias.ContainsKey($key)) { return @{ok = $false; requer_evidencia = $true; motivo = 'Procedencia/historico da fonte nao comprovados; bitrate e analise tecnica isolados nao atestam fidelidade' } }
     $e = $script:Evidencias[$key]
     if ([double]$e.bitrate_minimo_historico_kbps -gt 0 -and [double]$e.bitrate_minimo_historico_kbps -lt 128) {
         return @{ok = $false; motivo = 'Historico inclui etapa comprimida inferior a 128 kbps; contêiner sem perdas nao recupera qualidade' }
@@ -306,7 +310,7 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
     }
     return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
-function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt) {
+function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia) {
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
@@ -316,6 +320,19 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt)
     }
     $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
     $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
+    if ($SolicitarEvidencia -and $evidence.ContainsKey('requer_evidencia')) {
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $manifestPath = Request-InRunEvidencePath -Source $Source -VideoId $Id -FormatId $Fmt.id -Hash $sourceHash
+            if ([string]::IsNullOrWhiteSpace($manifestPath)) { break }
+            try {
+                $loaded = Import-SourceEvidence $manifestPath
+                foreach ($k in $loaded.Keys) { $script:Evidencias[$k] = $loaded[$k] }
+                $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
+            }
+            catch { Write-Warning ('Manifesto rejeitado: ' + $_.Exception.Message); continue }
+            if (-not $evidence.ContainsKey('requer_evidencia')) { break }
+        }
+    }
     $audit = @{ politica = $script:Policy; origem_sha256 = $sourceHash; origem_formato_id = $Fmt.id;
         origem_url = ('https://www.youtube.com/watch?v=' + $Id); origem = $sourceProbe; conversao = 'nenhuma';
         evidencia = $evidence; validado = $false 
@@ -644,25 +661,7 @@ try {
     foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
     }
-    if ($EvidenciasJson) {
-        $document = ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Resolve-Input $EvidenciasJson) -Raw -Encoding UTF8)
-        foreach ($e in $document) {
-            if ([string]$e.video_id -notmatch '^[A-Za-z0-9_-]{11}$' -or [string]$e.formato_id -notmatch '^[A-Za-z0-9_-]{1,45}$' -or
-                [string]$e.sha256 -notmatch '^[a-fA-F0-9]{64}$' -or ([string]$e.origem).Length -lt 15 -or
-                ([string]$e.historico).Length -lt 20 -or $e.qualidade -notin @('perdas_verificadas', 'sem_perdas_verificada')) {
-                throw 'Evidencia invalida: exigir video_id, formato_id, SHA256, origem, historico documentado e qualidade conhecida'
-            }
-            if ([string]$e.documento_sha256 -notmatch '^[a-fA-F0-9]{64}$' -or -not $e.documento) { throw 'Evidencia exige documento de procedencia e seu SHA256' }
-            $docPath = Resolve-Input ([string]$e.documento)
-            if (-not (Test-Path -LiteralPath $docPath -PathType Leaf) -or
-                (Get-FileHash -LiteralPath $docPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne ([string]$e.documento_sha256).ToLowerInvariant()) {
-                throw 'Documento de procedencia ausente ou hash divergente'
-            }
-            $key = [string]$e.video_id + '|' + [string]$e.formato_id + '|' + ([string]$e.sha256).ToLowerInvariant()
-            if ($script:Evidencias.ContainsKey($key)) { throw 'Evidencia duplicada' }
-            $script:Evidencias[$key] = To-Hashtable $e
-        }
-    }
+    if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson }
     Audit-Legacy
     $version = Invoke-Ytdlp -Arguments @('--ignore-config', '--version') -TimeoutSeconds 15
     if ($version.code -ne 0) { throw "yt-dlp.exe nao executou: $($version.err)" }
@@ -756,7 +755,7 @@ try {
             # Pendencias de acesso e falhas locais devem ser recuperaveis na reexecucao.
             $preserve = $rec.resultado -in @('nao_identificado', 'indisponivel') -or
             ($rec.resultado -eq 'pendente_auditoria' -and @($rec.candidatos).Count -eq 0)
-            if (-not $ReavaliarPendentes -and $null -eq $approval -and $preserve) {
+            if ($NaoInterativo -and -not $ReavaliarPendentes -and $null -eq $approval -and $preserve) {
                 Write-Host "[$order] Estado anterior preservado; use -ReavaliarPendentes para reconsultar."
                 continue
             }
@@ -791,11 +790,21 @@ try {
                 }
                 $autoCandidate = Select-AutoCandidate $search.items $artist $song
                 if ($null -eq $autoCandidate) {
-                    $rec.video_id = ''; $rec.url_video = ''; $rec.titulo_video = ''
-                    Finalize-Record $rec 'pendente_auditoria' 'Busca ambigua ou sem faixa exata unica em canal do artista/Topic; revisar candidatos e vocais'; continue
+                    $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -Candidates @($search.items) -NonInteractive:$NaoInterativo
+                    if ($null -eq $decision) {
+                        $rec.video_id = ''; $rec.url_video = ''; $rec.titulo_video = ''
+                        Finalize-Record $rec 'pendente_auditoria' 'Selecao nao confirmada nesta execucao; nenhum candidato aprovado automaticamente'; continue
+                    }
+                    $approvals[$order] = $decision
+                    $approval = Approved $row $approvals
+                    if ($null -eq $approval -or -not $approval.valid) { throw 'Confirmacao de selecao invalida' }
+                    $videoId = $approval.id
+                    $rec.criterio_selecao = 'aprovacao_na_execucao'
                 }
-                $videoId = [string]$autoCandidate.id
-                $rec.criterio_selecao = 'busca_exata_canal_artista_unica'
+                else {
+                    $videoId = [string]$autoCandidate.id
+                    $rec.criterio_selecao = 'busca_exata_canal_artista_unica'
+                }
             }
             $rec.video_id = $videoId
             $rec.url_video = 'https://www.youtube.com/watch?v=' + $videoId
@@ -886,7 +895,7 @@ try {
                     $lastError = 'Arquivo inferior a 97% do tamanho informado pela origem; nao aceitar como completo'
                     break
                 }
-                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt }
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) }
                 catch {
                     $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
                         auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
