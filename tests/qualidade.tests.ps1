@@ -38,6 +38,8 @@ $aac=Media 'source.aac' @('-c:a','aac','-b:a','160k')
 $p=Probe-Audio $exact
 Assert (Test-FinalAudio $exact $p) 'MP3 CBR 128 deve ser admissivel tecnicamente'
 Assert (-not (Test-SourceEvidence 'TestVideo01' '128' ((Get-FileHash $exact).Hash.ToLowerInvariant()) $p).ok) 'Bitrate isolado nao comprova procedencia'
+$truncated=Complete-Audio $exact (Join-Path $work 'truncated-final') 'TestVideo01' @{id='128';operacao='nativo';duracao_origem=240}
+Assert (-not $truncated.ok) 'Fonte decodificavel mas truncada perante metadados deve ser rejeitada'
 Assert ((Probe-Audio $vbr).bitrate_medido_kbps -lt 128) 'VBR nominal160 desta fixture fica abaixo do minimo efetivo'
 Evidence $low '96' 'perdas_verificadas' 96
 $r=Complete-Audio $low (Join-Path $work 'low-final') 'TestVideo01' @{id='96';operacao='nativo'}
@@ -89,4 +91,13 @@ Assert ((Get-FileHash -LiteralPath $archive).Hash.ToLowerInvariant() -eq $legacy
 Assert ($script:State.registros.one.resultado -eq 'pendente_qualidade') 'Sucesso antigo deve virar pendencia de qualidade'
 Audit-Legacy
 Assert ((Get-ChildItem (Join-Path $script:Control 'legado') -File).Count -eq 1) 'Migracao deve ser idempotente'
+$json=ConvertFrom-Json -InputObject '{"lista":[{"id":"a"},{"id":"b"}]}'
+$table=To-Hashtable $json
+Assert ($table.lista.Count -eq 2 -and $table.lista[0].id -eq 'a') 'Arrays JSON devem sobreviver a conversao do estado'
+Evidence $flac 'flac-low-history' 'sem_perdas_verificada' 96
+$r=Complete-Audio $flac (Join-Path $work 'false-lossless-final') 'TestVideo01' @{id='flac-low-history';operacao='transcodificacao'}
+Assert (-not $r.ok) 'Lossless derivado de fonte comprimida inferior deve ser rejeitado'
+$orphan=Join-Path $script:Out 'sem-estado.webm';Copy-Item -LiteralPath $webm -Destination $orphan
+Audit-Legacy
+Assert (-not (Test-Path -LiteralPath $orphan) -and $script:State.arquivos_preservados.Count -eq 1) 'Audio sem estado deve ser preservado fora dos resultados finais'
 Write-Host ('PASS: '+$script:Passed+' verificacoes; fixtures: '+$work)

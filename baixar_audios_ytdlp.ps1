@@ -1,7 +1,7 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Audita um CSV de musicas e baixa SOMENTE formatos de audio nativos aprovados.
+    Audita um CSV e publica somente M4A/MP3 com fonte documentada e minimo medido de 128 kbps.
 .EXAMPLE
     pwsh -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
 .EXAMPLE
@@ -76,13 +76,15 @@ function Hash-Text([string]$Text) {
 }
 function To-Hashtable($Item) {
     if ($null -eq $Item) { return $null }
+    # No Windows PowerShell, arrays JSON podem manter o wrapper PSObject.
+    # Testar arrays antes de PSCustomObject evita serializar suas propriedades CLR.
+    if ($Item -is [array]) { return ,@($Item | ForEach-Object { To-Hashtable $_ }) }
     if ($Item -is [System.Collections.IDictionary]) {
         $h = @{}; foreach ($k in $Item.Keys) { $h[[string]$k] = To-Hashtable $Item[$k] }; return $h
     }
     if ($Item -is [pscustomobject]) {
         $h = @{}; foreach ($p in $Item.PSObject.Properties) { $h[$p.Name] = To-Hashtable $p.Value }; return $h
     }
-    if ($Item -is [array]) { return ,@($Item | ForEach-Object { To-Hashtable $_ }) }
     return $Item
 }
 function Save-State {
@@ -299,6 +301,11 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
 }
 function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt) {
     $sourceProbe = Probe-Audio $Source
+    if ([double]$Fmt.duracao_origem -gt 0 -and
+        [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
+        return @{ok=$false; motivo='Duracao da fonte diverge dos metadados; possivel truncamento ou fonte incorreta';
+            auditoria=@{politica=$script:Policy; validado=$false; origem=$sourceProbe; duracao_esperada=$Fmt.duracao_origem}}
+    }
     $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
     $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
     $audit = @{ politica=$script:Policy; origem_sha256=$sourceHash; origem_formato_id=$Fmt.id;
@@ -379,6 +386,23 @@ function Audit-Legacy {
         }
         Save-State
     }
+    # Arquivos sem estado tambem nao podem herdar uma conformidade presumida.
+    $trusted=@{}
+    foreach ($v in $script:State.videos.Values) {
+        if ($v.arquivo -and $v.auditoria -and $v.auditoria.validado -and $v.auditoria.politica -eq $script:Policy) { $trusted[[string]$v.arquivo]=$true }
+    }
+    foreach ($file in @(Get-ChildItem -LiteralPath $script:Out -File)) {
+        if ($trusted.ContainsKey($file.Name) -or $file.Extension.ToLowerInvariant() -notin @('.m4a','.mp3','.webm','.mp4','.opus','.ogg','.oga','.aac','.flac','.wav','.mka')) { continue }
+        $hash=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $dir=Join-Path $script:Control 'nao_rastreados'
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        $name=[guid]::NewGuid().ToString('N') + $file.Extension.ToLowerInvariant()
+        if (-not $script:State.ContainsKey('arquivos_preservados')) { $script:State.arquivos_preservados=@{} }
+        $script:State.arquivos_preservados[$name]=@{nome_original=$file.Name;sha256=$hash;
+            caminho=('nao_rastreados/'+$name);motivo='Arquivo sem estado de conformidade; preservado sem atestar qualidade'}
+        Save-State
+        [IO.File]::Move($file.FullName,(Join-Path $dir $name))
+    }
 }
 function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$Song) {
     if (-not $script:State.videos.ContainsKey($Id)) { return $null }
@@ -424,7 +448,7 @@ function Get-Formats($Info) {
         $tier = if ($native) { 0 } elseif ($operation -eq 'remux') { 1 } else { 2 }
         $distance = if ($lossless) { 0 } elseif ($abr -ge 128) { $abr - 128 } else { [double]::MaxValue }
         $formats.Add([pscustomobject]@{ id=[string]$f.format_id; ext=$ext; codec=[string]$f.acodec;
-                    abr=$abr; tier=$tier; quality=$distance; operacao=$operation; filesize=$f.filesize })
+                    abr=$abr; tier=$tier; quality=$distance; operacao=$operation; filesize=$f.filesize; duracao_origem=$Info.duration })
     }
     return @($formats | Sort-Object -Property @{Expression='tier';Ascending=$true}, @{Expression='quality';Ascending=$true})
 }
@@ -604,12 +628,18 @@ try {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
     }
     if ($EvidenciasJson) {
-        $document = @(Get-Content -LiteralPath (Resolve-Input $EvidenciasJson) -Raw -Encoding UTF8 | ConvertFrom-Json)
+        $document = ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Resolve-Input $EvidenciasJson) -Raw -Encoding UTF8)
         foreach ($e in $document) {
             if ([string]$e.video_id -notmatch '^[A-Za-z0-9_-]{11}$' -or [string]$e.formato_id -notmatch '^[A-Za-z0-9_-]{1,45}$' -or
                 [string]$e.sha256 -notmatch '^[a-fA-F0-9]{64}$' -or ([string]$e.origem).Length -lt 15 -or
                 ([string]$e.historico).Length -lt 20 -or $e.qualidade -notin @('perdas_verificadas','sem_perdas_verificada')) {
                 throw 'Evidencia invalida: exigir video_id, formato_id, SHA256, origem, historico documentado e qualidade conhecida'
+            }
+            if ([string]$e.documento_sha256 -notmatch '^[a-fA-F0-9]{64}$' -or -not $e.documento) { throw 'Evidencia exige documento de procedencia e seu SHA256' }
+            $docPath=Resolve-Input ([string]$e.documento)
+            if (-not (Test-Path -LiteralPath $docPath -PathType Leaf) -or
+                (Get-FileHash -LiteralPath $docPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne ([string]$e.documento_sha256).ToLowerInvariant()) {
+                throw 'Documento de procedencia ausente ou hash divergente'
             }
             $key=[string]$e.video_id + '|' + [string]$e.formato_id + '|' + ([string]$e.sha256).ToLowerInvariant()
             if ($script:Evidencias.ContainsKey($key)) { throw 'Evidencia duplicada' }
@@ -835,7 +865,9 @@ try {
                     $lastError = 'Arquivo inferior a 97% do tamanho informado pela origem; nao aceitar como completo'
                     break
                 }
-                $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt }
+                catch { $result=@{ok=$false; motivo=('Validacao/conversao rejeitada: '+$_.Exception.Message);
+                    auditoria=@{politica=$script:Policy; validado=$false; origem_formato_id=$fmt.id; erro=$_.Exception.Message}} }
                 $rec.auditoria = $result.auditoria
                 if (-not $result.ok) {
                     $lastDiagnostic='qualidade'; $lastError=$result.motivo
