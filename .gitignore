@@ -3,4 +3,6 @@
 *.mp3
 destino/
 *.zip
+tests/.runtime-*/
 *.log
+tests/
