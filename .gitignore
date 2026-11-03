@@ -5,4 +5,5 @@ destino/
 *.zip
 tests/.runtime-*/
 *.log
+!tests/**/*.ps1
 tests/
