@@ -1,0 +1,10 @@
+{
+  "fornecedor_ffmpeg": "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip",
+  "referencia": "https://ffmpeg.org/download.html",
+  "ffmpeg_versao": "9.0.2-essentials_build-www.gyan.dev",
+  "hashes_sha256": {
+    "ffmpeg.exe": "3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec",
+    "ffprobe.exe": "f0d36ecbbdd3bcfac3efa078c96c7271c2e68b3810595552ac3b7f17e9a65c52",
+    "yt-dlp.exe": "f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d"
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "video_id": "SUBSTITUIR!",
+    "formato_id": "140",
+    "sha256": "SHA256_REAL_DA_FONTE",
+    "origem": "Referencia auditavel da cadeia original de producao",
+    "historico": "Descrever etapas de geracao e compressao, incluindo possiveis fontes anteriores",
+    "qualidade": "perdas_verificadas",
+    "bitrate_minimo_historico_kbps": 128,
+    "documento": "auditoria-origem.txt",
+    "documento_sha256": "SHA256_REAL_DO_DOCUMENTO"
+  }
+]
