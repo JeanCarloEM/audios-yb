@@ -100,4 +100,8 @@ Assert (-not $r.ok) 'Lossless derivado de fonte comprimida inferior deve ser rej
 $orphan=Join-Path $script:Out 'sem-estado.webm';Copy-Item -LiteralPath $webm -Destination $orphan
 Audit-Legacy
 Assert (-not (Test-Path -LiteralPath $orphan) -and $script:State.arquivos_preservados.Count -eq 1) 'Audio sem estado deve ser preservado fora dos resultados finais'
+$silent=Join-Path $work 'silencio.m4a'
+$run=Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin','-v','error','-f','lavfi','-i','anullsrc=r=44100:cl=stereo','-t','4','-c:a','alac',$silent)
+if($run.code){throw $run.err}
+Assert (-not (Test-FinalAudio $silent (Probe-Audio $silent))) 'Resultado final abaixo de128 deve ficar pendente mesmo sem perdas; nunca preencher artificialmente'
 Write-Host ('PASS: '+$script:Passed+' verificacoes; fixtures: '+$work)

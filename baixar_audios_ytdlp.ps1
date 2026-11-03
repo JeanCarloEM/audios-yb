@@ -278,7 +278,8 @@ function Test-FinalAudio([string]$File, $Probe) {
     $ext = [IO.Path]::GetExtension($File).ToLowerInvariant()
     $compatible = ($ext -eq '.m4a' -and $Probe.container -match '(^|,)mov(,|$)' -and $Probe.codec -in @('aac','alac')) -or
                   ($ext -eq '.mp3' -and $Probe.container -eq 'mp3' -and $Probe.codec -eq 'mp3')
-    return ($compatible -and ($Probe.lossless -or $Probe.bitrate_medido_kbps -ge 128))
+    # O resultado final tambem obedece ao piso absoluto; nao adicionar padding.
+    return ($compatible -and $Probe.bitrate_medido_kbps -ge 128)
 }
 function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Probe) {
     if (-not $Probe.lossless -and $Probe.bitrate_medido_kbps -lt 128) { return @{ok=$false; motivo='Fonte comprimida medida abaixo de 128 kbps; proibido inflar bitrate'} }
