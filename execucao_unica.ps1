@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Helpers para execução única: leitura interativa e confirmação de seleção de vídeo.
