@@ -19,6 +19,8 @@ param(
     [Parameter(Mandatory = $true, Position = 0)][ValidateNotNullOrEmpty()][string]$Csv,
     [string]$AprovacoesCsv,
     [string]$EvidenciasJson,
+    [string]$CookiesArquivo,
+    [string]$CookiesNavegador,
     [switch]$NaoInterativo,
     [switch]$SomenteAuditarExistentes,
     [switch]$ReavaliarPendentes,
@@ -32,6 +34,7 @@ $script:Root = $PSScriptRoot
 # Fluxo interativo na mesma execucao.
 . (Join-Path $script:Root 'execucao_unica.ps1')
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
+. (Join-Path $script:Root 'autenticacao_ytdlp.ps1')
 $script:Out = Join-Path $script:Root 'destino'
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
@@ -45,6 +48,8 @@ $script:RateLimitStreak = 0
 $script:NetworkSuspended = $false
 $script:Exe = Join-Path $script:Root 'yt-dlp.exe'
 $script:JsArgs = @()
+$script:AuthArgs = @()
+$script:AuthRecoveryAttempted = $false
 $script:Fatal = $false
 $script:Evidencias = @{}
 $script:Policy = 'fidelidade-128-v1'
@@ -170,13 +175,35 @@ function Diagnose([string]$ErrorText, [bool]$TimedOut) {
 }
 function Invoke-Checked([string[]]$Arguments, [int]$Timeout = 100) {
     $last = $null
+    $calls = 0
     for ($a = 1; $a -le $MaxTentativas; $a++) {
-        $last = Invoke-Ytdlp -Arguments $Arguments -TimeoutSeconds $Timeout
-        $last['tentativas'] = $a
+        $last = Invoke-Ytdlp -Arguments (@($script:AuthArgs) + $Arguments) -TimeoutSeconds $Timeout
+        $calls++
+        $last['tentativas'] = $calls
         if ($last.code -eq 0) { $script:RateLimitStreak = 0; return $last }
-        $d = Diagnose ($last.err + "`n" + $last.out) $last.timeout
+        $d = Diagnose ($last.err + [Environment]::NewLine + $last.out) $last.timeout
         $last['diagnostico'] = $d.tipo
-        if ($d.tipo -eq 'confirmacao_anti_bot') { $script:NetworkSuspended = $true; break }
+        if ($d.tipo -in @('confirmacao_anti_bot','autenticacao_ou_controle_de_acesso')) {
+            if (-not $NaoInterativo -and -not $script:AuthRecoveryAttempted) {
+                $script:AuthRecoveryAttempted = $true
+                Write-Warning 'YouTube exige autenticacao. Abra o video e entre na conta no navegador antes de continuar.'
+                $auth = @()
+                for ($inputTry = 0; $inputTry -lt 3; $inputTry++) {
+                    $choice = Read-InRunValue -Prompt 'Sessao: navegador:chrome ou arquivo:CAMINHO (vazio cancela)' -NonInteractive:$NaoInterativo
+                    if ([string]::IsNullOrWhiteSpace($choice)) { break }
+                    try {
+                        if ($choice -match '^navegador:(.+)$') { $auth = @(Get-YtdlpAuthArgs -CookiesNavegador $Matches[1]) }
+                        elseif ($choice -match '^arquivo:(.+)$') { $auth = @(Get-YtdlpAuthArgs -CookiesArquivo (Resolve-Input $Matches[1])) }
+                        else { throw 'Formato de entrada invalido' }
+                        break
+                    } catch { Write-Warning 'Sessao invalida ou arquivo de cookies indisponivel. Confira a entrada.' }
+                }
+                if ($auth.Count -gt 0) { $script:AuthArgs = $auth; $a--; continue }
+            }
+            $script:NetworkSuspended = $true
+            Write-Warning 'Acesso suspenso: autenticacao cancelada ou ainda bloqueada pelo YouTube.'
+            break
+        }
         if ($d.tipo -eq 'http_429') {
             $script:RateLimitStreak++
             if ($script:RateLimitStreak -ge 3) { $script:NetworkSuspended = $true; break }
@@ -647,6 +674,7 @@ function Export-Reports {
 
 try {
     if (-not (Test-Path -LiteralPath $script:Exe -PathType Leaf)) { throw "yt-dlp.exe ausente ao lado do script: $script:Exe" }
+    $script:AuthArgs = @(Get-YtdlpAuthArgs -CookiesArquivo $(if ($CookiesArquivo) { Resolve-Input $CookiesArquivo }) -CookiesNavegador $CookiesNavegador)
     $csvPath = Resolve-Input $Csv
     if (-not (Test-Path -LiteralPath $csvPath -PathType Leaf)) { throw "CSV nao encontrado: $csvPath" }
     New-Item -ItemType Directory -Force -Path $script:Control | Out-Null

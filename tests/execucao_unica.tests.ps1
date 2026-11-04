@@ -61,7 +61,7 @@ if($e.Count){throw ($e|Out-String)}
 foreach($mode in @('positivo','nao_interativo')){
  $case=Join-Path $work $mode
  [void][IO.Directory]::CreateDirectory($case)
- foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
+ foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,(New-Object Text.UTF8Encoding -ArgumentList $true))
  $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -eq 'nao_interativo');reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
