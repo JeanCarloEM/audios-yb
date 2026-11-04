@@ -5,7 +5,7 @@ $repo='D:\trampo\audios-yb'
 $t=$null;$e=$null
 $a=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'baixar_audios_ytdlp.ps1'),[ref]$t,[ref]$e)
 if($e.Count){throw 'Sintaxe principal invalida'}
-foreach($name in @('Diagnose','Invoke-Checked')){
+foreach($name in @('Diagnose','Resolve-Input','Invoke-Checked')){
  $f=@($a.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true))
  if($f.Count -ne 1){throw 'Funcao principal ausente/ambigua'}
  Invoke-Expression $f[0].Extent.Text
@@ -56,7 +56,7 @@ function Invoke-Ytdlp([string[]]$Arguments,[int]$TimeoutSeconds){
  if($script:Statuses.Count -eq 0){throw 'Chamada remota extra'}
  $s=$script:Statuses.Dequeue()
  if($s -eq 'ok'){return @{code=0;out='ok';err='';timeout=$false}}
- $err=switch($s){bot {"Sign in to confirm you're not a bot"};login {'Sign in required'};rate {'HTTP Error 429'};default {'error'}}
+ $err=switch($s){bot {"Sign in to confirm you're not a bot"};login {'Sign in required'};cookies {'Failed to decrypt with DPAPI'};rate {'HTTP Error 429'};default {'error'}}
  return @{code=1;out='';err=$err;timeout=$false}
 }
 Reset-Scenario @('bot','ok','ok') @('navegador:chrome')
@@ -83,4 +83,12 @@ Reset-Scenario @('rate') @()
 $script:RateLimitStreak=2
 $r=Invoke-Checked @('URL') 20
 Assert ($script:NetworkSuspended -and $script:Reads -eq 0 -and $script:RateLimitStreak -eq 3) '429 alterado'
+[IO.File]::WriteAllText($p,'# Netscape HTTP Cookie File')
+Reset-Scenario @('cookies','ok') @(('arquivo:'+$p))
+$r=Invoke-Checked @('URL') 20
+Assert ($r.code -eq 0 -and $r.tentativas -eq 2 -and $script:Reads -eq 1 -and -not $script:NetworkSuspended) 'DPAPI nao recuperou por arquivo na mesma execucao'
+Assert (($script:Calls[1] -join '|') -ceq ('--cookies|'+$p+'|URL')) 'Arquivo nao utilizado'
+Reset-Scenario @('cookies') @() $true
+$r=Invoke-Checked @('URL') 20
+Assert ($r.diagnostico -eq 'falha_cookies_dpapi' -and $script:NetworkSuspended -and $script:Calls.Count -eq 1 -and $script:Reads -eq 0) 'DPAPI nao interativo deve suspender'
 'AUTH_PASS'

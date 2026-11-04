@@ -1,4 +1,4 @@
-# Audio com procedencia e minimo de 128 kbps
+﻿# Audio com procedencia e minimo de 128 kbps
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
@@ -43,3 +43,19 @@ Testes locais em PowerShell 5.1 e 7: fontes de 96 kbps, bitrate inflado, VBR nom
 As fixtures sinteticas tem historico conhecido porque sao geradas localmente para o teste. Isso nao comprova a procedencia dos videos reais do CSV. A aprovacao manual de identidade e a autenticidade de documentos externos nao foram homologadas por esses testes.
 
 O teste `tests/execucao_unica.tests.ps1` confirmou o fluxo principal em copias isoladas, em PowerShell 5.1 e 7: busca ambigua, tres confirmacoes, um download simulado, manifesto fornecido depois do download, auditoria e publicacao na mesma chamada. O MP3 e sintetico e a validacao usa FFmpeg/ffprobe reais; o hash final corresponde a fixture independente. O caso negativo com `-NaoInterativo` confirmou zero downloads e nenhuma publicacao sem aprovacao. Dados remotos e transporte sao simulados; isso nao homologa disponibilidade nem procedencia dos videos reais.
+
+## Autenticacao do YouTube
+
+Mantenha autenticacao_ytdlp.ps1 junto dos outros helpers e do script principal. Para usar uma sessao escolhida explicitamente desde o inicio:
+
+~~~powershell
+.\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv -CookiesNavegador chrome
+~~~
+
+O parametro -CookiesArquivo 'C:\caminho\youtube-cookies.txt' aceita cookies Netscape exportados da sessao autorizada, como alternativa a -CookiesNavegador. Os dois parametros sao mutuamente exclusivos. Nao compartilhe o conteudo dos cookies em relatorios ou chats.
+
+Se ocorrer login/anti-bot ou Failed to decrypt with DPAPI, o modo interativo pede uma sessao: navegador:chrome ou arquivo:C:\caminho\youtube-cookies.txt. O mesmo pedido e repetido dentro da execucao atual, com uma unica recuperacao global e no maximo tres entradas invalidas. Vazio cancela. -NaoInterativo nao pergunta nem escolhe sessao automaticamente; parametros explicitos continuam disponiveis. Persistindo o bloqueio, as demais consultas sao suspensas.
+
+No teste real desta maquina, a extracao direta do Chrome falhou com DPAPI antes do download. Esse caminho ainda depende de uma sessao utilizavel; nao e comprovado pelos testes com transporte simulado. A correcao nao modifica a protecao do navegador. A alternativa por arquivo exige cookies validos e pode continuar sujeita a restricoes do YouTube. Consulte a [FAQ oficial](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) e o [registro do erro DPAPI](https://github.com/yt-dlp/yt-dlp/issues/10927).
+
+O teste tests/autenticacao.tests.ps1 cobre argv, cabecalho Netscape, recuperacao limitada na mesma chamada, reutilizacao da sessao, cancelamento, modo nao interativo, HTTP 429 e DPAPI, com respostas remotas simuladas. Qualidade, auditoria e publicacao continuam exigindo as evidencias descritas acima.

@@ -162,6 +162,7 @@ function Diagnose([string]$ErrorText, [bool]$TimedOut) {
     $e = $ErrorText.ToLowerInvariant()
     if ($e -match 'private video|is private|video is private|this video is unavailable|video unavailable|not available anymore|has been removed|copyright|does not exist|video has been deleted') { return @{ tipo = 'indisponivel'; transiente = $false } }
     if ($e -match 'geo.restrict|not available in your country|not available in your region|geo.block') { return @{ tipo = 'restricao_geografica'; transiente = $false } }
+    if ($e -match 'failed to decrypt with dpapi') { return @{ tipo = 'falha_cookies_dpapi'; transiente = $false } }
     if ($e -match 'confirm you.re not a bot|unusual traffic|automated queries') { return @{ tipo = 'confirmacao_anti_bot'; transiente = $false } }
     if ($e -match 'sign in|login|members.only|age.restrict|authentication|required.*cookie|confirm you.re not a bot') { return @{ tipo = 'autenticacao_ou_controle_de_acesso'; transiente = $false } }
     if ($e -match '429|too many requests|rate.limit') { return @{ tipo = 'http_429'; transiente = $true } }
@@ -183,10 +184,14 @@ function Invoke-Checked([string[]]$Arguments, [int]$Timeout = 100) {
         if ($last.code -eq 0) { $script:RateLimitStreak = 0; return $last }
         $d = Diagnose ($last.err + [Environment]::NewLine + $last.out) $last.timeout
         $last['diagnostico'] = $d.tipo
-        if ($d.tipo -in @('confirmacao_anti_bot','autenticacao_ou_controle_de_acesso')) {
+        if ($d.tipo -in @('falha_cookies_dpapi','confirmacao_anti_bot','autenticacao_ou_controle_de_acesso')) {
             if (-not $NaoInterativo -and -not $script:AuthRecoveryAttempted) {
                 $script:AuthRecoveryAttempted = $true
-                Write-Warning 'YouTube exige autenticacao. Abra o video e entre na conta no navegador antes de continuar.'
+                if ($d.tipo -eq 'falha_cookies_dpapi') {
+                    Write-Warning 'Chrome: yt-dlp nao conseguiu descriptografar cookies (DPAPI). Use arquivo:CAMINHO com cookies Netscape exportados da sessao autorizada.'
+                } else {
+                    Write-Warning 'YouTube exige autenticacao. Abra o video e entre na conta no navegador antes de continuar.'
+                }
                 $auth = @()
                 for ($inputTry = 0; $inputTry -lt 3; $inputTry++) {
                     $choice = Read-InRunValue -Prompt 'Sessao: navegador:chrome ou arquivo:CAMINHO (vazio cancela)' -NonInteractive:$NaoInterativo
