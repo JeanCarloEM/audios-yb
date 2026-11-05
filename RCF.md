@@ -23,13 +23,13 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `baixar_audios_ytdlp.ps1` | Orquestração sequencial; validação de URLs/identidade; busca e cache; formatos; download; análise técnica; publicação; estado e relatórios. Exige PS 7.0+. |
 | `ambiente_portatil.ps1` | Raiz física do script, resolução de caminhos e descoberta/importação canônica do CSV. |
 | `ferramentas_portateis.ps1` | Descoberta dos executáveis e execução de comandos de versão antes dos efeitos do lote. |
-| `execucao_unica.ps1` | Leitura interativa, escolha de candidato e três confirmações. O helper histórico de caminho de evidência permanece definido, mas não é chamado pelo fluxo principal atual. |
+| `execucao_unica.ps1` | Escolha e três confirmações no modo explícito; validação de aprovação musical atual/persistida com identidade exata. O helper histórico de caminho JSON não é chamado. |
 | `evidencias_fonte.ps1` | Descoberta local, leitura e vinculação de manifestos de procedência a documentos locais e hashes; reúne duplicatas idênticas entre manifestos e exclui chaves conflitantes. |
 | `autenticacao_ytdlp.ps1` | Argumentos de sessão explicitamente fornecida por cookies Netscape ou navegador suportado. |
 | `coletanea_uber_instrumental_candidatas.csv` | Entrada canônica existente: 372 linhas, 370 buscas e dois vídeos diretos; sugestões NÃO são auditoria musical. |
 | `evidencias.exemplo.json` | Modelo com valores fictícios; NÃO é evidência utilizável. |
 | `ferramentas.json` | Registro de fornecedor, versão FFmpeg e hashes de três executáveis; NÃO é um instalador nem uma verificação automática de confiança. |
-| `tests/*.tests.ps1` | Oito roteiros: qualidade, execução única, autenticação, ambiente, ferramentas, integração portátil, descoberta e contrato numérico das evidências. |
+| `tests/*.tests.ps1` | Nove roteiros: os oito anteriores e o contrato de aprovação musical. Os casos disponíveis e as evidências executadas são discriminados na seção 8. |
 
 **[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os cinco helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
 
@@ -104,7 +104,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 **[A]** Consultas exigem correspondência de artista/música com o termo fornecido. Normalização interna remove acentos, converte para minúsculas e compara palavras; NÃO altera a grafia exibida. Candidatos precisam de título coerente com música e título/canal/uploader coerente com artista. Termos de versões divergentes, covers, tributos, karaokê, remix, live etc. são filtrados quando não pertencem aos próprios nomes. Pontuação ordena candidatos e ID desempata; pontuação NÃO é aprovação. A seleção automática só ocorre com um único candidato de título exato dentre os padrões aceitos e canal igual ao artista ou `Artista - Topic`, seguida de confirmação pelos metadados completos. ID divergente, live ativo e JSON inválido são rejeitados.
 
-**[A/R]** `Identity-Matches` confronta música com título/track e artista com título/channel/uploader/artist. A comparação por texto NÃO comprova gravação, autoria musical, versão nem ausência de vocais. URL direta usa o ID indicado e exige metadados coerentes; pode prosseguir sem atestado humano de ausência de vocais. **É PROIBIDO** descrever esse caminho automático como auditoria de instrumentalidade. Quando a versão ou ausência de vocais for requisito ainda não comprovado, o resultado DEVE ser pendência de auditoria; o cumprimento integral dessa barreira em todos os caminhos atuais NÃO está demonstrado.
+**[A/R]** Identity-Matches confronta música/título/track e artista/título/channel/uploader/artist; texto não comprova gravação, versão nem ausência de vocais. URL direta mantém seu ID literal, incluindo caixa. Antes de novos downloads ou reutilização, exige-se aprovação explícita das três confirmações ou registro persistido válido para o mesmo ID, artista e música. Metadados sozinhos não liberam o item. Falta de aprovação gera pendente_auditoria; legado sem registro musical é preservado, sem aprovação fabricada. Conferência humana real e verdade externa permanecem requisitos, não certificações automáticas.
 
 **[A] Aprovações:** cabeçalho `Ordem,VideoId,ArtistaMusicaConferidos,VersaoConferida,SemVocaisConferido`; vírgula/UTF-8 no importador próprio. Ordem repetida no arquivo é erro global. Cada confirmação aceita `SIM`, `S`, `TRUE` ou `1`, sem distinguir caixa e após trim; o fluxo interativo pede três `SIM`. Ambiguidade pode solicitar índice a partir de zero ou ID presente nos candidatos; há até três entradas de escolha. Confirmação ausente/inválida permanece pendente. **[R]** Aprovação humana DEVE corresponder a conferência real, não preenchimento automático; NÃO substitui verificação técnica/procedência. Sugestão de primeiro candidato no relatório NÃO é seleção aprovada.
 
@@ -244,7 +244,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ## 8. Verificação, lacunas e aceite bloqueante
 
-**[A] Adequação incremental:** contrato numérico das evidências verificado por 19 casos e isolamento de manifesto inválido, mais fluxo válido/documento inválido (commit 6e84157). O modo padrão sem perguntas, conflito de modos antes de criar destino, interação explícita e compatibilidade -NaoInterativo foram testados em cópias Windows/PS7. Transporte e respostas humanas simulados, FFmpeg/ffprobe reais; não comprova Linux/macOS, verdade externa ou aderência integral ao RCF.
+**[A] Adequação incremental:** contrato histórico validado por 19 casos e isolamento (6e84157); modo padrão sem perguntas e interativo explícito (4d89778); contrato de aprovação musical (2fc22fa), novos downloads (ce64344) e oito retomadas preservando bytes sem rede (860757c). Os testes não autenticam a verdade externa das declarações, não homologam Unix e não demonstram aderência integral às demais lacunas.
 
 **[A] Base da inspeção:** a criação original leu principal, cinco helpers, CSV, modelos JSON, manifesto de ferramentas, README e os seis roteiros então versionados, sem executar lote/testes ou revalidar acesso remoto. A conciliação revisou os deltas do merge e executou os sete roteiros atuais em Windows/PowerShell 7, todos com saída zero: ambiente (48 verificações), autenticação, ferramentas, qualidade (24 verificações), descoberta de evidências, integração portátil e execução única (cinco cenários). Os cenários de execução única confirmaram manifesto na raiz/no controle, nenhuma pergunta de caminho, pendência sem manifesto/documento válido e nenhuma aprovação no modo não interativo. Transporte e respostas humanas desses ensaios são simulados; não houve novo download remoto nem homologação de Linux/macOS.
 
@@ -253,7 +253,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | Evidência disponível | Alcance e limite |
 | --- | --- |
 | `tests/qualidade.tests.ps1` | Define 24 verificações com FFmpeg/ffprobe e fixtures: 96 kbps, inflação, VBR medido inferior, MP3 128, nativo 192 sem alteração, conversão FLAC/Opus, remux AAC, extensão falsa, corrupção, truncamento, fila e legado/órfãos. Não comprova procedência dos vídeos reais. |
-| `tests/execucao_unica.tests.ps1` | Cinco cenários em cópias: manifesto na raiz, no controle, não interativo, sem manifesto e documento inválido. Verifica CSV intacto, preservação da fonte, ausência de perguntas de caminho e publicação condicionada à evidência. Transporte/respostas humanas simulados, áudio sintético e ferramentas de mídia reais; não comprova procedência dos vídeos reais. |
+| `tests/execucao_unica.tests.ps1` | Onze modos disponíveis, com evidências cumulativas por unidade. Foram exercitados diretos/automáticos sem aprovação, interação explícita e oito variantes de retomada: aprovação persistida/CSV/interação, ausência/inconsistência, ID literal e hash. Retomadas usam zero downloads/consultas remotas e preservam um arquivo/hash/CSV. Transporte e respostas humanas simulados; mídia e ferramentas reais. |
 | `tests/autenticacao.tests.ps1` | Argumentos/cabeçalho, recuperação limitada, cancelamento, não interativo, 429 e DPAPI com respostas simuladas. Não certifica sessão real utilizável. |
 | `tests/ambiente_portatil.tests.ps1` | Raiz/cwd, espaços/acentos, BOM/delimitadores/cabeçalhos e ambiguidade. O roteiro explicita que links simbólicos não foram exercitados. |
 | `tests/ferramentas_portateis.tests.ps1` | Executáveis reais, ausência/incompatibilidade e PATH vazio; declara não comprovar Linux/macOS. |
@@ -270,7 +270,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | Nome fixo `yt-dlp.exe` em Unix; sem ensaio Linux/macOS | Resolução condicional nativa e homologação por plataforma, sem presumir execução de PE. |
 | Destino/nome sem parâmetros; sem tratamento editorial novo | Parametrização determinística, compatibilidade com padrões e migração sem renomear/perder arquivos válidos. |
 | Sem metatags/capa/marcador; validador só admite um stream | Enriquecimento opcional com preservação de fluxo, exceção restrita para imagem e leitura posterior verificável. |
-| Seleção automática não audita vocais/versão por si | Garantir pendência quando requisitos musicais não estiverem comprovados; não confundir identidade textual com audição. |
+| Aprovação explícita agora exigida inclusive em direto/automático/reuso; verdade da conferência humana não é autenticada pelo software | Exigir conferência real e manter pendência quando faltam dados; nunca inferir instrumentalidade de título/canal. |
 | Manifesto valida mínimo histórico e vincula hashes, mas não autentica a verdade da cadeia | Exigir prova suficiente e manter pendência diante de inconsistências; não certificar fidelidade apenas pela declaração. |
 | Empates de formato/janelas de crash/relatórios auxiliares não integralmente cobertos | Desempate estável, recuperação rastreável e testes das condições restantes, sem alegações antecipadas. |
 
