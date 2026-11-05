@@ -9,6 +9,23 @@ function Import-SourceEvidence([string]$Path) {
                 ([string]$e.historico).Length -lt 20 -or $e.qualidade -notin @('perdas_verificadas', 'sem_perdas_verificada')) {
                 throw 'Evidencia invalida: exigir video_id, formato_id, SHA256, origem, historico documentado e qualidade conhecida'
             }
+            $minimumHistoryProperty = $e.PSObject.Properties['bitrate_minimo_historico_kbps']
+            if ($null -eq $minimumHistoryProperty -or $null -eq $minimumHistoryProperty.Value) {
+                throw 'bitrate_minimo_historico_kbps obrigatorio e numerico'
+            }
+            $minimumHistoryValue = $minimumHistoryProperty.Value
+            $numericCodes = @('Byte','SByte','Int16','UInt16','Int32','UInt32','Int64','UInt64','Single','Double','Decimal')
+            if ([string][Type]::GetTypeCode($minimumHistoryValue.GetType()) -notin $numericCodes -and $minimumHistoryValue -isnot [bigint]) {
+                throw 'bitrate_minimo_historico_kbps deve ser numero JSON, sem coercao'
+            }
+            $minimumHistory = [double]$minimumHistoryValue
+            if ([double]::IsNaN($minimumHistory) -or [double]::IsInfinity($minimumHistory) -or $minimumHistory -lt 0) {
+                throw 'bitrate_minimo_historico_kbps deve ser finito e nao negativo'
+            }
+            if (($minimumHistory -gt 0 -and $minimumHistory -lt 128) -or
+                ($e.qualidade -eq 'perdas_verificadas' -and $minimumHistory -lt 128)) {
+                throw 'bitrate_minimo_historico_kbps inferior ao piso; zero apenas em cadeia sem perdas'
+            }
             if ([string]$e.documento_sha256 -notmatch '^[a-fA-F0-9]{64}$' -or -not $e.documento) { throw 'Evidencia exige documento de procedencia e seu SHA256' }
             $docPath = Resolve-Input ([string]$e.documento)
             if (-not (Test-Path -LiteralPath $docPath -PathType Leaf) -or
