@@ -475,6 +475,20 @@ function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$S
     if (-not (Test-FinalAudio $file $probe)) { return @{conflito = $true; qualidade = $true; motivo = 'Arquivo existente reprovado na politica de qualidade atual' } }
     return @{ conflito = $false; arquivo = $name; formato = [string]$v.formato }
 }
+function Sort-AudioFormats([object[]]$Items) {
+    $sorted = [System.Collections.Generic.List[object]]::new()
+    foreach ($item in $Items) { if ($null -ne $item) { $sorted.Add($item) } }
+    $sorted.Sort([System.Comparison[object]]{
+        param($left, $right)
+        $cmp = ([int]$left.tier).CompareTo([int]$right.tier)
+        if ($cmp -ne 0) { return $cmp }
+        $cmp = ([double]$left.quality).CompareTo([double]$right.quality)
+        if ($cmp -ne 0) { return $cmp }
+        return [System.StringComparer]::Ordinal.Compare([string]$left.id, [string]$right.id)
+    })
+    return $sorted.ToArray()
+}
+
 function Get-Formats($Info) {
     $formats = New-Object 'System.Collections.Generic.List[object]'
     foreach ($f in @($Info.formats)) {
@@ -499,7 +513,7 @@ function Get-Formats($Info) {
                 abr = $abr; tier = $tier; quality = $distance; operacao = $operation; filesize = $f.filesize; duracao_origem = $Info.duration 
             })
     }
-    return @($formats | Sort-Object -Property @{Expression = 'tier'; Ascending = $true }, @{Expression = 'quality'; Ascending = $true })
+    return @(Sort-AudioFormats -Items ($formats.ToArray()))
 }
 function Get-Info([string]$Id) {
     $url = 'https://www.youtube.com/watch?v=' + $Id
@@ -924,7 +938,7 @@ try {
             $formatQueue = New-Object 'System.Collections.Generic.List[object]'
             foreach ($form in @($infoCheck.formats)) { $formatQueue.Add($form) }
             $refreshed = $false
-            $attemptedFormats = @{}
+            $attemptedFormats = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
             $baseName = File-Base $order $artist $song $videoId
             $completed = $false
             $lastError = ''
@@ -950,6 +964,7 @@ try {
                 if ($dl.code -ne 0) {
                     $lastDiagnostic = [string]$dl.diagnostico
                     $lastError = [string]$dl.diagnostico + ': ' + [string]$dl.err
+                    $rec.rejeicoes += @(@{formato_id = $fmt.id; etapa = 'download'; diagnostico = [string]$dl.diagnostico; tentativas = [int]$dl.tentativas })
                     # 403 apos metadados validos pode ser especifico do formato/CDN.
                     # Tentar outros formatos nativos, sem credenciais nem contorno de acesso.
                     if ($dl.diagnostico -in @('formato_indisponivel', 'acesso_limitado_http_403') -and -not $refreshed) {
@@ -960,7 +975,7 @@ try {
                             foreach ($candidateFmt in @($fresh.formats)) {
                                 if (-not $attemptedFormats.ContainsKey($candidateFmt.id)) { $formatQueue.Add($candidateFmt) }
                             }
-                            $sorted = @($formatQueue | Sort-Object tier, quality)
+                            $sorted = @(Sort-AudioFormats -Items ($formatQueue.ToArray()))
                             $formatQueue.Clear()
                             foreach ($candidateFmt in $sorted) { $formatQueue.Add($candidateFmt) }
                             $fiIndex = 0
