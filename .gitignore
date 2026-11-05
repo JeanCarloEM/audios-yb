@@ -1,10 +1,6 @@
-*.exe
-*.m4a
-*.mp3
-destino/
-*.zip
-tests/.runtime-*/
-*.log
-!tests/**/*.ps1
-tests/*
-!tests/*.ps1
+# Saidas de cada lote: audios, estado, cache, relatorios e lock locais.
+# Evidencias selecionadas para o projeto devem ficar fora desta arvore.
+/destino/
+
+# Fixtures geradas, copias de ferramentas e saidas descartaveis dos testes.
+/tests/.runtime-*/

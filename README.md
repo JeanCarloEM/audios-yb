@@ -29,7 +29,27 @@ Se faltar procedencia, o script primeiro baixa a fonte e exibe seu ID, formato e
 
 Mantenha `execucao_unica.ps1` e `evidencias_fonte.ps1` ao lado do principal. `-NaoInterativo` desativa as perguntas: forneca previamente as aprovacoes/evidencias necessarias; informacao ausente permanece pendente, sem aprovacao automatica. A execucao unica permite intervencao humana durante o processo e nao cria documentos de origem inexistentes.
 
-Mantenha yt-dlp.exe compativel junto do script; FFmpeg/ffprobe usam a descoberta nativa descrita acima. Node.js local e usado quando disponivel. As ferramentas incluidas neste ambiente sao yt-dlp 2026.10.26 e FFmpeg/ffprobe 9.0.2 (build Gyan, fornecedor indicado em https://ffmpeg.org/download.html). Seus hashes estao em `ferramentas.json`; os executaveis permanecem ignorados pelo Git.
+Mantenha yt-dlp.exe compativel junto do script; FFmpeg/ffprobe usam a descoberta nativa descrita acima. Node.js local e usado quando disponivel. As ferramentas Windows versionadas sao yt-dlp 2026.10.26 e FFmpeg/ffprobe 9.0.2 (build Gyan, fornecedor indicado em https://ffmpeg.org/download.html). Seus hashes estao em `ferramentas.json`; `yt-dlp.exe` esta no Git convencional e `ffmpeg.exe`/`ffprobe.exe` no Git LFS, conforme `.gitattributes`.
+
+### Preservacao e reproducao do repositorio
+
+Instale Git LFS antes de clonar. Em uma copia existente, execute na raiz do repositorio:
+
+```powershell
+git lfs install --local
+git lfs pull
+$manifesto = Get-Content -LiteralPath ./ferramentas.json -Raw | ConvertFrom-Json
+foreach ($arquivo in $manifesto.hashes_sha256.PSObject.Properties) {
+    $hash = (Get-FileHash -LiteralPath $arquivo.Name -Algorithm SHA256).Hash
+    if ($hash -ine $arquivo.Value) { throw "SHA-256 divergente: $($arquivo.Name)" }
+}
+```
+
+`git lfs pull` requer acesso ao remoto que armazena os objetos LFS; ponteiros sem os objetos nao sao executaveis utilizaveis. Ao publicar commits com esses binarios, preserve tambem seus objetos LFS. Nao substitua os executaveis sem verificar versao, testes e hashes do manifesto.
+
+O `.gitignore` exclui somente `/destino/` (downloads, estado, cache, relatorios e lock de cada lote) e `/tests/.runtime-*/` (fixtures geradas e copias temporarias criadas pelos testes). Esses arquivos continuam no disco. Nao ha exclusao geral por extensao nem do restante de `tests/`: fontes, configuracoes, CSVs, executaveis, arquivos de referencia e evidencias revisadas podem ser versionados. `coletanea_uber_instrumental_candidatas.csv` permanece obrigatoriamente rastreado, com seu conteudo preservado.
+
+`tests/amostra-real.csv` preserva a entrada de um item; `tests/execucao-real.log` e `auditoria_128.log` preservam evidencias historicas revisadas, antes ocultas pelas regras gerais. Registram bloqueio anti-bot e pendencias, nao uma nova execucao nem downloads concluidos. Os caminhos de workspace nesses logs sao referencias historicas, nao dependencias. Novas evidencias uteis devem ser revisadas e guardadas fora das arvores de execucao; nunca inclua cookies, sessoes, tokens ou credenciais no commit.
 
 Somente M4A (AAC/ALAC) e MP3 genuinos podem ser publicados em `destino/`. Fontes comprimidas declaradas ou medidas abaixo de 128 kbps sao rejeitadas. A medicao soma bytes e duracoes dos pacotes de audio, sem contar o tamanho do conteiner como bitrate de audio. Variacao entre pacotes e registrada, sem pressupor que seja prova de VBR ou fidelidade. Fontes realmente sem perdas sao tratadas separadamente; o resultado final tambem exige media medida >=128 kbps, sem padding artificial; um FLAC/ALAC derivado de audio inferior nao recupera qualidade.
 

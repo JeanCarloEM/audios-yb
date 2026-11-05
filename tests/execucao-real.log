@@ -1,0 +1,16 @@
+yt-dlp: 2026.10.26
+Runtime JavaScript local: Node.js
+Registros: 1 | Aprovacoes: 0 | Destino: C:\LOCAL\jcem\audios\destino
+[1] George Benson - Breezin: pendente_acesso | confirmacao_anti_bot: ERROR: [youtube] NBnH864JUZw: Sign in to confirm you’re not a bot. This helps protect our community. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+--- RESUMO ---
+baixado: 0
+existente: 0
+nao_identificado: 0
+indisponivel: 0
+pendente_auditoria: 0
+pendente_acesso: 1
+pendente_qualidade: 0
+falha: 0
+Relatorio: C:\LOCAL\jcem\audios\destino\.controle\relatorio.csv
+Pendencias: C:\LOCAL\jcem\audios\destino\.controle\pendencias.csv
