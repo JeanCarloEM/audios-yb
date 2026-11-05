@@ -1,4 +1,4 @@
-﻿## Execucao atual: PowerShell 7+
+## Execucao atual: PowerShell 7+
 
 ~~~powershell
 pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1
@@ -16,7 +16,7 @@ Validacao atual Windows/PS7: descoberta em dois diretorios, nomes com espacos/ac
 
 Teste real: NBnH864JUZw, URL da ordem 1 do CSV, baixado sem cookies/leitura de navegador/PATH, com Node.js pelo caminho descoberto. Recebeu 6.054.403 bytes WebM/Opus, 48 kHz, dois canais, 339,541 segundos; hash fisico e CSV intacto conferidos. Arquivo isolado em tests/.runtime-real-anonymous-b1d41a9962b2493faebdcb6c236f69d3/NBnH864JUZw.webm. Comprova transporte nesta maquina; nao certifica procedencia historica, publicacao M4A/MP3, qualidade auditada nem conclusao dos 372 itens.
 
-A execucao do projeto em Linux/macOS ainda nao esta homologada. O ensaio anterior teve acesso WSL negado; no inventario atual, Ubuntu WSL x86_64 esta disponivel, mas pwsh/yt-dlp/FFmpeg nao foram encontrados no PATH inspecionado. A descoberta por ramos/arquiteturas foi testada de forma parametrizada no Windows; isso nao executa binarios desses outros sistemas. Validacoes PS5.1 antigas sao historicas; o principal exige PS7+.
+Validacao Linux realizada em Ubuntu WSL 24.04.1 x86_64, PowerShell 7.6.9 e ferramentas ELF reais: sete roteiros passaram (ambiente, contrato/descoberta de evidencias, aprovacao musical, ordenacao, descoberta de ferramentas e qualidade com 24 verificacoes). A integracao adicional conferiu 372 registros e URLs/ordem contra o CSV canonico, publicou MP3 sintetico 192 kbps com hash preservado, reutilizou sem novo download e rejeitou PE antes de criar destino. Usou cwd externo e nomes com espacos/acentos, sem perguntas/cookies/navegador; metadados e transporte foram simulados. Nao houve novo download remoto. Binarios em /mnt/d ficaram em disk sleep/p9_client_rpc; as mesmas ferramentas funcionaram em /tmp nativo. Preparo e teste usaram a mesma chamada WSL, com provas arquivadas no workspace antes de encerrar; nao se presume persistencia de /tmp. Isso comprova esse escopo Linux, sem homologar toda montagem, arquitetura ou macOS. Validacoes PS5.1 antigas sao historicas; o principal exige PS7+.
 ## Audio com procedencia e minimo de 128 kbps
 
 ```powershell
