@@ -1,4 +1,4 @@
-## Execucao atual: PowerShell 7+
+﻿## Execucao atual: PowerShell 7+
 
 ~~~powershell
 pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1
@@ -23,11 +23,11 @@ Linux/macOS nao foram executados: WSL negou acesso e Docker estava ausente. Nao 
 pwsh -NoProfile -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
 ```
 
-Uma unica chamada percorre busca, selecao, download, validacao e publicacao. Quando houver ambiguidade, escolha o indice exibido (a partir de zero) e confirme artista/musica, versao e ausencia de vocais com tres respostas SIM. O processo continua imediatamente, sem gerar uma etapa obrigatoria de reexecucao.
+Uma unica chamada percorre o processamento possivel sem perguntas por padrao. Ambiguidade ou dados insuficientes geram pendencia, sem escolhas ou atestados fabricados. Para escolher candidatos e confirmar artista/musica, versao e ausencia de vocais durante a mesma chamada, use -Interativo. -NaoInterativo permanece compativel; ambos verdadeiros sao rejeitados antes de criar destino. Nenhum modo pede caminho JSON.
 
 O script nao solicita caminho JSON. Sem -EvidenciasJson, descobre manifestos JSON adjacentes ao script e em destino/.controle, sem recursao e ignorando *.exemplo.json e JSON sem campos de evidencia. Valida esquema, documento local e hashes antes de aceitar cada manifesto. Duplicatas identicas sao reunidas; evidencias conflitantes para a mesma fonte sao excluidas. Ausencia ou rejeicao de evidencia preserva a fonte baixada, registra pendente_qualidade e continua o lote, sem inventar procedencia. -EvidenciasJson continua opcional para indicar um manifesto explicitamente; aprovacoes existentes podem usar -AprovacoesCsv.
 
-Mantenha execucao_unica.ps1 e evidencias_fonte.ps1 ao lado do principal. -NaoInterativo desativa as confirmacoes humanas; a descoberta de evidencias funciona tambem nesse modo. Informacao ausente permanece pendente. Confirmacoes de artista/versao/vocais permanecem quando necessarias; nenhum documento de origem e criado automaticamente.
+Mantenha execucao_unica.ps1 e evidencias_fonte.ps1 junto do principal. O padrao e sem perguntas; -Interativo preserva as confirmacoes humanas como opcao explicita. A descoberta de evidencias funciona em ambos os modos. Informacao ausente permanece pendente; nenhum documento de origem e criado automaticamente.
 
 Mantenha yt-dlp.exe compativel junto do script; FFmpeg/ffprobe usam a descoberta nativa descrita acima. Node.js local e usado quando disponivel. As ferramentas Windows versionadas sao yt-dlp 2026.10.26 e FFmpeg/ffprobe 9.0.2 (build Gyan, fornecedor indicado em https://ffmpeg.org/download.html). Seus hashes estao em `ferramentas.json`; `yt-dlp.exe` esta no Git convencional e `ffmpeg.exe`/`ffprobe.exe` no Git LFS, conforme `.gitattributes`.
 
@@ -81,7 +81,7 @@ Testes locais em PowerShell 5.1 e 7: fontes de 96 kbps, bitrate inflado, VBR nom
 
 As fixtures sinteticas tem historico conhecido porque sao geradas localmente para o teste. Isso nao comprova a procedencia dos videos reais do CSV. A aprovacao manual de identidade e a autenticidade de documentos externos nao foram homologadas por esses testes.
 
-O teste tests/execucao_unica.tests.ps1 verifica o fluxo principal em copias isoladas no PowerShell 7: CSV descoberto automaticamente a partir de outro diretorio, quatro respostas de selecao/aprovacao e nenhuma pergunta de caminho. Manifesto local valido junto do script ou no controle permite auditoria e publicacao na mesma chamada; ausencia de manifesto em lote de dois registros e documento com hash invalido preservam a fonte e registram pendencias sem publicar. O caso NaoInterativo confirma zero downloads/perguntas sem aprovacao. A fixture MP3 e sintetica e o hash esperado vem de sua geracao independente; FFmpeg/ffprobe reais. Dados remotos e transporte sao simulados: nao homologa disponibilidade nem procedencia dos videos reais.
+O teste tests/execucao_unica.tests.ps1 verifica o fluxo principal em copias isoladas no PowerShell 7: CSV descoberto automaticamente a partir de outro diretorio, quatro respostas de selecao/aprovacao e nenhuma pergunta de caminho. Manifesto local valido junto do script ou no controle permite auditoria e publicacao na mesma chamada; ausencia de manifesto em lote de dois registros e documento com hash invalido preservam a fonte e registram pendencias sem publicar. O caso NaoInterativo confirma zero downloads/perguntas sem aprovacao. A fixture MP3 e sintetica e o hash esperado vem de sua geracao independente; FFmpeg/ffprobe reais. Dados remotos e transporte sao simulados: nao homologa disponibilidade nem procedencia dos videos reais. Selecao e as tres confirmacoes usam -Interativo; cenarios adicionais verificam o padrao sem flags e conflito de modos antes de efeitos.
 
 ## Autenticacao do YouTube
 

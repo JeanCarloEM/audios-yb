@@ -1,4 +1,4 @@
-# RCF — Referência de Contratos e Funcionamento
+﻿# RCF — Referência de Contratos e Funcionamento
 
 ## 1. Autoridade, escopo e leitura
 
@@ -29,7 +29,7 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `coletanea_uber_instrumental_candidatas.csv` | Entrada canônica existente: 372 linhas, 370 buscas e dois vídeos diretos; sugestões NÃO são auditoria musical. |
 | `evidencias.exemplo.json` | Modelo com valores fictícios; NÃO é evidência utilizável. |
 | `ferramentas.json` | Registro de fornecedor, versão FFmpeg e hashes de três executáveis; NÃO é um instalador nem uma verificação automática de confiança. |
-| `tests/*.tests.ps1` | Sete roteiros de qualidade, execução única, autenticação, ambiente, ferramentas, integração portátil e descoberta de evidências. |
+| `tests/*.tests.ps1` | Oito roteiros: qualidade, execução única, autenticação, ambiente, ferramentas, integração portátil, descoberta e contrato numérico das evidências. |
 
 **[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os cinco helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
 
@@ -37,7 +37,7 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 
 **[R]** Uma única invocação DEVE executar todo o processamento possível, descobrir caminhos/dependências, diagnosticar obstáculos e aplicar alternativas legítimas sem confirmações ordinárias nem etapas manuais obrigatórias entre busca e publicação. Autonomia NÃO dispensa pré-requisitos reais, credenciais autorizadas ou prova de procedência: quando ausentes, DEVE registrar a causa e continuar o lote. É PROIBIDO escolher uma música ambígua ou fabricar evidência para evitar pendência.
 
-**[A/F]** Hoje o padrão permite perguntas; `-NaoInterativo` impede perguntas e conserva as garantias, mas não cria dados ausentes. Tornar o fluxo ordinário autônomo preservando um modo interativo opcional é adequação futura. Não há garantia de obter todos os áudios do CSV nem de resolver restrições de terceiros.
+**[A]** O padrão não solicita entradas do usuário. -Interativo habilita escolhas, confirmações e recuperação interativa de sessão; -NaoInterativo permanece compatível. Informar ambos como verdadeiros é erro global antes dos efeitos do lote. Esse modo de operação não fornece dados ausentes, não comprova requisitos musicais e não garante todos os downloads nem acesso a terceiros.
 
 ## 3. Ambiente, distribuição e invocação
 
@@ -64,7 +64,8 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `-EvidenciasJson` | Manifesto JSON explícito opcional, relativo à raiz ou absoluto; quando informado substitui a descoberta automática. Documentos relativos também partem da raiz do script, não da pasta do manifesto. |
 | `-CookiesArquivo` | Arquivo Netscape explícito, relativo à raiz ou absoluto; mutuamente exclusivo com `-CookiesNavegador`. |
 | `-CookiesNavegador` | Descritor explícito de sessão; não é pré-requisito padrão. |
-| `-NaoInterativo` | Não solicita aprovações nem sessão; descoberta de evidências permanece ativa quando não há manifesto explícito. Nenhum modo solicita caminho JSON; ausência de dados suficientes mantém pendência. |
+| `-Interativo` | Opção explícita para escolhas, três confirmações e recuperação de sessão. Ausente: sem perguntas. Incompatível com -NaoInterativo quando ambos verdadeiros. |
+| `-NaoInterativo` | Mantido por compatibilidade; ausência de -Interativo já impede perguntas. Evidência descoberta normalmente; dados insuficientes permanecem pendentes. |
 | `-SomenteAuditarExistentes` | Auditoria local sem consultas remotas; ainda exige/testa ferramentas e PODE preservar/mover legado, atualizar estado e relatórios. Não é modo somente leitura. |
 | `-ReavaliarPendentes` | Ignora cache de buscas e permite reconsulta pertinente; não aprova candidatos nem relaxa qualidade. |
 | `-ResultadosPorBusca` | Inteiro de 3 a 12; padrão 7. Limita candidatos consultados, não garante identificação. |
@@ -155,7 +156,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | `bitrate_minimo_historico_kbps` | Menor bitrate de qualquer estágio com perdas. **[R]** DEVE ser numérico, não negativo; zero só para cadeia integralmente sem perdas documentada. Campo ausente, negativo, insuficiente ou contraditório NÃO DEVE produzir conformidade. |
 | `documento`, `documento_sha256` | Arquivo local real e seu SHA-256; caminho relativo à raiz do script ou absoluto. |
 
-**[A]** Documento ausente/hash divergente e entradas duplicadas são rejeitados; chave de associação é `video_id|formato_id|sha256`. Na decisão, fonte com perdas medida/nominal abaixo do piso é recusada; histórico positivo abaixo de 128 também, inclusive em codec sem perdas. `sem_perdas_verificada` exige codec real sem perdas; `perdas_verificadas` exige mínimo histórico ≥128. O importador NÃO faz validação explícita completa de presença/tipo/faixa do mínimo histórico para todas as combinações: a norma mais estrita acima é requisito vigente, não garantia do parser atual.
+**[A]** Documento ausente/hash divergente e entradas duplicadas são rejeitados; chave de associação é video_id|formato_id|sha256. O importador exige mínimo histórico presente, JSON numérico real, finito e não negativo: rejeita strings, booleanos, objetos, arrays, nulo e coerção implícita. Histórico positivo inferior a 128 é rejeitado inclusive para codec sem perdas; perdas_verificadas exige pelo menos 128; zero é admitido apenas com sem_perdas_verificada. A verificação posterior continua exigindo codec real sem perdas para esse valor de qualidade e vinculando bytes/documento. Esquema válido não certifica a verdade externa do histórico.
 
 **[R]** Evidência DEVE demonstrar a cadeia histórica efetiva e corresponder aos bytes analisados; um documento escrito a partir apenas do bitrate anunciado NÃO é prova. Verificação de hash demonstra vinculação e integridade, NÃO autenticidade intelectual, autoria ou verdade do histórico. O sistema NÃO dispõe de certificação automática universal dessa verdade; inconsistência DEVE resultar em pendência/rejeição, nunca declaração inventada. O modelo JSON contém placeholders deliberadamente inválidos.
 
@@ -243,6 +244,8 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ## 8. Verificação, lacunas e aceite bloqueante
 
+**[A] Adequação incremental:** contrato numérico das evidências verificado por 19 casos e isolamento de manifesto inválido, mais fluxo válido/documento inválido (commit 6e84157). O modo padrão sem perguntas, conflito de modos antes de criar destino, interação explícita e compatibilidade -NaoInterativo foram testados em cópias Windows/PS7. Transporte e respostas humanas simulados, FFmpeg/ffprobe reais; não comprova Linux/macOS, verdade externa ou aderência integral ao RCF.
+
 **[A] Base da inspeção:** a criação original leu principal, cinco helpers, CSV, modelos JSON, manifesto de ferramentas, README e os seis roteiros então versionados, sem executar lote/testes ou revalidar acesso remoto. A conciliação revisou os deltas do merge e executou os sete roteiros atuais em Windows/PowerShell 7, todos com saída zero: ambiente (48 verificações), autenticação, ferramentas, qualidade (24 verificações), descoberta de evidências, integração portátil e execução única (cinco cenários). Os cenários de execução única confirmaram manifesto na raiz/no controle, nenhuma pergunta de caminho, pendência sem manifesto/documento válido e nenhuma aprovação no modo não interativo. Transporte e respostas humanas desses ensaios são simulados; não houve novo download remoto nem homologação de Linux/macOS.
 
 **[A] Conciliação Git verificada:** após `git fetch --prune origin`, `origin/main` é ancestral do merge inspecionado, sem commits remotos pendentes; `git merge --no-edit '@{upstream}'` confirmou `Already up to date`. O merge preserva tanto os scripts/testes de descoberta automática do upstream quanto as regras locais de preservação, o CSV e os executáveis versionados. `git lfs fsck --objects --pointers HEAD` passou. Essa verificação local NÃO declara publicação dos commits/objetos no remoto.
@@ -263,12 +266,12 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 | Lacuna comprovada ou não homologada | Obrigação vigente para futura adequação |
 | --- | --- |
-| Perguntas por padrão; `-NaoInterativo` depende dos dados prévios | Fluxo ordinário autônomo com alternativas finitas e pendência sem interação; preservar interativo como opção. |
+| Modo sem perguntas por padrão implementado; identidade musical não é comprovada pelo modo de execução | Preservar interação explícita e tratar separadamente a barreira universal de versão/vocais e alternativas legítimas. |
 | Nome fixo `yt-dlp.exe` em Unix; sem ensaio Linux/macOS | Resolução condicional nativa e homologação por plataforma, sem presumir execução de PE. |
 | Destino/nome sem parâmetros; sem tratamento editorial novo | Parametrização determinística, compatibilidade com padrões e migração sem renomear/perder arquivos válidos. |
 | Sem metatags/capa/marcador; validador só admite um stream | Enriquecimento opcional com preservação de fluxo, exceção restrita para imagem e leitura posterior verificável. |
 | Seleção automática não audita vocais/versão por si | Garantir pendência quando requisitos musicais não estiverem comprovados; não confundir identidade textual com audição. |
-| Manifesto vincula hashes, mas não autentica verdade; mínimo histórico sem validação exaustiva | Exigir evidência suficiente, validar tipos/faixas/contradições e não emitir certificação de fidelidade baseada apenas em declaração. |
+| Manifesto valida mínimo histórico e vincula hashes, mas não autentica a verdade da cadeia | Exigir prova suficiente e manter pendência diante de inconsistências; não certificar fidelidade apenas pela declaração. |
 | Empates de formato/janelas de crash/relatórios auxiliares não integralmente cobertos | Desempate estável, recuperação rastreável e testes das condições restantes, sem alegações antecipadas. |
 
 **[R] Aceite do RCF:** DEVE ser autossuficiente, referenciado ao código inspecionado, distinguir [A]/[R]/[F], preservar os contratos compatíveis e registrar cada conflito/limite acima. Não depende de infraestrutura imaginada nem de anexos anteriores para compreender as obrigações. Na fase original de criação, somente `RCF.md` era entrega autorizada. A conciliação posterior verifica a integração e atualiza este documento; NÃO declara resolvidas as lacunas funcionais restantes.

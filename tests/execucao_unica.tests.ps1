@@ -1,8 +1,8 @@
 ﻿#requires -Version 7.0
 param(
- [ValidateSet('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido')]
- [ValidateCount(1,5)]
- [string[]]$Modes=@('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido')
+ [ValidateSet('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos')]
+ [ValidateCount(1,7)]
+ [string[]]$Modes=@('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos')
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 1
@@ -69,7 +69,7 @@ foreach($mode in $Modes){
  foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,(New-Object Text.UTF8Encoding -ArgumentList $true))
- $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -eq 'nao_interativo');reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
+ $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -in @('nao_interativo','autonomo','conflito_modos'));reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
  [IO.File]::WriteAllText((Join-Path $case 'cenario.json'),($config|ConvertTo-Json -Depth 8))
  $csv=Join-Path $case 'faixas.csv'
  $rows=@([pscustomobject]@{Ordem='1';Artista='Artista';Musica='Faixa';Link_YouTube='https://www.youtube.com/results?search_query=Artista+Faixa';Tipo_link='Busca';Verificacao='Fixture';Observacoes='Fixture sintetica'})
@@ -86,8 +86,19 @@ foreach($mode in $Modes){
   [IO.File]::WriteAllText((Join-Path $manifestDir 'manifesto-real-fixture.json'),(@($entry)|ConvertTo-Json -Depth 8))
  }
  Push-Location $work
- try{ & $scriptPath -NaoInterativo:($mode -eq 'nao_interativo'); $caseExit=$LASTEXITCODE }finally{Pop-Location}
+ try{
+  if($mode -eq 'autonomo'){ & $scriptPath }
+  elseif($mode -eq 'conflito_modos'){ & $scriptPath -Interativo -NaoInterativo }
+  else{ & $scriptPath -NaoInterativo:($mode -eq 'nao_interativo') -Interativo:($mode -ne 'nao_interativo') }
+  $caseExit=$LASTEXITCODE
+ }finally{Pop-Location}
  if((Get-FileHash -LiteralPath $csv).Hash -ne $csvHash){throw 'CSV canonico foi alterado'}
+ if($mode -eq 'conflito_modos'){
+  if($caseExit -ne 2 -or (Test-Path -LiteralPath (Join-Path $case 'destino'))){throw 'Conflito de modos nao falhou antes de efeitos'}
+  $global:LASTEXITCODE=0
+  Write-Output 'PASS E2E conflito_modos exit=2 sem destino'
+  continue
+ }
  if($caseExit -ne 0){throw ('Falha do processo de teste: '+$caseExit)}
  $dest=Join-Path $case 'destino'
  $state=Get-Content -LiteralPath (Join-Path $dest '.controle\estado.json') -Raw|ConvertFrom-Json
@@ -100,7 +111,7 @@ foreach($mode in $Modes){
   if($counts.downloads -ne 1 -or $counts.reads -ne 4 -or $finals.Count -ne 1){throw 'Contagens incorretas na execucao unica'}
   if(-not $record.auditoria.validado -or $record.criterio_selecao -ne 'aprovacao_na_execucao'){throw 'Auditoria/selecao nao comprovada'}
   if((Get-FileHash -LiteralPath $finals[0].FullName).Hash.ToLowerInvariant() -ne $hash){throw 'Nativo foi alterado'}
- }elseif($mode -eq 'nao_interativo'){
+ }elseif($mode -in @('nao_interativo','autonomo')){
   if($record.resultado -ne 'pendente_auditoria' -or $counts.downloads -ne 0 -or $counts.reads -ne 0 -or $finals.Count -ne 0){throw 'Caso negativo aprovou sem confirmacao'}
  }else{
   $expectedCount=if($mode -eq 'sem_manifesto'){2}else{1}

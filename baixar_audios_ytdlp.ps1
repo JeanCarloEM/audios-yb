@@ -21,6 +21,7 @@ param(
     [string]$EvidenciasJson,
     [string]$CookiesArquivo,
     [string]$CookiesNavegador,
+    [switch]$Interativo,
     [switch]$NaoInterativo,
     [switch]$SomenteAuditarExistentes,
     [switch]$ReavaliarPendentes,
@@ -664,6 +665,8 @@ function Export-Reports {
 }
 
 try {
+    if ($Interativo -and $NaoInterativo) { throw 'Use apenas um modo: Interativo ou NaoInterativo' }
+    $NaoInterativo = -not [bool]$Interativo
     $tools = Resolve-ScriptTools -Root $script:Root
     $script:Exe = $tools.Exe
     $script:Ffmpeg = $tools.Ffmpeg
