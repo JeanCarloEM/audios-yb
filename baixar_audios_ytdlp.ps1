@@ -350,19 +350,7 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
     }
     $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
     $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
-    if ($SolicitarEvidencia -and $evidence.ContainsKey('requer_evidencia')) {
-        for ($attempt = 1; $attempt -le 3; $attempt++) {
-            $manifestPath = Request-InRunEvidencePath -Source $Source -VideoId $Id -FormatId $Fmt.id -Hash $sourceHash
-            if ([string]::IsNullOrWhiteSpace($manifestPath)) { break }
-            try {
-                $loaded = Import-SourceEvidence $manifestPath
-                foreach ($k in $loaded.Keys) { $script:Evidencias[$k] = $loaded[$k] }
-                $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
-            }
-            catch { Write-Warning ('Manifesto rejeitado: ' + $_.Exception.Message); continue }
-            if (-not $evidence.ContainsKey('requer_evidencia')) { break }
-        }
-    }
+
     $audit = @{ politica = $script:Policy; origem_sha256 = $sourceHash; origem_formato_id = $Fmt.id;
         origem_url = ('https://www.youtube.com/watch?v=' + $Id); origem = $sourceProbe; conversao = 'nenhuma';
         evidencia = $evidence; validado = $false 
@@ -467,7 +455,7 @@ function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$S
     if (-not $script:State.videos.ContainsKey($Id)) { return $null }
     $v = $script:State.videos[$Id]
     if (-not $v.auditoria -or $v.auditoria.politica -ne $script:Policy -or -not $v.auditoria.validado) {
-        if ($EvidenciasJson -and -not $SomenteAuditarExistentes) { return $null }
+        if ($script:Evidencias.Count -gt 0 -and -not $SomenteAuditarExistentes) { return $null }
         return @{conflito = $true; qualidade = $true; motivo = 'Download legado sem validacao da procedencia e do minimo de 128 kbps; arquivo preservado no controle' }
     }
     if ([string]$v.artista -ne $Artist -or [string]$v.musica -ne $Song) {
@@ -707,7 +695,7 @@ try {
     foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
     }
-    if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson }
+    if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson } else { $script:Evidencias = Get-LocalSourceEvidence -Root $script:Root -Control $script:Control }
     Audit-Legacy
     $rows = @(Import-Csv -LiteralPath $csvPath -Delimiter $delim -Encoding UTF8)
     if ($rows.Count -eq 0) { throw 'CSV vazio' }

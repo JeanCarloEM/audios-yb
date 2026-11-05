@@ -68,3 +68,31 @@ function Find-SourceEvidencePaths([string]$Root, [string]$Control) {
 
     return ($candidates | Select-Object -Unique | Sort-Object)
 }
+
+function Get-LocalSourceEvidence([string]$Root, [string]$Control) {
+    $entries = @{}
+    $fingerprints = @{}
+    $blocked = @{}
+    foreach ($path in @(Find-SourceEvidencePaths -Root $Root -Control $Control)) {
+        try { $loaded = Import-SourceEvidence $path }
+        catch { Write-Warning ('Manifesto rejeitado: ' + $path + ': ' + $_.Exception.Message); continue }
+        foreach ($key in $loaded.Keys) {
+            if ($blocked.ContainsKey($key)) { continue }
+            $canonical = [ordered]@{}
+            foreach ($field in @($loaded[$key].Keys | Sort-Object)) { $canonical[$field] = $loaded[$key][$field] }
+            $fingerprint = ConvertTo-Json -InputObject $canonical -Depth 30 -Compress
+            if ($entries.ContainsKey($key)) {
+                if ($fingerprints[$key] -cne $fingerprint) {
+                    $entries.Remove($key)
+                    $fingerprints.Remove($key)
+                    $blocked[$key] = $true
+                    Write-Warning ('Evidencias conflitantes; chave excluida: ' + $key)
+                }
+                continue
+            }
+            $entries[$key] = $loaded[$key]
+            $fingerprints[$key] = $fingerprint
+        }
+    }
+    return $entries
+}
