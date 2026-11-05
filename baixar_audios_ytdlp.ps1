@@ -37,6 +37,7 @@ $script:Root = $script:Layout.Root
 . (Join-Path $script:Root 'execucao_unica.ps1')
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
 . (Join-Path $script:Root 'autenticacao_ytdlp.ps1')
+. (Join-Path $script:Root 'ferramentas_portateis.ps1')
 $script:Out = Join-Path $script:Root 'destino'
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
@@ -675,7 +676,21 @@ function Export-Reports {
 }
 
 try {
-    if (-not (Test-Path -LiteralPath $script:Exe -PathType Leaf)) { throw "yt-dlp.exe ausente ao lado do script: $script:Exe" }
+    $tools = Resolve-ScriptTools -Root $script:Root
+    $script:Exe = $tools.Exe
+    $script:Ffmpeg = $tools.Ffmpeg
+    $script:Ffprobe = $tools.Ffprobe
+    $versions = Test-ScriptTools -Tools $tools
+    Write-Host ('yt-dlp: ' + $versions.Exe)
+    if ($tools.Node) {
+        try {
+            $nodeRun = Invoke-Ytdlp -Executable $tools.Node -Arguments @('--version') -TimeoutSeconds 15
+            if ($nodeRun.code -eq 0 -and -not [string]::IsNullOrWhiteSpace($nodeRun.out)) {
+                $script:JsArgs = @('--js-runtimes', ('node:' + $tools.Node))
+                Write-Host 'Runtime JavaScript local: Node.js'
+            } else { Write-Warning 'Node.js encontrado mas indisponivel; continuando sem runtime explicito.' }
+        } catch { Write-Warning 'Node.js incompativel; continuando sem runtime explicito.' }
+    } else { Write-Warning 'Node.js ausente; o YouTube pode oferecer menos formatos de audio.' }
     $script:AuthArgs = @(Get-YtdlpAuthArgs -CookiesArquivo $(if ($CookiesArquivo) { Resolve-Input $CookiesArquivo }) -CookiesNavegador $CookiesNavegador)
     $csvPath = Find-ScriptCsv -Root $script:Root -Csv $Csv
     if (-not (Test-Path -LiteralPath $csvPath -PathType Leaf)) { throw "CSV nao encontrado: $csvPath" }
@@ -693,16 +708,6 @@ try {
     }
     if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson }
     Audit-Legacy
-    $version = Invoke-Ytdlp -Arguments @('--ignore-config', '--version') -TimeoutSeconds 15
-    if ($version.code -ne 0) { throw "yt-dlp.exe nao executou: $($version.err)" }
-    Write-Host ('yt-dlp: ' + $version.out.Trim())
-    if (Get-Command node.exe -ErrorAction SilentlyContinue) {
-        $script:JsArgs = @('--js-runtimes', 'node')
-        Write-Host 'Runtime JavaScript local: Node.js'
-    }
-    else {
-        Write-Warning 'Node.js ausente; o YouTube pode oferecer menos formatos de audio.'
-    }
     $first = [IO.File]::ReadLines($csvPath, [Text.Encoding]::UTF8) | Select-Object -First 1
     $first = $first.TrimStart([char]0xFEFF)
     $delim = if ($first.Contains('Ordem;')) { ';' } elseif ($first.Contains("Ordem`t")) { "`t" } else { ',' }
