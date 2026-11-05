@@ -8,7 +8,7 @@ Sem -Csv, procura junto do script um unico CSV com as colunas obrigatorias. Zero
 
 Mantenha os cinco helpers junto do principal: ambiente_portatil.ps1, ferramentas_portateis.ps1, execucao_unica.ps1, evidencias_fonte.ps1 e autenticacao_ytdlp.ps1. Virgula, ponto e virgula e tabulacao, UTF-8 com/sem BOM e cabecalhos entre aspas usam o mesmo leitor na descoberta e importacao.
 
-yt-dlp.exe e obrigatorio junto do script. Em Linux/macOS, seria necessario um executavel realmente nativo, compativel com arquitetura/permissoes locais, denominado yt-dlp.exe. O programa rejeita Windows PE fora do Windows e executa --version para verificar compatibilidade real. Nao instala nem baixa executaveis automaticamente. ffmpeg/ffprobe usam o nome nativo adjacente (.exe no Windows, sem extensao nos demais), depois um aplicativo no PATH. As tres ferramentas sao verificadas antes de criar estado ou migrar arquivos. Node.js e opcional, descoberto por nome nativo e verificado antes do uso.
+No Windows, yt-dlp.exe continua obrigatorio junto do script. Linux X64 procura yt-dlp_linux e depois yt-dlp adjacentes; Arm64 procura yt-dlp_linux_aarch64 e depois yt-dlp. macOS procura yt-dlp_macos e depois yt-dlp. Demais arquiteturas/sistemas procuram yt-dlp adjacente. Fora do Windows, a ultima opcao e uma aplicacao yt-dlp no PATH; yt-dlp.exe nao e escolhido como alternativa Unix. Nomes oficiais: https://github.com/yt-dlp/yt-dlp#release-files. O generico pode requerer Python; nao instala ferramentas. O primeiro candidato passa pelo teste real de versao: arquitetura/permissoes/dependencias incompatíveis sao erro, sem substituicao silenciosa. Windows PE e rejeitado fora do Windows. FFmpeg/ffprobe usam nome nativo adjacente e depois PATH; Node continua opcional.
 
 O padrao nao consulta perfil, cookie ou executavel de navegador. Conteudo publico e tentado anonimamente. Sessao por navegador e opcional e explicita; arquivo Netscape valido permite autenticacao sem navegador instalado quando indispensavel. Nao ha garantia de acesso a conteudo privado, controles anti-bot ou bloqueios externos, nem autenticacao universal alem dos mecanismos suportados pelo servico.
 
@@ -16,7 +16,7 @@ Validacao atual Windows/PS7: descoberta em dois diretorios, nomes com espacos/ac
 
 Teste real: NBnH864JUZw, URL da ordem 1 do CSV, baixado sem cookies/leitura de navegador/PATH, com Node.js pelo caminho descoberto. Recebeu 6.054.403 bytes WebM/Opus, 48 kHz, dois canais, 339,541 segundos; hash fisico e CSV intacto conferidos. Arquivo isolado em tests/.runtime-real-anonymous-b1d41a9962b2493faebdcb6c236f69d3/NBnH864JUZw.webm. Comprova transporte nesta maquina; nao certifica procedencia historica, publicacao M4A/MP3, qualidade auditada nem conclusao dos 372 itens.
 
-Linux/macOS nao foram executados: WSL negou acesso e Docker estava ausente. Nao se declara homologacao nesses sistemas nem compatibilidade nativa do binario Windows incluido. As validacoes historicas em PS5.1 abaixo referem-se a versoes anteriores; o principal atual exige PS7+. 
+A execucao do projeto em Linux/macOS ainda nao esta homologada. O ensaio anterior teve acesso WSL negado; no inventario atual, Ubuntu WSL x86_64 esta disponivel, mas pwsh/yt-dlp/FFmpeg nao foram encontrados no PATH inspecionado. A descoberta por ramos/arquiteturas foi testada de forma parametrizada no Windows; isso nao executa binarios desses outros sistemas. Validacoes PS5.1 antigas sao historicas; o principal exige PS7+.
 ## Audio com procedencia e minimo de 128 kbps
 
 ```powershell
