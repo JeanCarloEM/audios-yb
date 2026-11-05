@@ -58,4 +58,4 @@ try {
     }
     Assert (-not (Test-Path -LiteralPath (Join-Path $root 'destino'))) 'Descoberta escreveu destino'
 } finally { Set-Location -LiteralPath $origin }
-Write-Output ("AMBIENTE_PORTATIL_PASS checks="+$script:passed+"; Windows/PS7; sem navegador/rede; links nao exercitados")
+Write-Output ("AMBIENTE_PORTATIL_PASS checks="+$script:passed+"; OS="+[Runtime.InteropServices.RuntimeInformation]::OSDescription+"; PS="+$PSVersionTable.PSVersion+"; sem navegador/rede; links nao exercitados")

@@ -1,10 +1,13 @@
-# Executar: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/qualidade.tests.ps1
+﻿# Executar: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/qualidade.tests.ps1
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 1.0
 $script:Root=Split-Path $PSScriptRoot -Parent
-$script:Ffmpeg=Join-Path $script:Root 'ffmpeg.exe'
-$script:Ffprobe=Join-Path $script:Root 'ffprobe.exe'
-$script:Exe=Join-Path $script:Root 'yt-dlp.exe'
+. (Join-Path $script:Root 'ferramentas_portateis.ps1')
+$testToolsRoot=if([string]::IsNullOrWhiteSpace($env:AUDIOS_YB_TEST_TOOLS_ROOT)){$script:Root}else{[IO.Path]::GetFullPath($env:AUDIOS_YB_TEST_TOOLS_ROOT)}
+$testTools=Resolve-ScriptTools -Root $testToolsRoot
+$script:Ffmpeg=$testTools.Ffmpeg
+$script:Ffprobe=$testTools.Ffprobe
+$script:Exe=$testTools.Exe
 $script:Policy='fidelidade-128-v1'
 $script:Evidencias=@{}
 $script:Out=$PSScriptRoot
