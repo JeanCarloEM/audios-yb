@@ -1,7 +1,26 @@
-﻿# Audio com procedencia e minimo de 128 kbps
+﻿## Execucao atual: PowerShell 7+
+
+~~~powershell
+pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1
+~~~
+
+Sem -Csv, procura junto do script um unico CSV com as colunas obrigatorias. Zero ou varios candidatos geram diagnostico, sem escolha arbitraria. Com -Csv, basta nome/caminho relativo a pasta do script; absoluto tambem e aceito. A pasta de execucao nao altera CSV, ferramentas, estado ou destino. O CSV e a fonte canonica das URLs e consultas; nao e reescrito.
+
+Mantenha os cinco helpers junto do principal: ambiente_portatil.ps1, ferramentas_portateis.ps1, execucao_unica.ps1, evidencias_fonte.ps1 e autenticacao_ytdlp.ps1. Virgula, ponto e virgula e tabulacao, UTF-8 com/sem BOM e cabecalhos entre aspas usam o mesmo leitor na descoberta e importacao.
+
+yt-dlp.exe e obrigatorio junto do script. Em Linux/macOS, seria necessario um executavel realmente nativo, compativel com arquitetura/permissoes locais, denominado yt-dlp.exe. O programa rejeita Windows PE fora do Windows e executa --version para verificar compatibilidade real. Nao instala nem baixa executaveis automaticamente. ffmpeg/ffprobe usam o nome nativo adjacente (.exe no Windows, sem extensao nos demais), depois um aplicativo no PATH. As tres ferramentas sao verificadas antes de criar estado ou migrar arquivos. Node.js e opcional, descoberto por nome nativo e verificado antes do uso.
+
+O padrao nao consulta perfil, cookie ou executavel de navegador. Conteudo publico e tentado anonimamente. Sessao por navegador e opcional e explicita; arquivo Netscape valido permite autenticacao sem navegador instalado quando indispensavel. Nao ha garantia de acesso a conteudo privado, controles anti-bot ou bloqueios externos, nem autenticacao universal alem dos mecanismos suportados pelo servico.
+
+Validacao atual Windows/PS7: descoberta em dois diretorios, nomes com espacos/acentos, BOM, tres delimitadores e ambiguidade; argumentos especiais reais; ferramentas reais, PATH vazio, executavel ausente/incompativel; falta de yt-dlp nao cria destino; autenticacao simulada, 24 verificacoes de qualidade e fluxo positivo/negativo de execucao unica. Testes em tests/*.tests.ps1. O transporte dos testes automatizados do principal e simulado.
+
+Teste real: NBnH864JUZw, URL da ordem 1 do CSV, baixado sem cookies/leitura de navegador/PATH, com Node.js pelo caminho descoberto. Recebeu 6.054.403 bytes WebM/Opus, 48 kHz, dois canais, 339,541 segundos; hash fisico e CSV intacto conferidos. Arquivo isolado em tests/.runtime-real-anonymous-b1d41a9962b2493faebdcb6c236f69d3/NBnH864JUZw.webm. Comprova transporte nesta maquina; nao certifica procedencia historica, publicacao M4A/MP3, qualidade auditada nem conclusao dos 372 itens.
+
+Linux/macOS nao foram executados: WSL negou acesso e Docker estava ausente. Nao se declara homologacao nesses sistemas nem compatibilidade nativa do binario Windows incluido. As validacoes historicas em PS5.1 abaixo referem-se a versoes anteriores; o principal atual exige PS7+. 
+## Audio com procedencia e minimo de 128 kbps
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
+pwsh -NoProfile -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
 ```
 
 Uma unica chamada percorre busca, selecao, download, validacao e publicacao. Quando houver ambiguidade, escolha o indice exibido (a partir de zero) e confirme artista/musica, versao e ausencia de vocais com tres respostas SIM. O processo continua imediatamente, sem gerar uma etapa obrigatoria de reexecucao.
@@ -10,7 +29,7 @@ Se faltar procedencia, o script primeiro baixa a fonte e exibe seu ID, formato e
 
 Mantenha `execucao_unica.ps1` e `evidencias_fonte.ps1` ao lado do principal. `-NaoInterativo` desativa as perguntas: forneca previamente as aprovacoes/evidencias necessarias; informacao ausente permanece pendente, sem aprovacao automatica. A execucao unica permite intervencao humana durante o processo e nao cria documentos de origem inexistentes.
 
-Coloque `yt-dlp.exe`, `ffprobe.exe` e `ffmpeg.exe` junto do script. Node.js local e usado quando disponivel. As ferramentas incluidas neste ambiente sao yt-dlp 2026.10.26 e FFmpeg/ffprobe 9.0.2 (build Gyan, fornecedor indicado em https://ffmpeg.org/download.html). Seus hashes estao em `ferramentas.json`; os executaveis permanecem ignorados pelo Git.
+Mantenha yt-dlp.exe compativel junto do script; FFmpeg/ffprobe usam a descoberta nativa descrita acima. Node.js local e usado quando disponivel. As ferramentas incluidas neste ambiente sao yt-dlp 2026.10.26 e FFmpeg/ffprobe 9.0.2 (build Gyan, fornecedor indicado em https://ffmpeg.org/download.html). Seus hashes estao em `ferramentas.json`; os executaveis permanecem ignorados pelo Git.
 
 Somente M4A (AAC/ALAC) e MP3 genuinos podem ser publicados em `destino/`. Fontes comprimidas declaradas ou medidas abaixo de 128 kbps sao rejeitadas. A medicao soma bytes e duracoes dos pacotes de audio, sem contar o tamanho do conteiner como bitrate de audio. Variacao entre pacotes e registrada, sem pressupor que seja prova de VBR ou fidelidade. Fontes realmente sem perdas sao tratadas separadamente; o resultado final tambem exige media medida >=128 kbps, sem padding artificial; um FLAC/ALAC derivado de audio inferior nao recupera qualidade.
 
@@ -27,7 +46,7 @@ A fonte recebida fica em `destino/.controle/fontes/VIDEO/FORMATO.ext`; seu hash 
 ## Auditoria e reutilizacao opcional
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv -SomenteAuditarExistentes
+pwsh -NoProfile -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv -SomenteAuditarExistentes
 ```
 
 Esse comando audita o estado local sem consultas remotas. Downloads legados sem conformidade comprovada sao preservados em `destino/.controle/legado/`, com hash e historico, e deixam de contar como concluidos. A migracao e idempotente. Com evidencia real, uma execucao normal pode reavaliar as fontes. Mantenha `estado.json` para preservar rastreabilidade e impedir duplicacoes.
@@ -54,7 +73,7 @@ Mantenha autenticacao_ytdlp.ps1 junto dos outros helpers e do script principal. 
 
 O parametro -CookiesArquivo 'C:\caminho\youtube-cookies.txt' aceita cookies Netscape exportados da sessao autorizada, como alternativa a -CookiesNavegador. Os dois parametros sao mutuamente exclusivos. Nao compartilhe o conteudo dos cookies em relatorios ou chats.
 
-Se ocorrer login/anti-bot ou Failed to decrypt with DPAPI, o modo interativo pede uma sessao: navegador:chrome ou arquivo:C:\caminho\youtube-cookies.txt. O mesmo pedido e repetido dentro da execucao atual, com uma unica recuperacao global e no maximo tres entradas invalidas. Vazio cancela. -NaoInterativo nao pergunta nem escolhe sessao automaticamente; parametros explicitos continuam disponiveis. Persistindo o bloqueio, as demais consultas sao suspensas.
+Se ocorrer login/anti-bot ou Failed to decrypt with DPAPI, o modo interativo pede uma sessao opcional: arquivo:CAMINHO ou navegador:NOME. O mesmo pedido e repetido dentro da execucao atual, com uma unica recuperacao global e no maximo tres entradas invalidas. Vazio cancela. -NaoInterativo nao pergunta nem escolhe sessao automaticamente; parametros explicitos continuam disponiveis. Persistindo o bloqueio, as demais consultas sao suspensas.
 
 No teste real desta maquina, a extracao direta do Chrome falhou com DPAPI antes do download. Esse caminho ainda depende de uma sessao utilizavel; nao e comprovado pelos testes com transporte simulado. A correcao nao modifica a protecao do navegador. A alternativa por arquivo exige cookies validos e pode continuar sujeita a restricoes do YouTube. Consulte a [FAQ oficial](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp) e o [registro do erro DPAPI](https://github.com/yt-dlp/yt-dlp/issues/10927).
 

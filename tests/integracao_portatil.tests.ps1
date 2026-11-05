@@ -20,12 +20,17 @@ $old=Get-Location
 try {
  foreach($cwd in @($repo,$foreign)){
   Set-Location -LiteralPath $cwd
+  foreach($delimiter in @([char]',',[char]';',[char]9)){
+   [pscustomobject]@{Ordem='1';Artista='Fixture';Musica='Musica';Link_YouTube=$url;Tipo_link='Direto';Verificacao='Fixture';Observacoes='Sem rede'}|Export-Csv -LiteralPath $csv -Delimiter $delimiter -NoTypeInformation -Encoding utf8BOM
+   $before=(Get-FileHash -LiteralPath $csv).Hash
   $log=& $pwsh -NoProfile -File (Join-Path $case 'baixar_audios_ytdlp.ps1') -SomenteAuditarExistentes -NaoInterativo 2>&1
   if($LASTEXITCODE -ne 0){throw ($log|Out-String)}
   $state=Get-Content -LiteralPath (Join-Path (Join-Path $case 'destino') '.controle/estado.json') -Raw|ConvertFrom-Json
   $records=@($state.registros.PSObject.Properties.Value)
   if($records.Count -ne 1 -or $records[0].url_original -cne $url){throw 'Principal nao usou CSV canonico descoberto'}
   if($cwd -eq $foreign -and (Test-Path -LiteralPath (Join-Path $cwd 'destino/.controle/estado.json'))){throw 'Escreveu destino no cwd'}
+  if((Get-FileHash -LiteralPath $csv).Hash -cne $before){throw 'CSV modificado durante importacao'}
+  }
  }
  if((Get-FileHash -LiteralPath $csv).Hash -cne $before){throw 'CSV modificado'}
 } finally {Set-Location -LiteralPath $old}

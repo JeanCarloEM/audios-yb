@@ -11,7 +11,7 @@
     Sem auditoria de audio, metadados NAO comprovam ausencia de vocais.
     AprovacoesCsv: Ordem,VideoId,ArtistaMusicaConferidos,VersaoConferida,SemVocaisConferido
     Use SIM nas tres colunas de confirmacao SOMENTE apos ouvir e conferir.
-    ffprobe.exe e ffmpeg.exe ao lado do script: validacao integral e conversao excepcional.
+    ffprobe/ffmpeg nativos adjacentes ou no PATH: validacao integral e conversao excepcional.
     EvidenciasJson documenta procedencia e historico, vinculados ao hash da fonte.
 #>
 [CmdletBinding()]
@@ -693,6 +693,7 @@ try {
     } else { Write-Warning 'Node.js ausente; o YouTube pode oferecer menos formatos de audio.' }
     $script:AuthArgs = @(Get-YtdlpAuthArgs -CookiesArquivo $(if ($CookiesArquivo) { Resolve-Input $CookiesArquivo }) -CookiesNavegador $CookiesNavegador)
     $csvPath = Find-ScriptCsv -Root $script:Root -Csv $Csv
+    $delim = Get-ScriptCsvDelimiter -Path $csvPath
     if (-not (Test-Path -LiteralPath $csvPath -PathType Leaf)) { throw "CSV nao encontrado: $csvPath" }
     New-Item -ItemType Directory -Force -Path $script:Control | Out-Null
     # Bloqueia execucoes simultaneas; nao excluir o arquivo de lock para evitar corridas.
@@ -708,9 +709,6 @@ try {
     }
     if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson }
     Audit-Legacy
-    $first = [IO.File]::ReadLines($csvPath, [Text.Encoding]::UTF8) | Select-Object -First 1
-    $first = $first.TrimStart([char]0xFEFF)
-    $delim = if ($first.Contains('Ordem;')) { ';' } elseif ($first.Contains("Ordem`t")) { "`t" } else { ',' }
     $rows = @(Import-Csv -LiteralPath $csvPath -Delimiter $delim -Encoding UTF8)
     if ($rows.Count -eq 0) { throw 'CSV vazio' }
     $expected = @('Ordem', 'Artista', 'Musica', 'Link_YouTube', 'Tipo_link', 'Verificacao', 'Observacoes')
