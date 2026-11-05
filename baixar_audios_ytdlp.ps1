@@ -686,20 +686,6 @@ try {
     $csvPath = Find-ScriptCsv -Root $script:Root -Csv $Csv
     $delim = Get-ScriptCsvDelimiter -Path $csvPath
     if (-not (Test-Path -LiteralPath $csvPath -PathType Leaf)) { throw "CSV nao encontrado: $csvPath" }
-    New-Item -ItemType Directory -Force -Path $script:Control | Out-Null
-    # Bloqueia execucoes simultaneas; nao excluir o arquivo de lock para evitar corridas.
-    $lockPath = Join-Path $script:Control 'execucao.lock'
-    try { $script:Lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
-    catch { throw 'Outra instancia esta usando este destino (ou lock indisponivel).' }
-    if ([IO.File]::Exists($script:StateFile)) {
-        $script:State = To-Hashtable (Get-Content -LiteralPath $script:StateFile -Raw -Encoding UTF8 | ConvertFrom-Json)
-        foreach ($section in @('registros', 'videos', 'buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
-    }
-    foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
-        if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
-    }
-    if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson } else { $script:Evidencias = Get-LocalSourceEvidence -Root $script:Root -Control $script:Control }
-    Audit-Legacy
     $rows = @(Import-Csv -LiteralPath $csvPath -Delimiter $delim -Encoding UTF8)
     if ($rows.Count -eq 0) { throw 'CSV vazio' }
     $expected = @('Ordem', 'Artista', 'Musica', 'Link_YouTube', 'Tipo_link', 'Verificacao', 'Observacoes')
@@ -728,6 +714,21 @@ try {
             }
         }
     }
+    if ($EvidenciasJson) { $script:Evidencias = Import-SourceEvidence $EvidenciasJson } else { $script:Evidencias = Get-LocalSourceEvidence -Root $script:Root -Control $script:Control }
+    New-Item -ItemType Directory -Force -Path $script:Control | Out-Null
+    # Bloqueia execucoes simultaneas; nao excluir o arquivo de lock para evitar corridas.
+    $lockPath = Join-Path $script:Control 'execucao.lock'
+    try { $script:Lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
+    catch { throw 'Outra instancia esta usando este destino (ou lock indisponivel).' }
+    if ([IO.File]::Exists($script:StateFile)) {
+        $script:State = To-Hashtable (Get-Content -LiteralPath $script:StateFile -Raw -Encoding UTF8 | ConvertFrom-Json)
+        foreach ($section in @('registros', 'videos', 'buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
+    }
+    foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
+        if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
+    }
+
+    Audit-Legacy
     Write-Host ("Registros: $($rows.Count) | Aprovacoes: $($approvals.Count) | Destino: $script:Out")
     $index = 0
     foreach ($row in $rows) {
