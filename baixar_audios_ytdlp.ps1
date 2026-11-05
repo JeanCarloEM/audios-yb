@@ -1,4 +1,4 @@
-﻿#requires -Version 5.1
+﻿#requires -Version 7.0
 <#
 .SYNOPSIS
     Audita um CSV e publica somente M4A/MP3 com fonte documentada e minimo medido de 128 kbps.
@@ -16,7 +16,7 @@
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true, Position = 0)][ValidateNotNullOrEmpty()][string]$Csv,
+    [Parameter(Position = 0)][string]$Csv,
     [string]$AprovacoesCsv,
     [string]$EvidenciasJson,
     [string]$CookiesArquivo,
@@ -30,7 +30,9 @@ param(
 
 Set-StrictMode -Version 1.0
 $ErrorActionPreference = 'Stop'
-$script:Root = $PSScriptRoot
+. (Join-Path $PSScriptRoot 'ambiente_portatil.ps1')
+$script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
+$script:Root = $script:Layout.Root
 # Fluxo interativo na mesma execucao.
 . (Join-Path $script:Root 'execucao_unica.ps1')
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
@@ -56,12 +58,7 @@ $script:Policy = 'fidelidade-128-v1'
 $script:Ffmpeg = Join-Path $script:Root 'ffmpeg.exe'
 $script:Ffprobe = Join-Path $script:Root 'ffprobe.exe'
 
-function Resolve-Input([string]$Path) {
-    if ([IO.Path]::IsPathRooted($Path)) { return [IO.Path]::GetFullPath($Path) }
-    $beside = Join-Path $script:Root $Path
-    if (Test-Path -LiteralPath $beside -PathType Leaf) { return [IO.Path]::GetFullPath($beside) }
-    return [IO.Path]::GetFullPath((Join-Path (Get-Location).ProviderPath $Path))
-}
+function Resolve-Input([string]$Path) { return Resolve-ScriptInput -Path $Path -Root $script:Root }
 function Normal([string]$Value) {
     if ($null -eq $Value) { return '' }
     $decomposed = $Value.Normalize([Text.NormalizationForm]::FormD).ToLowerInvariant()
@@ -132,7 +129,7 @@ function Invoke-Ytdlp([string[]]$Arguments, [int]$TimeoutSeconds = 90, [string]$
     $psi.StandardOutputEncoding = [Text.Encoding]::UTF8
     $psi.StandardErrorEncoding = [Text.Encoding]::UTF8
     $psi.WorkingDirectory = $script:Root
-    $psi.Arguments = (($Arguments | ForEach-Object { Quote-WindowsArg ([string]$_) }) -join ' ')
+    foreach ($argument in $Arguments) { $psi.ArgumentList.Add([string]$argument) }
     $p = New-Object System.Diagnostics.Process
     $p.StartInfo = $psi
     try {
@@ -188,13 +185,13 @@ function Invoke-Checked([string[]]$Arguments, [int]$Timeout = 100) {
             if (-not $NaoInterativo -and -not $script:AuthRecoveryAttempted) {
                 $script:AuthRecoveryAttempted = $true
                 if ($d.tipo -eq 'falha_cookies_dpapi') {
-                    Write-Warning 'Chrome: yt-dlp nao conseguiu descriptografar cookies (DPAPI). Use arquivo:CAMINHO com cookies Netscape exportados da sessao autorizada.'
+                    Write-Warning 'yt-dlp nao conseguiu descriptografar a sessao escolhida (DPAPI). Se autenticacao for indispensavel, use arquivo:CAMINHO com cookies Netscape validos.'
                 } else {
-                    Write-Warning 'YouTube exige autenticacao. Abra o video e entre na conta no navegador antes de continuar.'
+                    Write-Warning 'O servico exige autenticacao. Um arquivo Netscape valido permite usar sessao sem depender de navegador instalado; vazio cancela.'
                 }
                 $auth = @()
                 for ($inputTry = 0; $inputTry -lt 3; $inputTry++) {
-                    $choice = Read-InRunValue -Prompt 'Sessao: navegador:chrome ou arquivo:CAMINHO (vazio cancela)' -NonInteractive:$NaoInterativo
+                    $choice = Read-InRunValue -Prompt 'Sessao opcional: arquivo:CAMINHO Netscape ou navegador:NOME (vazio cancela)' -NonInteractive:$NaoInterativo
                     if ([string]::IsNullOrWhiteSpace($choice)) { break }
                     try {
                         if ($choice -match '^navegador:(.+)$') { $auth = @(Get-YtdlpAuthArgs -CookiesNavegador $Matches[1]) }
@@ -680,7 +677,7 @@ function Export-Reports {
 try {
     if (-not (Test-Path -LiteralPath $script:Exe -PathType Leaf)) { throw "yt-dlp.exe ausente ao lado do script: $script:Exe" }
     $script:AuthArgs = @(Get-YtdlpAuthArgs -CookiesArquivo $(if ($CookiesArquivo) { Resolve-Input $CookiesArquivo }) -CookiesNavegador $CookiesNavegador)
-    $csvPath = Resolve-Input $Csv
+    $csvPath = Find-ScriptCsv -Root $script:Root -Csv $Csv
     if (-not (Test-Path -LiteralPath $csvPath -PathType Leaf)) { throw "CSV nao encontrado: $csvPath" }
     New-Item -ItemType Directory -Force -Path $script:Control | Out-Null
     # Bloqueia execucoes simultaneas; nao excluir o arquivo de lock para evitar corridas.

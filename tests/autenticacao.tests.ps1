@@ -1,7 +1,9 @@
 ﻿$ErrorActionPreference='Stop'
 Set-StrictMode -Version 1
-$repo='D:\trampo\audios-yb'
+$repo=Split-Path $PSScriptRoot -Parent
+$script:Root=$repo
 . (Join-Path $repo 'autenticacao_ytdlp.ps1')
+. (Join-Path $repo 'ambiente_portatil.ps1')
 $t=$null;$e=$null
 $a=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'baixar_audios_ytdlp.ps1'),[ref]$t,[ref]$e)
 if($e.Count){throw 'Sintaxe principal invalida'}
@@ -91,4 +93,8 @@ Assert (($script:Calls[1] -join '|') -ceq ('--cookies|'+$p+'|URL')) 'Arquivo nao
 Reset-Scenario @('cookies') @() $true
 $r=Invoke-Checked @('URL') 20
 Assert ($r.diagnostico -eq 'falha_cookies_dpapi' -and $script:NetworkSuspended -and $script:Calls.Count -eq 1 -and $script:Reads -eq 0) 'DPAPI nao interativo deve suspender'
+# Sucesso publico sem autenticacao: nenhum navegador/cookie/prompt e necessario.
+Reset-Scenario @('ok') @() $true
+$r=Invoke-Checked @('URL_PUBLICA') 20
+Assert ($r.code -eq 0 -and $script:Reads -eq 0 -and $script:AuthArgs.Count -eq 0 -and ($script:Calls[0] -join '|') -ceq 'URL_PUBLICA') 'Pedido publico passou a exigir sessao'
 'AUTH_PASS'
