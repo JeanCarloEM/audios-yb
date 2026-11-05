@@ -167,3 +167,45 @@ function Request-InRunEvidencePath {
 
     return $path
 }
+
+
+function Resolve-MusicalApprovalProof {
+    [CmdletBinding()]
+    param(
+        [string]$VideoId,
+        [string]$Artist,
+        [string]$Song,
+        [System.Collections.IDictionary]$RawApproval = $null,
+        [System.Collections.IDictionary]$StoredProof = $null,
+        [ValidateSet('arquivo_aprovacoes', 'interativo')][string]$Origin = 'arquivo_aprovacoes'
+    )
+    if ($VideoId -notmatch '^[A-Za-z0-9_-]{11}$' -or
+        [string]::IsNullOrWhiteSpace($Artist) -or [string]::IsNullOrWhiteSpace($Song)) { return $null }
+    $artistText = $Artist.Trim()
+    $songText = $Song.Trim()
+    if ($null -ne $RawApproval) {
+        if (([string]$RawApproval['VideoId']).Trim() -cne $VideoId) { return $null }
+        foreach ($field in @('ArtistaMusicaConferidos', 'VersaoConferida', 'SemVocaisConferido')) {
+            if (([string]$RawApproval[$field]).Trim().ToUpperInvariant() -notin @('SIM', 'S', 'TRUE', '1')) { return $null }
+        }
+        return @{
+            versao = 1; video_id = $VideoId; artista = $artistText; musica = $songText
+            artista_musica_conferidos = $true; versao_conferida = $true; sem_vocais_conferido = $true
+            origem = $Origin
+        }
+    }
+    if ($null -eq $StoredProof -or
+        ($StoredProof['versao'] -isnot [int] -and $StoredProof['versao'] -isnot [long]) -or
+        $StoredProof['versao'] -ne 1 -or
+        ([string]$StoredProof['video_id']) -cne $VideoId -or
+        ([string]$StoredProof['artista']) -cne $artistText -or
+        ([string]$StoredProof['musica']) -cne $songText -or
+        $StoredProof['origem'] -notin @('arquivo_aprovacoes', 'interativo')) { return $null }
+    foreach ($field in @('artista_musica_conferidos', 'versao_conferida', 'sem_vocais_conferido')) {
+        if ($StoredProof[$field] -isnot [bool] -or -not $StoredProof[$field]) { return $null }
+    }
+    $copy = @{}
+    foreach ($key in $StoredProof.Keys) { $copy[$key] = $StoredProof[$key] }
+    return $copy
+}
+
