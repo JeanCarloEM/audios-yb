@@ -22,3 +22,49 @@ function Import-SourceEvidence([string]$Path) {
     
     return $entries
 }
+
+function Find-SourceEvidencePaths([string]$Root, [string]$Control) {
+    $candidates = @()
+
+    $dirs = @($Root, $Control)
+
+    foreach ($dir in $dirs) {
+        if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
+            continue
+        }
+
+        $jsonFiles = Get-ChildItem -LiteralPath $dir -Filter '*.json' -File | Where-Object { $_.Name -notmatch '\.exemplo\.json$' }
+
+        foreach ($file in $jsonFiles) {
+            try {
+                $content = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8
+                $document = ConvertFrom-Json -InputObject $content
+                if ($null -eq $document -or -not ($document -is [array] -or $document -is [psobject])) {
+                    Write-Warning "JSON ilegível: $($file.FullName)"
+                    continue
+                }
+
+                $hasValidEntry = $false
+                $items = if ($document -is [array]) { $document } else { @($document) }
+                foreach ($item in $items) {
+                    if ($item.PSObject.Properties.Name -contains 'video_id' -and
+                        $item.PSObject.Properties.Name -contains 'formato_id' -and
+                        $item.PSObject.Properties.Name -contains 'sha256') {
+                        $hasValidEntry = $true
+                        break
+                    }
+                }
+
+                if ($hasValidEntry) {
+                    $candidates += $file.FullName
+                }
+            }
+            catch {
+                Write-Warning "Falha ao parsear JSON: $($file.FullName) - $($_.Exception.Message)"
+                continue
+            }
+        }
+    }
+
+    return ($candidates | Select-Object -Unique | Sort-Object)
+}
