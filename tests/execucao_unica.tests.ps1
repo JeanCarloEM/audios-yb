@@ -1,8 +1,8 @@
 ﻿#requires -Version 7.0
 param(
- [ValidateSet('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos')]
- [ValidateCount(1,7)]
- [string[]]$Modes=@('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos')
+ [ValidateSet('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos','direto_sem_aprovacao','auto_sem_aprovacao','direto_interativo')]
+ [ValidateCount(1,10)]
+ [string[]]$Modes=@('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos','direto_sem_aprovacao','auto_sem_aprovacao','direto_interativo')
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 1
@@ -29,7 +29,8 @@ function Resolve-ScriptTools([string]$Root) {
 }
 function Save-E2E { [IO.File]::WriteAllText($script:E2E.log,($script:E2E|ConvertTo-Json -Depth 8)) }
 function Search-Candidates([string]$Query,[string]$Artist,[string]$Song) {
- $items=@('TestVideo01','TestVideo02')|ForEach-Object {@{id=$_;titulo='Artista - Faixa';canal='Artista - Topic';pontuacao=100;url=('https://www.youtube.com/watch?v='+$_)}}
+ $ids=if($script:E2E.unique){@('TestVideo01')}else{@('TestVideo01','TestVideo02')}
+ $items=@($ids)|ForEach-Object {@{id=$_;titulo='Artista - Faixa';canal='Artista - Topic';pontuacao=100;url=('https://www.youtube.com/watch?v='+$_)}}
  return @{ok=$true;items=@($items);tentativas=1}
 }
 function Get-Info([string]$Id) {
@@ -54,6 +55,7 @@ function Read-InRunValue([string]$Prompt,[switch]$NonInteractive,[scriptblock]$R
  if($script:E2E.no_input){throw 'Leitura indevida no caso nao interativo'}
  if($Prompt -match '(?i)caminho|json|path'){throw ('Pergunta de caminho proibida: '+$Prompt)}
  $script:E2E.reads++;Save-E2E
+ if($script:E2E.fixed){return 'SIM'}
  if(($script:E2E.reads % 4) -eq 1){return '0'}
  return 'SIM'
 }
@@ -69,14 +71,15 @@ foreach($mode in $Modes){
  foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,(New-Object Text.UTF8Encoding -ArgumentList $true))
- $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -in @('nao_interativo','autonomo','conflito_modos'));reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
+ $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -in @('nao_interativo','autonomo','conflito_modos','direto_sem_aprovacao','auto_sem_aprovacao'));unique=($mode -eq 'auto_sem_aprovacao');fixed=($mode -eq 'direto_interativo');reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
  [IO.File]::WriteAllText((Join-Path $case 'cenario.json'),($config|ConvertTo-Json -Depth 8))
  $csv=Join-Path $case 'faixas.csv'
  $rows=@([pscustomobject]@{Ordem='1';Artista='Artista';Musica='Faixa';Link_YouTube='https://www.youtube.com/results?search_query=Artista+Faixa';Tipo_link='Busca';Verificacao='Fixture';Observacoes='Fixture sintetica'})
  if($mode -eq 'sem_manifesto'){ $second=$rows[0].PSObject.Copy(); $second.Ordem='2'; $rows+= $second }
+ if($mode -in @('direto_sem_aprovacao','direto_interativo')){$rows[0].Link_YouTube='https://www.youtube.com/watch?v=TestVideo01';$rows[0].Tipo_link='Direto'}
  $rows|Export-Csv -LiteralPath $csv -NoTypeInformation -Encoding UTF8
  $csvHash=(Get-FileHash -LiteralPath $csv).Hash
- if($mode -in @('positivo','controle','manifesto_invalido')){
+ if($mode -in @('positivo','controle','manifesto_invalido','direto_interativo')){
   $doc=Join-Path $case 'origem.txt'
   [IO.File]::WriteAllText($doc,'Fixture sintetica: PCM local codificado uma unica vez em MP3 CBR128 para este teste.')
   $entry=@{video_id='TestVideo01';formato_id='128';sha256=$hash;documento='origem.txt';documento_sha256=(Get-FileHash -LiteralPath $doc).Hash.ToLowerInvariant();origem='Fixture sintetica gerada localmente com FFmpeg';historico='PCM local sintetico codificado uma unica vez em MP3 CBR128';qualidade='perdas_verificadas';bitrate_minimo_historico_kbps=128}
@@ -87,7 +90,7 @@ foreach($mode in $Modes){
  }
  Push-Location $work
  try{
-  if($mode -eq 'autonomo'){ & $scriptPath }
+  if($mode -in @('autonomo','direto_sem_aprovacao','auto_sem_aprovacao')){ & $scriptPath }
   elseif($mode -eq 'conflito_modos'){ & $scriptPath -Interativo -NaoInterativo }
   else{ & $scriptPath -NaoInterativo:($mode -eq 'nao_interativo') -Interativo:($mode -ne 'nao_interativo') }
   $caseExit=$LASTEXITCODE
@@ -106,12 +109,14 @@ foreach($mode in $Modes){
  $record=$records[0]
  $counts=Get-Content -LiteralPath $config.log -Raw|ConvertFrom-Json
  $finals=@(Get-ChildItem -LiteralPath $dest -File|Where-Object {$_.Extension -in @('.mp3','.m4a')})
- if($mode -in @('positivo','controle')){
+ if($mode -in @('positivo','controle','direto_interativo')){
+  $expectedReads=if($mode -eq 'direto_interativo'){3}else{4}
   if($record.resultado -ne 'baixado'){throw ('Nao publicou: '+$record.motivo)}
-  if($counts.downloads -ne 1 -or $counts.reads -ne 4 -or $finals.Count -ne 1){throw 'Contagens incorretas na execucao unica'}
+  if($counts.downloads -ne 1 -or $counts.reads -ne $expectedReads -or $finals.Count -ne 1){throw 'Contagens incorretas na execucao unica'}
   if(-not $record.auditoria.validado -or $record.criterio_selecao -ne 'aprovacao_na_execucao'){throw 'Auditoria/selecao nao comprovada'}
   if((Get-FileHash -LiteralPath $finals[0].FullName).Hash.ToLowerInvariant() -ne $hash){throw 'Nativo foi alterado'}
- }elseif($mode -in @('nao_interativo','autonomo')){
+  if(-not $record.aprovacao_musical.sem_vocais_conferido -or -not $state.videos.TestVideo01.aprovacao_musical.versao_conferida){throw 'Aprovacao musical nao persistida'}
+ }elseif($mode -in @('nao_interativo','autonomo','direto_sem_aprovacao','auto_sem_aprovacao')){
   if($record.resultado -ne 'pendente_auditoria' -or $counts.downloads -ne 0 -or $counts.reads -ne 0 -or $finals.Count -ne 0){throw 'Caso negativo aprovou sem confirmacao'}
  }else{
   $expectedCount=if($mode -eq 'sem_manifesto'){2}else{1}

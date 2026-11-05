@@ -788,7 +788,7 @@ try {
             if ($approval) {
                 $videoId = $approval.id
                 $rec.criterio_selecao = 'aprovacao_manual'
-                if ($urlInfo.tipo -eq 'video' -and $urlInfo.id -ne $videoId) {
+                if ($urlInfo.tipo -eq 'video' -and $urlInfo.id -cne $videoId) {
                     Finalize-Record $rec 'falha' 'Aprovacao nao corresponde ao ID da URL direta'; continue
                 }
             }
@@ -836,9 +836,35 @@ try {
                 # O usuario atesta a escolha; nao tratar resultado de busca como video.
                 $rec.candidatos = @(@{id = $videoId; url = $rec.url_video; titulo = 'Aprovado pelo usuario' })
             }
+            $rawMusicalApproval = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
+            $storedMusicalProof = $null
+            if ($script:State.videos.ContainsKey($videoId)) {
+                $storedVideo = $script:State.videos[$videoId]
+                if ([string]$storedVideo.auditoria.origem_url -cne $rec.url_video) {
+                    Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'
+                    continue
+                }
+                $storedMusicalProof = $storedVideo['aprovacao_musical']
+            }
+            $musicalOrigin = if ($rec.criterio_selecao -eq 'aprovacao_na_execucao') { 'interativo' } else { 'arquivo_aprovacoes' }
+            $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $rawMusicalApproval -StoredProof $storedMusicalProof -Origin $musicalOrigin
+            if ($null -eq $musicalProof -and $null -eq $rawMusicalApproval -and -not $NaoInterativo) {
+                $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $videoId -NonInteractive:$NaoInterativo
+                if ($null -ne $decision) {
+                    $approvals[$order] = $decision
+                    $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
+                    if ($null -ne $musicalProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
+                }
+            }
+            if ($null -eq $musicalProof) {
+                Finalize-Record $rec 'pendente_auditoria' 'Versao e ausencia de vocais sem aprovacao explicita; metadados nao substituem auditoria musical'
+                continue
+            }
+            $rec.aprovacao_musical = $musicalProof
             $prev = Existing-Video $videoId $order $artist $song
             if ($prev -and $prev.conflito) { $status = if ($prev.qualidade) { 'pendente_qualidade' }else { 'falha' }; Finalize-Record $rec $status $prev.motivo; continue }
             if ($prev) {
+                $script:State.videos[$videoId].aprovacao_musical = $musicalProof
                 $rec.arquivo = $prev.arquivo; $rec.formato = $prev.formato
                 Finalize-Record $rec 'existente' 'Arquivo auditado, tamanho e SHA-256 preservados; download dispensado'; continue
             }
@@ -926,6 +952,7 @@ try {
                     } 
                 }
                 $rec.auditoria = $result.auditoria
+                $rec.auditoria['aprovacao_musical'] = $musicalProof
                 if (-not $result.ok) {
                     $lastDiagnostic = 'qualidade'; $lastError = $result.motivo
                     $rec.rejeicoes += @(@{formato_id = $fmt.id; motivo = $lastError; auditoria = $result.auditoria })
@@ -938,7 +965,7 @@ try {
                 $script:State.videos[$videoId] = @{ artista = $artist; musica = $song; arquivo = $filename;
                     tamanho = $size; sha256 = $sha; formato = [IO.Path]::GetExtension($filename).TrimStart('.');
                     codec = $result.probe.codec; bitrate_kbps = $result.probe.bitrate_medido_kbps;
-                    auditoria = $result.auditoria; verificado_utc = [DateTime]::UtcNow.ToString('o') 
+                    auditoria = $result.auditoria; aprovacao_musical = $musicalProof; verificado_utc = [DateTime]::UtcNow.ToString('o') 
                 }
                 $rec.formato = [IO.Path]::GetExtension($filename).TrimStart('.'); $rec.codec = $result.probe.codec
                 $rec.bitrate_kbps = [string]$result.probe.bitrate_medido_kbps; $rec.arquivo = $filename
