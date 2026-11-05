@@ -2,7 +2,7 @@
 
 ## 1. Autoridade, escopo e leitura
 
-Este documento consolida a finalidade, os contratos e as regras do projeto de download auditável de áudio de uma coletânea. A inspeção documental corresponde ao repositório em `870a96d352d16ebe59701198703914c7eebfb875`, em 05/11/2026. Caminhos relativos citados aqui partem da pasta do script principal. Este RCF é a única entrega desta fase; NÃO autoriza nem declara realizada qualquer implementação, refatoração, instalação, alteração do CSV ou migração de arquivos.
+Este documento consolida a finalidade, os contratos e as regras do projeto de download auditável de áudio de uma coletânea. A inspeção documental original corresponde ao repositório em `870a96d352d16ebe59701198703914c7eebfb875`, em 05/11/2026. A revisão de conciliação, na mesma data, corresponde ao merge `c85f47272baaa8f0dd22afcb2b3ff81585824d49`, que incorpora o upstream `c598438d2241f963d95f66017019f4f3b4d047b1` e a preservação/versionamento de `2e37a4836c1ce47f62f65629313ce805433b46aa`. Caminhos relativos citados aqui partem da pasta do script principal. A criação original teve somente este RCF como entrega; a conciliação atual atualiza os contratos afetados e verifica a integração, sem alterar o código funcional, o CSV ou os downloads.
 
 **DEVE** indica obrigação; **NÃO DEVE** e **É PROIBIDO**, vedação; **PODE**, possibilidade condicionada. As classificações têm significados distintos:
 
@@ -23,13 +23,13 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `baixar_audios_ytdlp.ps1` | Orquestração sequencial; validação de URLs/identidade; busca e cache; formatos; download; análise técnica; publicação; estado e relatórios. Exige PS 7.0+. |
 | `ambiente_portatil.ps1` | Raiz física do script, resolução de caminhos e descoberta/importação canônica do CSV. |
 | `ferramentas_portateis.ps1` | Descoberta dos executáveis e execução de comandos de versão antes dos efeitos do lote. |
-| `execucao_unica.ps1` | Leitura interativa, escolha de candidato, três confirmações e fornecimento do caminho de evidência na mesma chamada. |
-| `evidencias_fonte.ps1` | Leitura e vinculação de manifesto de procedência a documentos locais e hashes. |
+| `execucao_unica.ps1` | Leitura interativa, escolha de candidato e três confirmações. O helper histórico de caminho de evidência permanece definido, mas não é chamado pelo fluxo principal atual. |
+| `evidencias_fonte.ps1` | Descoberta local, leitura e vinculação de manifestos de procedência a documentos locais e hashes; reúne duplicatas idênticas entre manifestos e exclui chaves conflitantes. |
 | `autenticacao_ytdlp.ps1` | Argumentos de sessão explicitamente fornecida por cookies Netscape ou navegador suportado. |
 | `coletanea_uber_instrumental_candidatas.csv` | Entrada canônica existente: 372 linhas, 370 buscas e dois vídeos diretos; sugestões NÃO são auditoria musical. |
 | `evidencias.exemplo.json` | Modelo com valores fictícios; NÃO é evidência utilizável. |
 | `ferramentas.json` | Registro de fornecedor, versão FFmpeg e hashes de três executáveis; NÃO é um instalador nem uma verificação automática de confiança. |
-| `tests/*.tests.ps1` | Roteiros de qualidade, execução única, autenticação, ambiente, ferramentas e integração portátil. |
+| `tests/*.tests.ps1` | Sete roteiros de qualidade, execução única, autenticação, ambiente, ferramentas, integração portátil e descoberta de evidências. |
 
 **[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os cinco helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
 
@@ -51,6 +51,8 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 
 **[A]** As três ferramentas obrigatórias são testadas com timeout de 15 s antes de criar destino/estado ou migrar legado; incompatibilidade informa sistema, arquitetura e caminho. O script NÃO baixa nem instala executáveis. `ferramentas.json` registra FFmpeg/ffprobe `9.0.2-essentials_build-www.gyan.dev`, fornecedor `https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip` e referência `https://ffmpeg.org/download.html`. O README registra yt-dlp `2026.10.26`. Essas versões são retrato da distribuição, NÃO promessa de compatibilidade futura, nem exigência de atualização automática.
 
+**[A/R] Versionamento:** o CSV canônico e `yt-dlp.exe` permanecem no Git convencional; `ffmpeg.exe` e `ffprobe.exe` são versionados por Git LFS, com regras específicas em `.gitattributes` e hashes no manifesto. A reprodução exige os objetos LFS completos; ponteiros isolados NÃO são executáveis. O `.gitignore` exclui somente `/destino/` e `/tests/.runtime-*/`, preservando referências e evidências revisadas fora dessas árvores. É PROIBIDO substituir binários testados ou ocultar fontes/CSV/evidências úteis por exclusões genéricas sem justificativa e validação.
+
 **[R] Preparação:** instalar PS 7+, distribuir o principal e os cinco helpers juntos, disponibilizar os executáveis compatíveis e acesso de escrita ao destino; fornecer CSV e, quando necessários, aprovações, evidências/documentos e sessão autorizada. O preflight DEVE anteceder efeitos do lote. Falhas globais de configuração/integridade PODEM impedir a inicialização; falhas de um item NÃO DEVEM interromper os demais. O código atual ainda audita legado antes de validar integralmente linhas/aprovações: NÃO se DEVE prometer preflight global sem efeitos para todo erro de entrada.
 
 ### 3.2 Parâmetros implementados [A]
@@ -59,10 +61,10 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | --- | --- |
 | `-Csv` | String opcional, posição 0. Caminho absoluto ou relativo à raiz do script. Ausente: descobrir um único CSV elegível adjacente. |
 | `-AprovacoesCsv` | CSV de confirmações prévias por `Ordem`, relativo à raiz ou absoluto. Não substitui evidência técnica. |
-| `-EvidenciasJson` | Manifesto JSON prévio, relativo à raiz ou absoluto; documentos relativos também partem da raiz do script, não da pasta do manifesto. |
+| `-EvidenciasJson` | Manifesto JSON explícito opcional, relativo à raiz ou absoluto; quando informado substitui a descoberta automática. Documentos relativos também partem da raiz do script, não da pasta do manifesto. |
 | `-CookiesArquivo` | Arquivo Netscape explícito, relativo à raiz ou absoluto; mutuamente exclusivo com `-CookiesNavegador`. |
 | `-CookiesNavegador` | Descritor explícito de sessão; não é pré-requisito padrão. |
-| `-NaoInterativo` | Não solicita aprovações, sessão nem evidências; ausência de dados suficientes mantém pendência. |
+| `-NaoInterativo` | Não solicita aprovações nem sessão; descoberta de evidências permanece ativa quando não há manifesto explícito. Nenhum modo solicita caminho JSON; ausência de dados suficientes mantém pendência. |
 | `-SomenteAuditarExistentes` | Auditoria local sem consultas remotas; ainda exige/testa ferramentas e PODE preservar/mover legado, atualizar estado e relatórios. Não é modo somente leitura. |
 | `-ReavaliarPendentes` | Ignora cache de buscas e permite reconsulta pertinente; não aprova candidatos nem relaxa qualidade. |
 | `-ResultadosPorBusca` | Inteiro de 3 a 12; padrão 7. Limita candidatos consultados, não garante identificação. |
@@ -140,7 +142,9 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ### 5.4 Contrato de evidência de origem
 
-**[A]** `-EvidenciasJson` aceita uma coleção JSON; cada entrada DEVE conter:
+**[A]** Na inicialização, sem `-EvidenciasJson`, o programa descobre JSONs somente na raiz do script e em `destino/.controle/`, sem recursão nem dependência do cwd. Ignora `*.exemplo.json` e documentos sem os campos candidatos `video_id`, `formato_id` e `sha256`; JSON ilegível gera aviso. Cada manifesto candidato passa pelo importador completo: rejeição gera aviso e permite continuar com os demais. Duplicatas idênticas entre manifestos são reunidas; divergência para a mesma chave exclui essa chave de toda a união. Descoberta NÃO constitui aprovação nem prova de procedência. Com `-EvidenciasJson`, somente o manifesto explícito é importado; erro nesse arquivo pode impedir a inicialização.
+
+**[A/R]** Não há pergunta de caminho JSON durante a validação da fonte. Evidência ausente/rejeitada mantém a fonte no controle, registra `pendente_qualidade` e continua o lote; não há fabricação de documento nem relaxamento do piso. A descoberta ocorre na inicialização, sem promessa de recarregamento durante o lote. O importador aceita uma coleção JSON; cada entrada DEVE conter:
 
 | Campo | Contrato |
 | --- | --- |
@@ -239,16 +243,19 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ## 8. Verificação, lacunas e aceite bloqueante
 
-**[A] Base da inspeção:** principal, cinco helpers, CSV, modelos JSON, manifesto de ferramentas, README e os seis roteiros versionados foram lidos. A revisão de criação deste RCF NÃO executou o lote nem os testes e NÃO revalidou acesso remoto. Declarações históricas do README são evidência documental de ensaios anteriores, não nova execução nesta fase.
+**[A] Base da inspeção:** a criação original leu principal, cinco helpers, CSV, modelos JSON, manifesto de ferramentas, README e os seis roteiros então versionados, sem executar lote/testes ou revalidar acesso remoto. A conciliação revisou os deltas do merge e executou os sete roteiros atuais em Windows/PowerShell 7, todos com saída zero: ambiente (48 verificações), autenticação, ferramentas, qualidade (24 verificações), descoberta de evidências, integração portátil e execução única (cinco cenários). Os cenários de execução única confirmaram manifesto na raiz/no controle, nenhuma pergunta de caminho, pendência sem manifesto/documento válido e nenhuma aprovação no modo não interativo. Transporte e respostas humanas desses ensaios são simulados; não houve novo download remoto nem homologação de Linux/macOS.
+
+**[A] Conciliação Git verificada:** após `git fetch --prune origin`, `origin/main` é ancestral do merge inspecionado, sem commits remotos pendentes; `git merge --no-edit '@{upstream}'` confirmou `Already up to date`. O merge preserva tanto os scripts/testes de descoberta automática do upstream quanto as regras locais de preservação, o CSV e os executáveis versionados. `git lfs fsck --objects --pointers HEAD` passou. Essa verificação local NÃO declara publicação dos commits/objetos no remoto.
 
 | Evidência disponível | Alcance e limite |
 | --- | --- |
 | `tests/qualidade.tests.ps1` | Define 24 verificações com FFmpeg/ffprobe e fixtures: 96 kbps, inflação, VBR medido inferior, MP3 128, nativo 192 sem alteração, conversão FLAC/Opus, remux AAC, extensão falsa, corrupção, truncamento, fila e legado/órfãos. Não comprova procedência dos vídeos reais. |
-| `tests/execucao_unica.tests.ps1` | Fluxo positivo/negativo em cópias com transporte e respostas humanas simulados, áudio sintético e ferramentas de mídia reais. Não comprova autonomia sem dados, acesso remoto ou verdade de documentos externos. |
+| `tests/execucao_unica.tests.ps1` | Cinco cenários em cópias: manifesto na raiz, no controle, não interativo, sem manifesto e documento inválido. Verifica CSV intacto, preservação da fonte, ausência de perguntas de caminho e publicação condicionada à evidência. Transporte/respostas humanas simulados, áudio sintético e ferramentas de mídia reais; não comprova procedência dos vídeos reais. |
 | `tests/autenticacao.tests.ps1` | Argumentos/cabeçalho, recuperação limitada, cancelamento, não interativo, 429 e DPAPI com respostas simuladas. Não certifica sessão real utilizável. |
 | `tests/ambiente_portatil.tests.ps1` | Raiz/cwd, espaços/acentos, BOM/delimitadores/cabeçalhos e ambiguidade. O roteiro explicita que links simbólicos não foram exercitados. |
 | `tests/ferramentas_portateis.tests.ps1` | Executáveis reais, ausência/incompatibilidade e PATH vazio; declara não comprovar Linux/macOS. |
 | `tests/integracao_portatil.tests.ps1` | CSV canônico em dois cwd, três delimitadores, argumentos reais especiais e preflight sem ferramenta; auditoria isolada sem rede/navegador. |
+| `tests/evidencias_descoberta.tests.ps1` | Descoberta não recursiva na raiz/controle, cwd independente, exemplos/JSON inválido/sem campos, diretórios ausentes/duplicados e ausência de alteração dos documentos. Não atesta a verdade do histórico das fontes. |
 | README: ensaio remoto `NBnH864JUZw` | Registra transporte anônimo de WebM/Opus de 6.054.403 bytes, 339,541 s, 48 kHz, dois canais, em fixture isolada. Não prova publicação M4A/MP3, procedência histórica nem conclusão do CSV. |
 | README: plataformas/autenticação | Windows/PS7 exercitado; Linux/macOS não executados (WSL indisponível/Docker ausente no ensaio). Chrome falhou com DPAPI em ensaio real. Relatos PS5.1 são históricos e NÃO homologam o principal PS7 atual. |
 
@@ -264,6 +271,6 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | Manifesto vincula hashes, mas não autentica verdade; mínimo histórico sem validação exaustiva | Exigir evidência suficiente, validar tipos/faixas/contradições e não emitir certificação de fidelidade baseada apenas em declaração. |
 | Empates de formato/janelas de crash/relatórios auxiliares não integralmente cobertos | Desempate estável, recuperação rastreável e testes das condições restantes, sem alegações antecipadas. |
 
-**[R] Aceite do RCF:** DEVE ser autossuficiente, referenciado ao código inspecionado, distinguir [A]/[R]/[F], preservar os contratos compatíveis e registrar cada conflito/limite acima. Não depende de infraestrutura imaginada nem de anexos anteriores para compreender as obrigações. Somente `RCF.md` DEVE ser alterado nesta fase; execução funcional e resolução das lacunas NÃO são entregas autorizadas aqui.
+**[R] Aceite do RCF:** DEVE ser autossuficiente, referenciado ao código inspecionado, distinguir [A]/[R]/[F], preservar os contratos compatíveis e registrar cada conflito/limite acima. Não depende de infraestrutura imaginada nem de anexos anteriores para compreender as obrigações. Na fase original de criação, somente `RCF.md` era entrega autorizada. A conciliação posterior verifica a integração e atualiza este documento; NÃO declara resolvidas as lacunas funcionais restantes.
 
 **[R] Aceite funcional futuro:** conclusão conforme exige identidade/versão e requisitos musicais comprovados, fonte/histórico adequados vinculados aos bytes, ausência de qualidade artificial, arquivo M4A/MP3 genuíno decodificável com média ≥128, prioridade nativa respeitada, nenhuma conversão indevida, publicação única e recuperável, origem/decisões/rejeições/hash rastreáveis e nenhuma perda dos arquivos válidos. Tags/capa/marcador só PODEM constar como realizados após verificação específica. Fonte inferior, arquivo incompatível/corrompido ou evidência insuficiente NÃO PODEM ser concluídos. Na falta de alternativa legítima, DEVE registrar pendência e continuar os demais itens; nenhuma promessa de autonomia, eficiência ou sucesso DEVE enfraquecer essas barreiras.
