@@ -4,7 +4,7 @@
 pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1
 ~~~
 
-Sem -Csv, procura junto do script um unico CSV com as colunas obrigatorias. Zero ou varios candidatos geram diagnostico, sem escolha arbitraria. Com -Csv, basta nome/caminho relativo a pasta do script; absoluto tambem e aceito. A pasta de execucao nao altera CSV, ferramentas, estado ou destino. O CSV e a fonte canonica das URLs e consultas; nao e reescrito.
+Sem -Csv, procura junto do script um unico CSV com as colunas obrigatorias. Zero ou varios candidatos geram diagnostico, sem escolha arbitraria. Com -Csv, basta nome/caminho relativo a pasta do script; absoluto tambem e aceito. A pasta de execucao nao altera CSV, ferramentas, estado ou destino. Opcionalmente, -Destino escolhe outra raiz de saida: relativo parte da pasta do script, absoluto e aceito, e .controle acompanha essa raiz. Sem -Destino, permanece destino/. O CSV e a fonte canonica das URLs e consultas; nao e reescrito.
 
 Mantenha os cinco helpers junto do principal: ambiente_portatil.ps1, ferramentas_portateis.ps1, execucao_unica.ps1, evidencias_fonte.ps1 e autenticacao_ytdlp.ps1. Virgula, ponto e virgula e tabulacao, UTF-8 com/sem BOM e cabecalhos entre aspas usam o mesmo leitor na descoberta e importacao.
 

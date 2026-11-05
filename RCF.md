@@ -164,7 +164,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ### 6.1 Layout, identidade persistente e recuperação
 
-**[A]** Raiz é a localização física do script, com tentativa de resolver link simbólico. Entradas relativas são canônicas em relação a ela. Destino atual é fixo `destino/`; controle é `destino/.controle/`:
+**[A]** Raiz é a localização física do script, com tentativa de resolver link simbólico. Entradas relativas são canônicas em relação a ela. Destino padrão é `destino/`; `-Destino` permite outra raiz absoluta ou relativa à pasta do script, com `.controle/` associado. Sem a opção, os caminhos permanecem:
 
 | Caminho | Uso |
 | --- | --- |
@@ -222,7 +222,9 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 **[R/F]** A nomeação musical preferencial DEVE seguir `{Autor}{Track}{Titulo}.{ext}`, com campos ausentes omitidos e separador ` - ` apenas entre campos presentes. Autor confiável, faixa numérica e título musical DEVERÃO vir de mapeamento explícito; sem identificação suficiente, DEVE usar o padrão atual. O ID DEVE permanecer como sufixo estável de desambiguação, compatível com a convenção existente. Não se DEVE renomear arquivos válidos já publicados silenciosamente.
 
-**[R/F] Interface normativa futura, ainda indisponível:** `-Destino` DEVE substituir a raiz de saída, com relativo resolvido pela raiz do script e controle associado ao destino; sem opção, manter `destino/`. `-ModeloNome` DEVE permitir manter o legado ou selecionar a convenção musical acima, preservando o legado quando não sobrescrito. `-LarguraTrack` PODE fixar uma largura mínima positiva de preenchimento numérico; sem largura expressa/documentada NÃO se DEVE presumir dois, três ou outro número de dígitos. Track desconhecido DEVE ser omitido; zero-padding não altera seu valor e NÃO DEVE truncar números maiores. `Ordem` NÃO vira Track sem mapeamento de coletânea declarado. Toda resolução de colisões DEVE ser estável pelo ID/identidade, sem sobrescrita ou sufixo aleatório final.
+**[A] Destino implementado:** `-Destino` substitui a raiz de saída; relativo parte da raiz do script e controle acompanha o destino. Sem opção, mantém `destino/`. Verificação Windows/PS7: padrão, relativo e absoluto, dois cwd, estado/relatórios/lock associados, CSV canônico e saída padrão existente preservados.
+
+**[R/F] Interfaces de nomeação futuras, ainda indisponíveis:** `-ModeloNome` DEVE permitir manter o legado ou selecionar a convenção musical acima, preservando o legado quando não sobrescrito. `-LarguraTrack` PODE fixar uma largura mínima positiva de preenchimento numérico; sem largura expressa/documentada NÃO se DEVE presumir dois, três ou outro número de dígitos. Track desconhecido DEVE ser omitido; zero-padding não altera seu valor e NÃO DEVE truncar números maiores. `Ordem` NÃO vira Track sem mapeamento de coletânea declarado. Toda resolução de colisões DEVE ser estável pelo ID/identidade, sem sobrescrita ou sufixo aleatório final.
 
 **[R/F]** Normalização editorial DEVE corrigir espaços/formato com regra cultural explícita e conservar siglas, nomes próprios e grafias legítimas (ex.: `AC/DC`, `DJ`, `iTunes`). NÃO DEVE aplicar capitalização cega a títulos/nomes. A normalização de comparação sem acentos do algoritmo atual NÃO DEVE substituir texto editorial. Sem evidência para mudar uma grafia, preservá-la é obrigatório. Metadados editoriais insuficientes NÃO DEVEM invalidar áudio tecnicamente admissível; identidade musical incerta continua bloqueante.
 
@@ -271,7 +273,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | --- | --- |
 | Modo sem perguntas por padrão implementado; identidade musical não é comprovada pelo modo de execução | Preservar interação explícita e tratar separadamente a barreira universal de versão/vocais e alternativas legítimas. |
 | Descoberta nativa e escopo Linux real acima verificados; macOS, outras arquiteturas/montagens e acesso remoto Linux não homologados | Validar somente ambientes efetivamente disponíveis e distinguir transporte simulado, sem presumir execução de PE nem compatibilidade universal. |
-| Destino/nome sem parâmetros; sem tratamento editorial novo | Parametrização determinística, compatibilidade com padrões e migração sem renomear/perder arquivos válidos. |
+| Destino parametrizado; nomeação e tratamento editorial novos ainda ausentes | Preservar saída padrão e parametrizar nomes/mapeamentos confiáveis sem renomear/perder arquivos válidos. |
 | Sem metatags/capa/marcador; validador só admite um stream | Enriquecimento opcional com preservação de fluxo, exceção restrita para imagem e leitura posterior verificável. |
 | Aprovação explícita agora exigida inclusive em direto/automático/reuso; verdade da conferência humana não é autenticada pelo software | Exigir conferência real e manter pendência quando faltam dados; nunca inferir instrumentalidade de título/canal. |
 | Manifesto valida mínimo histórico e vincula hashes, mas não autentica a verdade da cadeia | Exigir prova suficiente e manter pendência diante de inconsistências; não certificar fidelidade apenas pela declaração. |

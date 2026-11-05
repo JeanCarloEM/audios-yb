@@ -34,6 +34,43 @@ try {
  }
  if((Get-FileHash -LiteralPath $csv).Hash -cne $before){throw 'CSV modificado'}
 } finally {Set-Location -LiteralPath $old}
+
+# Contrato RCF: -Destino relativo parte da raiz do script, com controle associado.
+$defaultOut=Join-Path $case 'destino'
+$defaultSnapshot=@{}
+foreach($file in @(Get-ChildItem -LiteralPath $defaultOut -Recurse -File)){
+ $defaultSnapshot[$file.FullName]=(Get-FileHash -LiteralPath $file.FullName).Hash
+}
+$relativeName='saída escolhida'
+$absoluteOut=Join-Path $work 'saída absoluta á'
+try {
+ foreach($cwd in @($repo,$foreign)){
+  Set-Location -LiteralPath $cwd
+  foreach($choice in @(
+   @{Argument=$relativeName;Expected=(Join-Path $case $relativeName)},
+   @{Argument=$absoluteOut;Expected=$absoluteOut}
+  )){
+   $output=& $pwsh -NoLogo -NoProfile -NonInteractive -File (Join-Path $case 'baixar_audios_ytdlp.ps1') -SomenteAuditarExistentes -Destino $choice.Argument 2>&1
+   if($LASTEXITCODE -ne 0){throw ($output|Out-String)}
+   $control=Join-Path $choice.Expected '.controle'
+   foreach($name in @('estado.json','relatorio.csv','pendencias.csv','execucao.lock')){
+    if(-not [IO.File]::Exists((Join-Path $control $name))){throw ('Controle fora do destino escolhido: '+$name)}
+   }
+   $state=Get-Content -LiteralPath (Join-Path $control 'estado.json') -Raw -Encoding UTF8|ConvertFrom-Json
+   $items=@($state.registros.PSObject.Properties.Value)
+   if($items.Count -ne 1 -or $items[0].url_original -cne $url){throw 'Destino mudou origem canonica'}
+   if((Get-FileHash -LiteralPath $csv).Hash -cne $before){throw 'Destino modificou CSV'}
+  }
+ }
+}finally{Set-Location -LiteralPath $old}
+if(Test-Path -LiteralPath (Join-Path $foreign $relativeName)){throw 'Destino relativo foi resolvido pelo cwd'}
+$defaultAfter=@(Get-ChildItem -LiteralPath $defaultOut -Recurse -File)
+if($defaultAfter.Count -ne $defaultSnapshot.Count){throw 'Destino padrao alterado por opcao'}
+foreach($file in $defaultAfter){
+ if(-not $defaultSnapshot.ContainsKey($file.FullName) -or (Get-FileHash -LiteralPath $file.FullName).Hash -cne $defaultSnapshot[$file.FullName]){throw 'Estado/arquivo padrao alterado por opcao'}
+}
+Write-Output 'DESTINO_RCF_PASS: padrao/relativo/absoluto; dois cwd; controles associados; CSV/default preservados'
+
 $t=$null;$e=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repo 'baixar_audios_ytdlp.ps1'),[ref]$t,[ref]$e)
 if($e.Count){throw 'Sintaxe principal invalida'}

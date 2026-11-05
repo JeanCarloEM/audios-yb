@@ -26,7 +26,8 @@ param(
     [switch]$SomenteAuditarExistentes,
     [switch]$ReavaliarPendentes,
     [ValidateRange(3, 12)][int]$ResultadosPorBusca = 7,
-    [ValidateRange(1, 4)][int]$MaxTentativas = 2
+    [ValidateRange(1, 4)][int]$MaxTentativas = 2,
+    [string]$Destino
 )
 
 Set-StrictMode -Version 1.0
@@ -39,7 +40,7 @@ $script:Root = $script:Layout.Root
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
 . (Join-Path $script:Root 'autenticacao_ytdlp.ps1')
 . (Join-Path $script:Root 'ferramentas_portateis.ps1')
-$script:Out = Join-Path $script:Root 'destino'
+$script:Out = if ([string]::IsNullOrWhiteSpace($Destino)) { $script:Layout.Out } else { Resolve-ScriptInput -Path $Destino -Root $script:Root }
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
 $script:StateFile = Join-Path $script:Control 'estado.json'
