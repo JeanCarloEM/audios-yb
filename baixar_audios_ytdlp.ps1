@@ -748,25 +748,6 @@ try {
                 Finalize-Record $rec 'falha' 'Campos obrigatorios vazios ou muito extensos'; continue
             }
             $urlInfo = Get-UrlInfo $url
-            if ($SomenteAuditarExistentes) {
-                if ($rec.resultado -notin @('baixado', 'existente')) {
-                    if (-not $rec.resultado) { Finalize-Record $rec 'pendente_qualidade' 'Auditoria local: nenhuma consulta remota realizada' }
-                    else { Finalize-Record $rec $rec.resultado $rec.motivo }
-                    continue
-                }
-            }
-            # Um estado de sucesso so pode ser reutilizado se o arquivo continuar integro.
-            if ($rec.resultado -in @('baixado', 'existente') -and $rec.video_id -match '^[a-zA-Z0-9_-]{11}$') {
-                $prior = Existing-Video $rec.video_id $order $artist $song
-                if ($prior -and -not $prior.conflito) {
-                    $rec.arquivo = $prior.arquivo; $rec.formato = $prior.formato
-                    Finalize-Record $rec 'existente' 'Reexecucao: arquivo validado por tamanho, assinatura e SHA-256'
-                    continue
-                }
-                $reason = if ($prior -and $prior.qualidade) { $prior.motivo }else { 'Registro anterior sem arquivo integro; investigar antes de baixar novamente' }
-                Finalize-Record $rec 'pendente_qualidade' $reason
-                continue
-            }
             if (($urlInfo.tipo -eq 'busca' -and [string]$row.Tipo_link -notmatch 'Busca') -or
                 ($urlInfo.tipo -eq 'video' -and [string]$row.Tipo_link -notmatch 'direto')) {
                 Finalize-Record $rec 'falha' 'Tipo_link contradiz a URL real'; continue
@@ -775,6 +756,59 @@ try {
             if ($null -ne $approval -and -not $approval.valid) {
                 Finalize-Record $rec 'pendente_auditoria' 'Aprovacao incompleta ou ID invalido: exigidos tres SIM'; continue
             }
+            if ($null -ne $approval -and $urlInfo.tipo -eq 'video' -and $approval.id -cne $urlInfo.id) {
+                Finalize-Record $rec 'falha' 'Aprovacao nao corresponde ao ID da URL direta'; continue
+            }
+            if ($SomenteAuditarExistentes) {
+                if ($rec.resultado -notin @('baixado', 'existente')) {
+                    if (-not $rec.resultado) { Finalize-Record $rec 'pendente_qualidade' 'Auditoria local: nenhuma consulta remota realizada' }
+                    else { Finalize-Record $rec $rec.resultado $rec.motivo }
+                    continue
+                }
+            }
+            # Um estado de sucesso so pode ser reutilizado se o arquivo continuar integro.
+            if ($rec.resultado -in @('baixado', 'existente') -and $rec.video_id -match '^[a-zA-Z0-9_-]{11}$' -and
+                ($null -eq $approval -or $approval.id -ceq $rec.video_id)) {
+                $reuseId = [string]$rec.video_id
+                if ($urlInfo.tipo -eq 'video' -and $urlInfo.id -cne $reuseId) {
+                    Finalize-Record $rec 'falha' 'Registro anterior nao corresponde ao ID da URL direta'; continue
+                }
+                $reuseRaw = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
+                $reuseStored = $null
+                if ($script:State.videos.ContainsKey($reuseId)) {
+                    $reuseVideo = $script:State.videos[$reuseId]
+                    if ([string]$reuseVideo.auditoria.origem_url -cne ('https://www.youtube.com/watch?v=' + $reuseId)) {
+                        Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'; continue
+                    }
+                    $reuseStored = $reuseVideo['aprovacao_musical']
+                }
+                $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $reuseRaw -StoredProof $reuseStored
+                if ($null -eq $reuseProof -and $null -eq $reuseRaw -and -not $NaoInterativo) {
+                    $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $reuseId -NonInteractive:$NaoInterativo
+                    if ($null -ne $decision) {
+                        $approvals[$order] = $decision
+                        $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
+                        if ($null -ne $reuseProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
+                    }
+                }
+                if ($null -eq $reuseProof) {
+                    Finalize-Record $rec 'pendente_auditoria' 'Arquivo preservado: versao e ausencia de vocais sem aprovacao musical valida'; continue
+                }
+                $prior = Existing-Video $reuseId $order $artist $song
+                if ($prior -and -not $prior.conflito) {
+                    $script:State.videos[$reuseId].aprovacao_musical = $reuseProof
+                    $rec.aprovacao_musical = $reuseProof
+                    $rec.auditoria = $script:State.videos[$reuseId].auditoria
+                    $rec.auditoria['aprovacao_musical'] = $reuseProof
+                    $rec.arquivo = $prior.arquivo; $rec.formato = $prior.formato
+                    Finalize-Record $rec 'existente' 'Reexecucao: arquivo integro e aprovacao musical revalidados'
+                    continue
+                }
+                $reason = if ($prior -and $prior.qualidade) { $prior.motivo }else { 'Registro anterior sem arquivo integro; investigar antes de baixar novamente' }
+                Finalize-Record $rec 'pendente_qualidade' $reason
+                continue
+            }
+
             # Candidatos em cache podem ser reavaliados sem nova consulta remota.
             # Pendencias de acesso e falhas locais devem ser recuperaveis na reexecucao.
             $preserve = $rec.resultado -in @('nao_identificado', 'indisponivel') -or
