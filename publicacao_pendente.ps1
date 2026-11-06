@@ -96,6 +96,7 @@ function Save-PublicationIntentFile {
  $fresh.status='preparada'
  $fresh.persistido_utc=[DateTime]::UtcNow.ToString('o')
  $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($fresh|ConvertTo-Json -Depth 25 -WarningAction Stop))
+ if($bytes.Length -gt (Get-PublicationIntentMaxBytes)){throw [IO.InvalidDataException]::new('Intencao excede limite de bytes')}
  $sha=[Security.Cryptography.SHA256]::Create()
  try{
   $name=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($fresh.video_id))).Replace('-','').ToLowerInvariant()+'.json'
@@ -163,4 +164,55 @@ function ConvertFrom-PublicationJson {
   if($document.RootElement.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw [IO.InvalidDataException]::new('JSON raiz deve ser objeto')}
   return (Read-PublicationJsonNode -Element $document.RootElement)
  }finally{$document.Dispose()}
+}
+
+function Get-PublicationIntentMaxBytes { return 8388608 }
+
+# Leitura de dados com hash externo. Nao valida qualidade/prova humana nem autoriza efeitos.
+function Read-PublicationIntentFile {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Path,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$ExpectedSha256,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Control)
+ if($ExpectedSha256 -cnotmatch '^[0-9a-f]{64}$'){throw [ArgumentException]::new('Hash esperado invalido')}
+ $controlPath=[IO.Path]::GetFullPath($Control)
+ $pathFull=[IO.Path]::GetFullPath($Path)
+ $directory=Join-Path $controlPath 'publicacoes_pendentes'
+ $comparison=if($IsWindows){[StringComparison]::OrdinalIgnoreCase}else{[StringComparison]::Ordinal}
+ if(-not [string]::Equals([IO.Path]::GetDirectoryName($pathFull),$directory,$comparison)){throw [ArgumentException]::new('Arquivo fora do diretorio de intencoes')}
+ if(-not (Test-Path -LiteralPath $pathFull -PathType Leaf)){throw [IO.FileNotFoundException]::new('Intencao ausente',$pathFull)}
+ $null=Assert-PublicationPathWithoutLinks -Path $pathFull
+ $stream=[IO.FileStream]::new($pathFull,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+ try{
+  $length=$stream.Length
+  if($length -le 0 -or $length -gt (Get-PublicationIntentMaxBytes)){throw [IO.InvalidDataException]::new('Tamanho do arquivo de intencao invalido')}
+  $bytes=[byte[]]::new([int]$length)
+  $offset=0
+  while($offset -lt $bytes.Length){
+   $count=$stream.Read($bytes,$offset,$bytes.Length-$offset)
+   if($count -eq 0){throw [IO.InvalidDataException]::new('Arquivo de intencao truncado')}
+   $offset+=$count
+  }
+  if($stream.ReadByte() -ne -1){throw [IO.InvalidDataException]::new('Arquivo de intencao cresceu')}
+ }finally{$stream.Dispose()}
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$actual=[BitConverter]::ToString($sha.ComputeHash($bytes)).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+ if(-not [string]::Equals($actual,$ExpectedSha256,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Hash do arquivo de intencao divergente')}
+ try{$json=[Text.UTF8Encoding]::new($false,$true).GetString($bytes)}catch{throw [IO.InvalidDataException]::new('UTF8 invalido')}
+ $data=ConvertFrom-PublicationJson -Json $json
+ if(-not [string]::Equals([string]$data.schema,'audios-yb-publication-intent/v1',[StringComparison]::Ordinal) -or -not [string]::Equals([string]$data.status,'preparada',[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Schema/status de intencao invalido')}
+ if($data.video_id -isnot [string] -or $data.video_id -cnotmatch '^[A-Za-z0-9_-]{11}$'){throw [IO.InvalidDataException]::new('VideoId da intencao invalido')}
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$name=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($data.video_id))).Replace('-','').ToLowerInvariant()+'.json'}finally{$sha.Dispose()}
+ if(-not [string]::Equals([IO.Path]::GetFileName($pathFull),$name,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Nome de arquivo nao corresponde ao VideoId')}
+ foreach($key in @('registro','auditoria','probe')){
+  if($data[$key] -isnot [hashtable] -or $data[$key].Count -eq 0){throw [IO.InvalidDataException]::new('Secao de dados invalida: '+$key)}
+ }
+ foreach($key in @('pronto_relativo','arquivo','criado_utc','persistido_utc','sha256')){
+  if($data[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($data[$key])){throw [IO.InvalidDataException]::new('Campo de dados ausente: '+$key)}
+ }
+ if($data.sha256 -cnotmatch '^[0-9a-f]{64}$' -or $data.tamanho -isnot [long] -and $data.tamanho -isnot [int] -or $data.tamanho -le 0){throw [IO.InvalidDataException]::new('Hash/tamanho de audio invalido')}
+ if(-not [string]::Equals([string]$data.registro.video_id,$data.video_id,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Registro e VideoId divergentes')}
+ # Metadados de caminhos/provas continuam pendentes de validacao antes de qualquer recuperacao.
+ return @{Path=$pathFull;Sha256=$actual;Data=$data;Status='dados_lidos_nao_autorizados'}
 }
