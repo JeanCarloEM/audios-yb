@@ -124,3 +124,29 @@ function New-Mp3MarkerCandidate {
  if((Get-Item -LiteralPath $candidatePath).Length -le 0){throw [IO.InvalidDataException]::new('Candidato vazio')}
  return [pscustomobject]@{SourcePath=$sourcePath;CandidatePath=$candidatePath;Marker=$normalized;Validated=$false}
 }
+
+# Verifica somente preservacao de tags; nao valida marcador, audio ou publicacao.
+function Assert-MarkerTagsPreserved {
+ [CmdletBinding()]
+ param([AllowNull()][object]$Before,[AllowNull()][object]$After,[switch]$FormatTags)
+ $sets=@()
+ foreach($tags in @($Before,$After)){
+  $map=[Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+  if($null -ne $tags){
+   if($tags -isnot [pscustomobject]){throw [IO.InvalidDataException]::new('Tags devem ser objeto JSON')}
+   foreach($property in $tags.PSObject.Properties){
+    if($FormatTags -and [string]::Equals($property.Name,'marcador_coletanea',[StringComparison]::Ordinal)){continue}
+    if($property.Value -isnot [string]){throw [IO.InvalidDataException]::new('Tag sem valor textual: '+$property.Name)}
+    $map.Add($property.Name,$property.Value)
+   }
+  }
+  $sets+=,$map
+ }
+ if($sets[0].Count -ne $sets[1].Count){throw [IO.InvalidDataException]::new('Conjunto de tags alterado')}
+ foreach($key in $sets[0].Keys){
+  if(-not $sets[1].ContainsKey($key) -or -not [string]::Equals($sets[0][$key],$sets[1][$key],[StringComparison]::Ordinal)){
+   throw [IO.InvalidDataException]::new('Tag alterada: '+$key)
+  }
+ }
+ return $true
+}
