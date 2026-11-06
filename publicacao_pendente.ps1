@@ -47,7 +47,7 @@ function New-PublicationIntentSnapshot {
  $hashBefore=(Get-FileHash -LiteralPath $readyPath -Algorithm SHA256).Hash.ToLowerInvariant()
  if(-not [string]::Equals($Audit.resultado_sha256.ToLowerInvariant(),$hashBefore,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Hash resultado divergente')}
  $data=@{registro=$Record;auditoria=$Audit;probe=$Probe}
- $copy=ConvertFrom-Json -AsHashtable -InputObject ($data|ConvertTo-Json -Depth 25 -WarningAction Stop)
+ $copy=ConvertFrom-PublicationJson -Json ($data|ConvertTo-Json -Depth 25 -WarningAction Stop)
  $sizeAfter=(Get-Item -LiteralPath $readyPath).Length
  $hashAfter=(Get-FileHash -LiteralPath $readyPath -Algorithm SHA256).Hash.ToLowerInvariant()
  if($sizeBefore -ne $sizeAfter -or -not [string]::Equals($hashBefore,$hashAfter,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Ready mudou durante snapshot')}
@@ -119,4 +119,48 @@ function Save-PublicationIntentFile {
  }
  if(-not [string]::Equals((Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant(),$expectedHash,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Arquivo persistido divergente; evidencia preservada')}
  return @{Path=$path;Sha256=$expectedHash;Status='persistida_nao_autorizada'}
+}
+
+# Preserva strings ISO e chaves Ordinal; nao interpreta datas nem autoriza recuperacao.
+function ConvertFrom-PublicationJson {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Json)
+ function Read-PublicationJsonNode([Text.Json.JsonElement]$Element) {
+  switch($Element.ValueKind.ToString()){
+   'Object' {
+    $map=[hashtable]::new([StringComparer]::Ordinal)
+    foreach($property in $Element.EnumerateObject()){
+     if($map.ContainsKey($property.Name)){throw [IO.InvalidDataException]::new('JSON com chave duplicada: '+$property.Name)}
+     $map.Add($property.Name,(Read-PublicationJsonNode -Element $property.Value))
+    }
+    return $map
+   }
+   'Array' {
+    $items=[Collections.Generic.List[object]]::new()
+    foreach($child in $Element.EnumerateArray()){$items.Add((Read-PublicationJsonNode -Element $child))}
+    return ,($items.ToArray())
+   }
+   'String' {return $Element.GetString()}
+   'Number' {
+    $integer=[long]0
+    if($Element.TryGetInt64([ref]$integer)){return $integer}
+    $raw=$Element.GetRawText()
+    if($raw.IndexOfAny([char[]]@('.','e','E')) -lt 0){throw [IO.InvalidDataException]::new('JSON inteiro fora de Int64')}
+    try{$number=$Element.GetDouble()}catch{throw [IO.InvalidDataException]::new('JSON numero invalido')}
+    if(-not [double]::IsFinite($number)){throw [IO.InvalidDataException]::new('JSON numero nao finito')}
+    return $number
+   }
+   'True' {return $true}
+   'False' {return $false}
+   'Null' {return $null}
+   default {throw [IO.InvalidDataException]::new('JSON valor nao suportado')}
+  }
+ }
+ $options=[Text.Json.JsonDocumentOptions]::new()
+ $options.MaxDepth=64
+ try{$document=[Text.Json.JsonDocument]::Parse($Json,$options)}catch{throw [IO.InvalidDataException]::new('JSON invalido', $_.Exception)}
+ try{
+  if($document.RootElement.ValueKind -ne [Text.Json.JsonValueKind]::Object){throw [IO.InvalidDataException]::new('JSON raiz deve ser objeto')}
+  return (Read-PublicationJsonNode -Element $document.RootElement)
+ }finally{$document.Dispose()}
 }
