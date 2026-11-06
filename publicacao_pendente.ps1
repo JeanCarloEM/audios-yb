@@ -216,3 +216,61 @@ function Read-PublicationIntentFile {
  # Metadados de caminhos/provas continuam pendentes de validacao antes de qualquer recuperacao.
  return @{Path=$pathFull;Sha256=$actual;Data=$data;Status='dados_lidos_nao_autorizados'}
 }
+
+# Plano por leitura; depende do executor/provas/evidencias atuais fornecidos pelo principal.
+# O hash externo deve vir da referencia persistida pelo proprio fluxo, nao do arquivo lido.
+function Get-PublicationRecoveryPlan {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$Path,[Parameter(Mandatory)][string]$ExpectedSha256,
+       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+ $loaded=Read-PublicationIntentFile -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control
+ $data=$loaded.Data;$record=$data.registro;$audit=$data.auditoria
+ foreach($key in @('chave','ordem','artista','musica','url_original')){
+  if($record[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($record[$key])){throw [IO.InvalidDataException]::new('Registro incompleto: '+$key)}
+ }
+ $keyText=[string]::Join([char]31,@($record.ordem.Trim(),$record.artista.Trim(),$record.musica.Trim(),$record.url_original.Trim()))
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$key=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($keyText))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
+ if(-not [string]::Equals($key,$record.chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Chave canonica do registro divergente')}
+ if($record.aprovacao_musical -isnot [Collections.IDictionary]){throw [IO.InvalidDataException]::new('Aprovacao musical ausente')}
+ $artist=$record.artista.Trim();$song=$record.musica.Trim()
+ $proof=Resolve-MusicalApprovalProof -VideoId $data.video_id -Artist $artist -Song $song -StoredProof $record.aprovacao_musical
+ if($null -eq $proof -or -not [string]::Equals([string]$proof.video_id,$data.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.artista,$artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.musica,$song,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Aprovacao musical invalida')}
+ if($audit.validado -isnot [bool] -or -not $audit.validado -or -not [string]::Equals([string]$audit.politica,$script:Policy,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Politica de auditoria invalida')}
+ if($audit.origem_sha256 -isnot [string] -or $audit.origem_sha256 -cnotmatch '^[0-9a-fA-F]{64}$' -or $audit.origem_formato_id -isnot [string] -or [string]::IsNullOrWhiteSpace($audit.origem_formato_id) -or $audit.origem -isnot [hashtable]){throw [IO.InvalidDataException]::new('Procedencia incompleta')}
+ if(-not [string]::Equals(([string]$audit.resultado_sha256).ToLowerInvariant(),$data.sha256,[StringComparison]::Ordinal) -or $audit.origem.lossless -isnot [bool] -or -not [double]::IsFinite([double]$audit.origem.bitrate_medido_kbps) -or [double]$audit.origem.bitrate_medido_kbps -le 0){throw [IO.InvalidDataException]::new('Auditoria de origem/resultado divergente')}
+ $sourceEvidence=Test-SourceEvidence -Id $data.video_id -FormatId $audit.origem_formato_id -Hash $audit.origem_sha256.ToLowerInvariant() -Probe $audit.origem
+ if(-not $sourceEvidence.ok){throw [IO.InvalidDataException]::new('Procedencia atual nao confirmada: '+$sourceEvidence.motivo)}
+ $controlPath=[IO.Path]::GetFullPath($Control);$outPath=[IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Out))
+ if([IO.Path]::IsPathRooted($data.pronto_relativo) -or -not [string]::Equals([IO.Path]::GetFileName($data.arquivo),$data.arquivo,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Caminho de audio inseguro')}
+ $ready=[IO.Path]::GetFullPath([IO.Path]::Combine($controlPath,$data.pronto_relativo.Replace([char]'/',[IO.Path]::DirectorySeparatorChar)))
+ $relative=[IO.Path]::GetRelativePath($controlPath,$ready)
+ if([IO.Path]::IsPathRooted($relative) -or $relative -ceq '..' -or $relative.StartsWith(('..'+[IO.Path]::DirectorySeparatorChar),[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Caminho Ready fora do controle')}
+ $target=[IO.Path]::GetFullPath([IO.Path]::Combine($outPath,$data.arquivo))
+ $null=Assert-PublicationPathWithoutLinks -Path $controlPath
+ $null=Assert-PublicationPathWithoutLinks -Path $outPath
+ if(Test-Path -LiteralPath $target){
+  if(-not (Test-Path -LiteralPath $target -PathType Leaf)){throw [IO.InvalidDataException]::new('Destino existente nao e arquivo')}
+  $chosen=$target;$action='restore_state'
+ }elseif(Test-Path -LiteralPath $ready -PathType Leaf){$chosen=$ready;$action='publish'}
+ else{throw [IO.FileNotFoundException]::new('Audio da intencao ausente',$ready)}
+ $null=Assert-PublicationPathWithoutLinks -Path $chosen
+ if((Get-Item -LiteralPath $chosen).Length -ne $data.tamanho -or -not [string]::Equals((Get-FileHash -LiteralPath $chosen).Hash.ToLowerInvariant(),$data.sha256,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Hash/tamanho do audio divergente')}
+ $probe=Probe-Audio -File $chosen
+ if(-not (Test-FinalAudio -File $chosen -Probe $probe)){throw [IO.InvalidDataException]::new('Qualidade final do audio reprovada')}
+ foreach($key in @('codec','container','bitrate_nominal_bps')){
+  if(-not [string]::Equals([string]$probe[$key],[string]$data.probe[$key],[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Parametro de audio divergente: '+$key)}
+ }
+ foreach($key in @('canais','amostragem')){
+  if([long]$probe[$key] -ne [long]$data.probe[$key]){throw [IO.InvalidDataException]::new('Parametro de audio divergente: '+$key)}
+ }
+ foreach($key in @('lossless','variacao_pacotes')){
+  if($data.probe[$key] -isnot [bool] -or $probe[$key] -ne $data.probe[$key]){throw [IO.InvalidDataException]::new('Parametro de audio divergente: '+$key)}
+ }
+ foreach($key in @('duracao','bitrate_medido_kbps')){
+  $stored=[double]$data.probe[$key];$current=[double]$probe[$key]
+  if(-not [double]::IsFinite($stored) -or -not [double]::IsFinite($current) -or $stored -le 0 -or $current -le 0 -or [Math]::Abs($stored-$current) -gt 0.001){throw [IO.InvalidDataException]::new('Parametro medido divergente: '+$key)}
+ }
+ if((Get-Item -LiteralPath $chosen).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $chosen).Hash.ToLowerInvariant() -cne $data.sha256 -or (Get-FileHash -LiteralPath $loaded.Path).Hash.ToLowerInvariant() -cne $ExpectedSha256){throw [IO.InvalidDataException]::new('Arquivo mudou durante plano')}
+ return @{Status='plano_validado_sem_efeitos';Action=$action;Path=$chosen;Target=$target;Ready=$ready;IntentPath=$loaded.Path;IntentSha256=$ExpectedSha256;Data=$data;Probe=$probe;MusicalApproval=$proof;Artist=$artist;Song=$song}
+}
