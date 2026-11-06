@@ -75,9 +75,25 @@ Buscas conservam o criterio de identidade por artista/titulo e pendencia diante 
 
 `destino/.controle/relatorio.csv` e `pendencias.csv` refletem o CSV atual; `estado.json` guarda origem, analises, evidencia, conversao, hashes e rejeicoes por formato. Arquivos de trabalho e resultados nao admissiveis ficam fora dos resultados finais.
 
+## Marcador de coletanea em MP3
+
+~~~powershell
+pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Marcador '  MINHA COLETÂNEA  '
+~~~
+
+`-Marcador` e opcional e nao exige caminhos adicionais. Mantenha `editorial_audio.ps1` junto do principal para usar a opcao; o helper e carregado somente quando o valor nao e vazio. Sem marcador ou com apenas espacos, o fluxo anterior permanece. O CSV de entrada continua sendo a fonte canonica das URLs.
+
+Em novos MP3 admissiveis, o valor e normalizado em Unicode NFC, trim e capitalizacao invariante (`Minha coletânea`). FFmpeg copia o audio e os metadados para um candidato ID3v2.3 separado; ffprobe relê o campo adicional `format.tags.marcador_coletanea`. Antes de publicar, o script exige tags restantes preservadas, mesmo payload comprimido SHA-256, codec/duracao/canais/amostragem/bitrate medido compativeis e decodificacao integral. A auditoria guarda o hash da fonte e o hash dos bytes finais separadamente. Falha editorial preserva o audio admissivel e registra limitacao.
+
+No reuso, o mesmo marcador ja existente e apenas confirmado, sem reescrever ou duplicar o audio. Se o campo estiver ausente ou tiver valor diferente, o arquivo publicado permanece intacto: esta versao registra `limitacao` em `marcador_reuso` do registro e acrescenta o motivo ao relatorio. A aplicacao posterior a arquivo ja publicado e o acrescimo de multiplos valores ainda nao estao disponiveis.
+
+Escopo comprovado: Windows/PowerShell 7, MP3 e leitura por FFmpeg/ffprobe. Marcador em M4A, exibicao em players GUI e execucao deste enriquecimento em Linux/macOS nao foram homologados. A opcao nao substitui aprovacao musical, evidencia de origem ou disponibilidade do servico. Nomeacao musical, metatags editoriais gerais, capa e recuperacao integral entre publicacao e estado seguem pendentes no RCF.
+
+Verificacao: `tests/marcador_cli.tests.ps1` e executavel com `pwsh -NoProfile -File ./tests/marcador_cli.tests.ps1`. Ele reutiliza o harness de execucao unica com midia/ferramentas/provas sinteticas reais e transporte/aprovacoes simulados, verifica publicacao e duas retomadas offline (igual/conflitante), hash/tamanho do estado, campo lido e CSV preservado. Tambem passaram cinco cenarios de publicacao e as 24 verificacoes de qualidade existentes. Os testes de helpers com `-FixtureRoot` dependem da fixture e do executor de producao preparados pelo wrapper; nao sao comandos avulsos sem essa preparacao.
+
 ## Verificacao executada
 
-Testes locais em PowerShell 5.1 e 7: fontes de 96 kbps, bitrate inflado, VBR nominal superior com media inferior a 128, MP3 CBR 128, nativo 192 preservado byte a byte, FLAC documentado convertido, Opus documentado convertido, remux AAC, extensao falsa, corrupcao, ordenacao dos formatos, truncamento perante a duracao esperada e migracao/reexecucao de legado. O roteiro `tests/qualidade.tests.ps1` esta versionado. Passaram 24 verificacoes em cada versao de PowerShell. O fluxo principal tambem foi exercitado com transporte simulado e documento/hash reais da fixture, incluindo publicacao e reexecucao sem duplicacao.
+O principal atual requer PowerShell 7+. Nesta revisao, testes locais em Windows/PowerShell 7 verificaram: fontes de 96 kbps, bitrate inflado, VBR nominal superior com media inferior a 128, MP3 CBR 128, nativo 192 preservado byte a byte, FLAC documentado convertido, Opus documentado convertido, remux AAC, extensao falsa, corrupcao, ordenacao dos formatos, truncamento perante a duracao esperada e migracao/reexecucao de legado. O roteiro `tests/qualidade.tests.ps1` esta versionado. A suite atual passou nas 24 verificacoes em PowerShell 7 apos a integracao do marcador. O fluxo principal tambem foi exercitado com transporte simulado e documento/hash reais da fixture, incluindo publicacao e reexecucao sem duplicacao.
 
 As fixtures sinteticas tem historico conhecido porque sao geradas localmente para o teste. Isso nao comprova a procedencia dos videos reais do CSV. A aprovacao manual de identidade e a autenticidade de documentos externos nao foram homologadas por esses testes.
 

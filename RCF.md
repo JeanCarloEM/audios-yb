@@ -26,10 +26,11 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `execucao_unica.ps1` | Escolha e três confirmações no modo explícito; validação de aprovação musical atual/persistida com identidade exata. O helper histórico de caminho JSON não é chamado. |
 | `evidencias_fonte.ps1` | Descoberta local, leitura e vinculação de manifestos de procedência a documentos locais e hashes; reúne duplicatas idênticas entre manifestos e exclui chaves conflitantes. |
 | `autenticacao_ytdlp.ps1` | Argumentos de sessão explicitamente fornecida por cookies Netscape ou navegador suportado. |
+| `editorial_audio.ps1` | Normalização/decisão do marcador, leitura e preservação de tags/payload, candidato MP3 e verificação técnica antes da publicação; carregado somente para marcador não vazio. |
 | `coletanea_uber_instrumental_candidatas.csv` | Entrada canônica existente: 372 linhas, 370 buscas e dois vídeos diretos; sugestões NÃO são auditoria musical. |
 | `evidencias.exemplo.json` | Modelo com valores fictícios; NÃO é evidência utilizável. |
 | `ferramentas.json` | Registro de fornecedor, versão FFmpeg e hashes de três executáveis; NÃO é um instalador nem uma verificação automática de confiança. |
-| `tests/*.tests.ps1` | Treze roteiros, incluindo integração Linux, descoberta nativa, ordenação, evidências, aprovação musical e preflight. Cobertura parametrizada é distinguida de execução por sistema. |
+| `tests/*.tests.ps1` | Roteiros de verificação, incluindo integração Linux, descoberta nativa, ordenação, evidências, aprovação musical e preflight. Cobertura parametrizada é distinguida de execução por sistema. |
 
 **[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os cinco helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
 
@@ -70,8 +71,10 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `-ReavaliarPendentes` | Ignora cache de buscas e permite reconsulta pertinente; não aprova candidatos nem relaxa qualidade. |
 | `-ResultadosPorBusca` | Inteiro de 3 a 12; padrão 7. Limita candidatos consultados, não garante identificação. |
 | `-MaxTentativas` | Inteiro de 1 a 4; padrão 2. Limita chamadas externas por operação no wrapper; não é o total de pedidos HTTP internos do yt-dlp. |
+| `-Destino` | Raiz de saída opcional; relativa à raiz do script ou absoluta. Controle acompanha a raiz. Padrão destino/. |
+| `-Marcador` | Texto opcional, ao fim dos parâmetros. Vazio equivale a ausente. Novos MP3: campo adicional verificado. Reuso: confirmar igual ou registrar limitação sem alterar arquivo; ver 7.3. |
 
-**[A]** Não há parâmetros implementados de destino, modelo de nome, largura de faixa, capitalização, metatags, capa ou marcador comum. **[R/F]** Caminhos, nomes e organização DEVEM tornar-se configuráveis por parâmetros, mantendo os padrões atuais quando não sobrescritos. As opções futuras especificadas na seção 7 NÃO DEVEM constar de exemplos executáveis da versão atual.
+**[A]** Destino e marcador estão implementados nos limites acima. Não há parâmetros implementados de modelo de nome, largura de faixa, capitalização, metatags editoriais gerais ou capa. **[R/F]** Caminhos, nomes e organização DEVEM tornar-se configuráveis por parâmetros, mantendo os padrões atuais quando não sobrescritos. As opções futuras especificadas na seção 7 NÃO DEVEM constar de exemplos executáveis da versão atual.
 
 ### 3.3 Exemplos utilizáveis com a interface atual
 
@@ -240,9 +243,16 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 
 ### 7.3 Marcador comum opcional
 
-**[R/F]** A interface futura DEVE oferecer `-Marcador` opcional, comum aos downloads da invocação e cumulativo aos demais metadados. Ausência NÃO altera tags; valor vazio após trim equivale a ausente. Valor informado DEVE ser normalizado em Unicode NFC, com espaços externos removidos, primeira letra em maiúscula e demais letras em minúscula por regra invariante; espaços internos, acentos, dígitos e pontuação DEVEM conservar significado. Exemplo: `  MINHA COLETÂNEA  ` → `Minha coletânea`. Valor sem letras DEVE ser preservado após trim/NFC, sem “capitalização” fictícia.
+**[R]** A interface DEVE oferecer `-Marcador` opcional, comum aos downloads da invocação e cumulativo aos demais metadados. Ausência NÃO altera tags; valor vazio após trim equivale a ausente. Valor informado DEVE ser normalizado em Unicode NFC, com espaços externos removidos, primeira letra em maiúscula e demais letras em minúscula por regra invariante; espaços internos, acentos, dígitos e pontuação DEVEM conservar significado. Exemplo: `  MINHA COLETÂNEA  ` → `Minha coletânea`. Valor sem letras DEVE ser preservado após trim/NFC, sem “capitalização” fictícia.
 
-**[R/F]** O marcador DEVE usar um campo adicional semanticamente próprio, de nome lógico `marcador_coletanea`; mapeamento físico para cada contêiner/ferramenta/player DEVE ser documentado e testado antes de declarar suporte. NÃO DEVE substituir artista, título, álbum, gênero, comentário ou outro campo de significado distinto. Se um campo adicional suportar múltiplos valores, um novo marcador DEVE ser acrescentado sem duplicatas; sem suporte compatível, DEVE registrar limitação/preservar os demais dados e NÃO alegar que o marcador foi incorporado. Reexecução com marcador NÃO DEVE duplicar áudio nem aplicar enriquecimento repetitivo desnecessário. Não há suporte atual demonstrado a essa opção.
+**[R/F]** O marcador DEVE usar um campo adicional semanticamente próprio, de nome lógico `marcador_coletanea`; mapeamento físico para cada contêiner/ferramenta/player DEVE ser documentado e testado antes de declarar suporte. NÃO DEVE substituir artista, título, álbum, gênero, comentário ou outro campo de significado distinto. Se um campo adicional suportar múltiplos valores, um novo marcador DEVE ser acrescentado sem duplicatas; sem suporte compatível, DEVE registrar limitação/preservar os demais dados e NÃO alegar que o marcador foi incorporado. Reexecução com marcador NÃO DEVE duplicar áudio nem aplicar enriquecimento repetitivo desnecessário. 
+
+**[A] Suporte delimitado implementado:** `-Marcador` foi acrescentado ao fim da lista de parâmetros, sem mudar posições anteriores. `editorial_audio.ps1` é carregado da raiz do script somente para pedido não vazio. Em novos MP3 admissíveis, FFmpeg cria candidato separado por cópia do fluxo e dos metadados, com ID3v2.3 e `-metadata marcador_coletanea=VALOR`; ffprobe lê o campo em `format.tags.marcador_coletanea`. Normalização, preservação dos demais campos e payload comprimido, decodificação integral, parâmetros medidos e hashes antes/depois são verificados antes da publicação. A auditoria conserva o hash da fonte e atualiza o hash final. Ausência/vazio mantém o comportamento anterior.
+
+**[A] Reuso e limites:** marcador igual já gravado é confirmado sem reescrever/duplicar áudio. Campo ausente ou diferente em arquivo publicado permanece intacto; `marcador_reuso.status=limitacao` e o motivo no relatório impedem alegar incorporação. Atualização posterior de arquivo publicado, multivalor, M4A, players GUI e este enriquecimento em Linux/macOS continuam sem suporte/homologação. O mapeamento acima foi observado apenas com MP3/FFmpeg/ffprobe no Windows/PowerShell 7, não com todos os leitores ID3. Não há aceite integral desta seção nem do RCF.
+
+**[A] Evidência específica:** `tests/marcador_cli.tests.ps1` concluiu uma publicação e duas retomadas offline com marcador igual/conflitante, arquivo único/hash inalterado no reuso, hashes/tamanho do estado corretos e CSV canônico preservado. Mídia e ferramentas são reais; transporte e aprovações são simulados. Passaram também os cinco cenários de `tests/marcador_publicacao.tests.ps1`, as 24 verificações de qualidade e as oito variantes legadas de retomada musical. Os testes de helpers com `-FixtureRoot` exigem fixture e executor de produção preparados pelo wrapper, diferentemente do roteiro CLI autônomo.
+
 
 ## 8. Verificação, lacunas e aceite bloqueante
 
@@ -274,7 +284,7 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Csv coletanea_uber_instrumental
 | Modo sem perguntas por padrão implementado; identidade musical não é comprovada pelo modo de execução | Preservar interação explícita e tratar separadamente a barreira universal de versão/vocais e alternativas legítimas. |
 | Descoberta nativa e escopo Linux real acima verificados; macOS, outras arquiteturas/montagens e acesso remoto Linux não homologados | Validar somente ambientes efetivamente disponíveis e distinguir transporte simulado, sem presumir execução de PE nem compatibilidade universal. |
 | Destino parametrizado; nomeação e tratamento editorial novos ainda ausentes | Preservar saída padrão e parametrizar nomes/mapeamentos confiáveis sem renomear/perder arquivos válidos. |
-| Sem metatags/capa/marcador; validador só admite um stream | Enriquecimento opcional com preservação de fluxo, exceção restrita para imagem e leitura posterior verificável. |
+| Marcador em novos MP3 verificado via FFmpeg/ffprobe; metatags editoriais gerais/capa e outros contêineres/leitores pendentes; validador só admite um stream | Enriquecimento opcional com preservação de fluxo, exceção restrita para imagem e leitura posterior verificável. |
 | Aprovação explícita agora exigida inclusive em direto/automático/reuso; verdade da conferência humana não é autenticada pelo software | Exigir conferência real e manter pendência quando faltam dados; nunca inferir instrumentalidade de título/canal. |
 | Manifesto valida mínimo histórico e vincula hashes, mas não autentica a verdade da cadeia | Exigir prova suficiente e manter pendência diante de inconsistências; não certificar fidelidade apenas pela declaração. |
 | Desempate e tentativas por ID literal implementados; janelas de crash e relatórios auxiliares ainda não integralmente cobertos | Preservar ordenação estável e desenvolver recuperação rastreável/testes das condições restantes, sem alegações antecipadas. |
