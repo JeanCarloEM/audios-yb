@@ -1,4 +1,4 @@
-﻿#requires -Version 7.0
+#requires -Version 7.0
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $repo=Split-Path $PSScriptRoot -Parent
@@ -7,7 +7,7 @@ $case=Join-Path $work 'script com acento á'
 $foreign=Join-Path $work 'cwd externo'
 [void][IO.Directory]::CreateDirectory($case)
 [void][IO.Directory]::CreateDirectory($foreign)
-foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','yt-dlp.exe','ffmpeg.exe','ffprobe.exe')){
+foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1','yt-dlp.exe','ffmpeg.exe','ffprobe.exe')){
  [IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name))
 }
 $csv=Join-Path $case 'fonte canônica.csv'
@@ -88,10 +88,12 @@ for($i=0;$i -lt $values.Count;$i++){if($got[$i] -cne $values[$i]){throw ('Argume
 # Sem yt-dlp: inicializacao deve falhar antes de criar destino/estado.
 $missing=Join-Path $work 'ferramenta ausente'
 [void][IO.Directory]::CreateDirectory($missing)
-foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1')){
+foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){
  [IO.File]::Copy((Join-Path $repo $name),(Join-Path $missing $name))
 }
 $failedLog=& $pwsh -NoProfile -File (Join-Path $missing 'baixar_audios_ytdlp.ps1') -SomenteAuditarExistentes -NaoInterativo 2>&1
 if($LASTEXITCODE -ne 2 -or ($failedLog|Out-String) -notmatch 'yt-dlp.exe'){throw 'Preflight nao diagnosticou dependencia ausente'}
 if(Test-Path -LiteralPath (Join-Path $missing 'destino')){throw 'Preflight ausente criou destino'}
+# O processo negativo acima retornou 2 como exigido; nao propagar esse codigo como resultado do roteiro.
+$global:LASTEXITCODE=0
 Write-Output 'INTEGRACAO_PORTATIL_PASS: CSV automatico/URL canonica, dois cwd, processo argv real; sem rede/browser'

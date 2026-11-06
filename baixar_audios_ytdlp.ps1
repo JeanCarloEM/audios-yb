@@ -46,6 +46,7 @@ if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
 . (Join-Path $script:Root 'autenticacao_ytdlp.ps1')
 . (Join-Path $script:Root 'ferramentas_portateis.ps1')
+. (Join-Path $script:Root 'publicacao_pendente.ps1')
 $script:Out = if ([string]::IsNullOrWhiteSpace($Destino)) { $script:Layout.Out } else { Resolve-ScriptInput -Path $Destino -Root $script:Root }
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
@@ -777,7 +778,7 @@ try {
     try { $script:Lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
     catch { throw 'Outra instancia esta usando este destino (ou lock indisponivel).' }
     if ([IO.File]::Exists($script:StateFile)) {
-        $script:State = To-Hashtable (Get-Content -LiteralPath $script:StateFile -Raw -Encoding UTF8 | ConvertFrom-Json)
+        $script:State = ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText($script:StateFile,[Text.UTF8Encoding]::new($false,$true)))
         foreach ($section in @('registros', 'videos', 'buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
     }
     foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {

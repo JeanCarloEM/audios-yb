@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 $harness=Join-Path $repo 'tests/execucao_unica.tests.ps1'
-if((Get-FileHash -LiteralPath $harness).Hash -cne '577E25989E3D5E9BA24BF0BB92B37D663C70A3A8E25BEBD1172FD6387BFAF472'){throw 'Harness mudou: revisar adaptacao'}
+if((Get-FileHash -LiteralPath $harness).Hash -cne 'E1B13CDB449EC9DDD19556A5C45E4E64D08A40FC54E8204B47DA4185C5D18727'){throw 'Harness mudou: revisar adaptacao'}
 $source=[IO.File]::ReadAllText($harness)
 function Replace-UniqueMarkerTest([string]$Text,[string]$Old,[string]$New){
  if($Text.IndexOf($Old,[StringComparison]::Ordinal) -lt 0 -or $Text.IndexOf($Old,[StringComparison]::Ordinal) -ne $Text.LastIndexOf($Old,[StringComparison]::Ordinal)){throw 'Ancora de teste ausente/ambigua'}
@@ -15,7 +15,7 @@ $expectedMarker='Minha colet'+[char]0x00E2+'nea'
 . (Join-Path $repo 'tests/processo_capturado.ps1')
 '@
 $source=Replace-UniqueMarkerTest $source $repoLine $injectedRoot
-$source=Replace-UniqueMarkerTest $source "'ferramentas_portateis.ps1'))" "'ferramentas_portateis.ps1','editorial_audio.ps1'))"
+$source=Replace-UniqueMarkerTest $source "'publicacao_pendente.ps1'))" "'publicacao_pendente.ps1','editorial_audio.ps1'))"
 $oldCall='else{ & $scriptPath -NaoInterativo:($mode -eq '+ "'nao_interativo'"+') -Interativo:($mode -ne '+ "'nao_interativo'"+') }'
 $newCall=$oldCall.Replace(') }',') -Marcador $cliMarker }')
 $source=Replace-UniqueMarkerTest $source $oldCall $newCall

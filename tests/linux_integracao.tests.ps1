@@ -61,7 +61,7 @@ function New-Case([string]$Name,[switch]$Mock,[switch]$Poison){
   if(-not $ResumeFixture -or -not $Mock){throw 'Caso existente nao pode ser repetido'}
   if((Test-Path -LiteralPath (Join-Path $dir 'destino')) -or (Test-Path -LiteralPath (Join-Path $dir 'download_calls.txt'))){throw 'Publicacao ja iniciada: reconciliar'}
   Assert ([IO.File]::ReadAllText((Join-Path $dir 'baixar_audios_ytdlp.ps1')) -ceq $mockSource) 'Main da fixture mudou'
-  foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1')){
+  foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){
    Assert ((Get-FileHash -LiteralPath (Join-Path $repo $helper)).Hash -ceq (Get-FileHash -LiteralPath (Join-Path $dir $helper)).Hash) ('Helper da fixture mudou: '+$helper)
   }
   Assert ([IO.File]::Exists((Join-Path $dir 'fonte conhecida.mp3'))) 'Fonte sintetica ausente'
@@ -69,7 +69,7 @@ function New-Case([string]$Name,[switch]$Mock,[switch]$Poison){
   return $dir
  }
  [void][IO.Directory]::CreateDirectory($dir)
- foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1')){[IO.File]::Copy((Join-Path $repo $helper),(Join-Path $dir $helper))}
+ foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){[IO.File]::Copy((Join-Path $repo $helper),(Join-Path $dir $helper))}
  [IO.File]::WriteAllText((Join-Path $dir 'baixar_audios_ytdlp.ps1'),$(if($Mock){$mockSource}else{$source}),[Text.UTF8Encoding]::new($true))
  $files=@{ffmpeg=$tools.Ffmpeg;ffprobe=$tools.Ffprobe}
  if(-not $Poison){$files['yt-dlp_linux']=$tools.Exe}
@@ -94,7 +94,7 @@ $canonical=Join-Path $repo $expected.source_name
 Assert ((Get-FileHash -LiteralPath $canonical).Hash.ToLowerInvariant() -ceq $expected.sha256) 'Fonte canonica mudou apos referencia independente'
 $audit=Join-Path $work 'auditoria canonica com acento á'
 if($ResumeFixture){
- foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1')){
+ foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){
   $current=Join-Path $repo $name;$cached=Join-Path $audit $name
   Assert ((Get-FileHash -LiteralPath $current).Hash -ceq (Get-FileHash -LiteralPath $cached).Hash) ('Fonte da auditoria anterior mudou: '+$name)
  }

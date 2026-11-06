@@ -1,4 +1,4 @@
-﻿#requires -Version 7.0
+#requires -Version 7.0
 param(
  [ValidateSet('positivo','controle','nao_interativo','sem_manifesto','manifesto_invalido','autonomo','conflito_modos','direto_sem_aprovacao','auto_sem_aprovacao','direto_interativo','retomada_musical','formatos_case_sensitive')]
  [ValidateCount(1,12)]
@@ -79,7 +79,7 @@ if($e.Count){throw ($e|Out-String)}
 foreach($mode in $Modes){
  $case=Join-Path $work $mode
  [void][IO.Directory]::CreateDirectory($case)
- foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
+ foreach($name in @('execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','publicacao_pendente.ps1')){[IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name),$false)}
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,(New-Object Text.UTF8Encoding -ArgumentList $true))
  $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=($mode -in @('nao_interativo','autonomo','conflito_modos','direto_sem_aprovacao','auto_sem_aprovacao'));unique=($mode -eq 'auto_sem_aprovacao');fixed=($mode -in @('direto_interativo','retomada_musical','formatos_case_sensitive'));fallback=($mode -eq 'formatos_case_sensitive');formatCalls=@();offline=$false;remotes=0;reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
