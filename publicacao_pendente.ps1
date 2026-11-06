@@ -272,5 +272,66 @@ function Get-PublicationRecoveryPlan {
   if(-not [double]::IsFinite($stored) -or -not [double]::IsFinite($current) -or $stored -le 0 -or $current -le 0 -or [Math]::Abs($stored-$current) -gt 0.001){throw [IO.InvalidDataException]::new('Parametro medido divergente: '+$key)}
  }
  if((Get-Item -LiteralPath $chosen).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $chosen).Hash.ToLowerInvariant() -cne $data.sha256 -or (Get-FileHash -LiteralPath $loaded.Path).Hash.ToLowerInvariant() -cne $ExpectedSha256){throw [IO.InvalidDataException]::new('Arquivo mudou durante plano')}
- return @{Status='plano_validado_sem_efeitos';Action=$action;Path=$chosen;Target=$target;Ready=$ready;IntentPath=$loaded.Path;IntentSha256=$ExpectedSha256;Data=$data;Probe=$probe;MusicalApproval=$proof;Artist=$artist;Song=$song}
+ return @{Status='plano_validado_sem_efeitos';Action=$action;Path=$chosen;Target=$target;Ready=$ready;IntentPath=$loaded.Path;IntentSha256=$ExpectedSha256;Data=$data;Probe=$probe;MusicalApproval=$proof;Artist=$artist;Song=$song;Evidence=$sourceEvidence}
+}
+
+# Requer o lock exclusivo adquirido pelo chamador. Mantem referencia ate State confirmado.
+function Invoke-PublicationRecovery {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$ReferenceName,
+       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+ if($ReferenceName -cnotmatch '^[0-9a-f]{64}[.]json$'){throw [ArgumentException]::new('Nome de referencia invalido')}
+ $comparison=if($IsWindows){[StringComparison]::OrdinalIgnoreCase}else{[StringComparison]::Ordinal}
+ $controlPath=[IO.Path]::GetFullPath($Control);$outPath=[IO.Path]::GetFullPath($Out)
+ if(-not [string]::Equals($controlPath,[IO.Path]::GetFullPath($script:Control),$comparison) -or -not [string]::Equals($outPath,[IO.Path]::GetFullPath($script:Out),$comparison) -or -not [string]::Equals([IO.Path]::GetFullPath($script:StateFile),(Join-Path $controlPath 'estado.json'),$comparison)){throw [ArgumentException]::new('Contexto de estado divergente')}
+ if($script:Lock -isnot [IO.FileStream] -or -not $script:Lock.CanRead -or -not $script:Lock.CanWrite -or -not [string]::Equals($script:Lock.Name,(Join-Path $controlPath 'execucao.lock'),$comparison)){throw [InvalidOperationException]::new('Lock do destino requerido')}
+ if(-not $script:State.ContainsKey('publicacoes_pendentes') -or -not $script:State.publicacoes_pendentes.ContainsKey($ReferenceName)){return @{Status='sem_pendencia';ReferenceName=$ReferenceName}}
+ $reference=$script:State.publicacoes_pendentes[$ReferenceName]
+ if($reference -isnot [hashtable] -or ($reference.versao -isnot [int] -and $reference.versao -isnot [long]) -or $reference.versao -ne 1){throw [IO.InvalidDataException]::new('Referencia de publicacao invalida')}
+ foreach($key in @('arquivo','sha256','video_id','registro_chave')){
+  if($reference[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($reference[$key])){throw [IO.InvalidDataException]::new('Referencia incompleta')}
+ }
+ if(-not [string]::Equals($reference.arquivo,$ReferenceName,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia nao corresponde ao arquivo')}
+ $null=Assert-PublicationPathWithoutLinks -Path $script:StateFile
+ $disk=ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText($script:StateFile,[Text.UTF8Encoding]::new($false,$true)))
+ if(-not $disk.ContainsKey('publicacoes_pendentes') -or -not $disk.publicacoes_pendentes.ContainsKey($ReferenceName)){throw [IO.InvalidDataException]::new('Referencia nao persistida')}
+ $persisted=$disk.publicacoes_pendentes[$ReferenceName]
+ foreach($key in @('versao','arquivo','sha256','video_id','registro_chave')){
+  if(-not [string]::Equals([string]$persisted[$key],[string]$reference[$key],[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia persistida divergente')}
+ }
+ $path=Join-Path (Join-Path $controlPath 'publicacoes_pendentes') $ReferenceName
+ $plan=Get-PublicationRecoveryPlan -Path $path -ExpectedSha256 $reference.sha256 -Control $controlPath -Out $outPath
+ $data=$plan.Data
+ if(-not [string]::Equals($data.video_id,$reference.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals($data.registro.chave,$reference.registro_chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia e registro divergentes')}
+ if($script:State.videos.ContainsKey($data.video_id)){
+  $old=$script:State.videos[$data.video_id]
+  if(-not [string]::Equals([string]$old.arquivo,$data.arquivo,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.sha256,$data.sha256,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.artista,$plan.Artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.musica,$plan.Song,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.aprovacao_musical.video_id,$data.video_id,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Conflito com video existente no estado')}
+ }
+ if((Get-FileHash -LiteralPath $plan.Path).Hash.ToLowerInvariant() -cne $data.sha256 -or (Get-Item -LiteralPath $plan.Path).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant() -cne $reference.sha256){throw [IO.InvalidDataException]::new('Arquivo mudou antes da reconciliacao')}
+ if($plan.Action -ceq 'publish'){
+  $null=Assert-PublicationPathWithoutLinks -Path $plan.Ready
+  $null=Assert-PublicationPathWithoutLinks -Path $outPath
+  [IO.File]::Move($plan.Ready,$plan.Target)
+ }elseif($plan.Action -cne 'restore_state'){throw [IO.InvalidDataException]::new('Acao de recuperacao invalida')}
+ $null=Assert-PublicationPathWithoutLinks -Path $plan.Target
+ if((Get-Item -LiteralPath $plan.Target).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $plan.Target).Hash.ToLowerInvariant() -cne $data.sha256){throw [IO.InvalidDataException]::new('Resultado publicado divergente; referencia preservada')}
+ $now=[DateTime]::UtcNow.ToString('o')
+ $audit=$data.auditoria
+ $audit.resultado=$plan.Probe;$audit.evidencia=$plan.Evidence;$audit.aprovacao_musical=$plan.MusicalApproval
+ $audit.recuperacao=@{acao=$plan.Action;intencao_sha256=$reference.sha256;verificado_utc=$now}
+ $trace=$reference.Clone();$trace.situacao='concluida'
+ $format=[IO.Path]::GetExtension($data.arquivo).TrimStart('.').ToLowerInvariant()
+ $script:State.videos[$data.video_id]=@{artista=$plan.Artist;musica=$plan.Song;arquivo=$data.arquivo;tamanho=$data.tamanho;sha256=$data.sha256;formato=$format;codec=$plan.Probe.codec;bitrate_kbps=$plan.Probe.bitrate_medido_kbps;auditoria=$audit;aprovacao_musical=$plan.MusicalApproval;verificado_utc=$now;publicacao_intencao=$trace}
+ $record=$data.registro
+ $record.auditoria=$audit;$record.aprovacao_musical=$plan.MusicalApproval;$record.arquivo=$data.arquivo;$record.formato=$format;$record.codec=$plan.Probe.codec;$record.bitrate_kbps=[string]$plan.Probe.bitrate_medido_kbps
+ $record.resultado=if($plan.Action -ceq 'publish'){'baixado'}else{'existente'}
+ $record.motivo='Publicacao recuperada: identidade, evidencia e audio revalidados'
+ $record.atualizado_utc=$now
+ $script:State.registros[$record.chave]=$record
+ # Primeiro confirmar video/registro mantendo a referencia; erro continua recuperavel.
+ $null=Save-State
+ $null=$script:State.publicacoes_pendentes.Remove($ReferenceName)
+ $null=Save-State
+ # JSON original e mantido como evidencia imutavel, referenciado pelo video concluido.
+ return @{Status='reconciliada';Action=$plan.Action;VideoId=$data.video_id;RecordKey=$record.chave;Arquivo=$data.arquivo;Sha256=$data.sha256}
 }
