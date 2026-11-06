@@ -1,4 +1,4 @@
-﻿#requires -Version 7.0
+#requires -Version 7.0
 <#
 .SYNOPSIS
     Audita um CSV e publica somente M4A/MP3 com fonte documentada e minimo medido de 128 kbps.
@@ -342,7 +342,7 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
     }
     return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
-function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia) {
+function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '') {
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
@@ -387,6 +387,11 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
         }
         if (-not $ready) { return @{ok = $false; motivo = 'Conversao/remux nao produziu resultado admissivel; fonte preservada'; auditoria = $audit } }
     }
+    if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
+        $prepared = Get-MarkerPreparedAudio -File $ready -Marker $Marcador
+        $audit.marcador = $prepared.MarkerAudit
+        $ready = $prepared.Path
+    }
     $resultProbe = Probe-Audio $ready
     if (-not (Test-FinalAudio $ready $resultProbe) -or
         [Math]::Abs($resultProbe.duracao - $sourceProbe.duracao) -gt [Math]::Max(0.25, $sourceProbe.duracao * 0.005) -or
@@ -397,6 +402,11 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
     if ([IO.File]::Exists($target)) { return @{ok = $false; motivo = 'Colisao: arquivo final existente preservado'; auditoria = $audit } }
     $audit.resultado = $resultProbe; $audit.validado = $true
     $audit.resultado_sha256 = (Get-FileHash -LiteralPath $ready -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($audit.ContainsKey('marcador') -and $audit.marcador.status -ceq 'aplicado' -and
+        -not [string]::Equals($audit.resultado_sha256, ([string]$audit.marcador.resultado_sha256).ToLowerInvariant(), [StringComparison]::Ordinal)) {
+        $audit.validado = $false
+        return @{ok = $false; motivo = 'Candidato mudou depois da verificacao editorial; fonte preservada'; auditoria = $audit }
+    }
     # Publicar apenas depois de todas as verificacoes. A fonte excepcional fica no controle.
     [IO.File]::Move($ready, $target)
     return @{ok = $true; arquivo = [IO.Path]::GetFileName($target); auditoria = $audit; probe = $resultProbe }
