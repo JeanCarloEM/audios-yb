@@ -194,3 +194,44 @@ function Assert-Mp3MarkerCandidate {
  if((Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash -cne $sourceHash -or (Get-FileHash -LiteralPath $candidatePath -Algorithm SHA256).Hash -cne $candidateHash){throw [IO.InvalidDataException]::new('Arquivo mudou durante validacao')}
  return [pscustomobject]@{Verified=$true;SourcePath=$sourcePath;CandidatePath=$candidatePath;SourceSha256=$sourceHash;CandidateSha256=$candidateHash;PayloadSha256=$sourcePayload;BeforeProbe=$beforeProbe;AfterProbe=$afterProbe}
 }
+
+# Prepara selecao sem publicar; o chamador valida o arquivo selecionado antes de publica-lo.
+function Get-MarkerPreparedAudio {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$File,
+       [AllowNull()][AllowEmptyString()][string]$Marker='')
+ if(-not (Test-Path -LiteralPath $File -PathType Leaf)){throw [IO.FileNotFoundException]::new('Arquivo ausente',$File)}
+ $source=[IO.Path]::GetFullPath($File)
+ $normalized=ConvertTo-CollectionMarker -Value $Marker
+ $result=[pscustomobject]@{Path=$source;Changed=$false;MarkerAudit=@{status='ausente';valor=$normalized}}
+ if([string]::IsNullOrEmpty($normalized)){return $result}
+ $candidate=$null
+ try {
+  if([IO.Path]::GetExtension($source).ToLowerInvariant() -ne '.mp3'){
+   $result.MarkerAudit=@{status='limitacao';valor=$normalized;motivo='Mapeamento de marcador validado somente para MP3 via FFmpeg/ffprobe'}
+   return $result
+  }
+  $snapshot=Get-AudioMetadataSnapshot -File $source -Ffprobe $script:Ffprobe
+  $decision=Get-CollectionMarkerDecision -CurrentValue ([string]$snapshot.format.tags.marcador_coletanea) -RequestedValue $normalized
+  if($decision.Action -ceq 'keep'){
+   $result.MarkerAudit=@{status='ja_presente';valor=$normalized;motivo=$decision.Reason}
+   return $result
+  }
+  if($decision.Action -cne 'apply'){
+   $result.MarkerAudit=@{status='limitacao';valor=$normalized;motivo=$decision.Reason}
+   return $result
+  }
+  $candidate=Join-Path ([IO.Path]::GetDirectoryName($source)) ('marcador-'+[guid]::NewGuid().ToString('N')+'.mp3')
+  $created=New-Mp3MarkerCandidate -File $source -Output $candidate -Marker $normalized -Ffmpeg $script:Ffmpeg
+  $proof=Assert-Mp3MarkerCandidate -File $source -Candidate $created.CandidatePath -Marker $normalized
+  if(-not $proof.Verified){throw [IO.InvalidDataException]::new('Candidato sem verificacao')}
+  $result.Path=$created.CandidatePath
+  $result.Changed=$true
+  $result.MarkerAudit=@{status='aplicado';valor=$normalized;validado=$true;origem_sha256=$proof.SourceSha256;resultado_sha256=$proof.CandidateSha256;payload_sha256=$proof.PayloadSha256}
+  return $result
+ }
+ catch {
+  $result.MarkerAudit=@{status='limitacao';valor=$normalized;motivo=$_.Exception.Message;arquivo_candidato=$candidate}
+  return $result
+ }
+}
