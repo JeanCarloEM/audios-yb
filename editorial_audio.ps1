@@ -33,3 +33,23 @@ function ConvertTo-CollectionMarker {
     }
     return $result.ToString().Normalize([Text.NormalizationForm]::FormC)
 }
+
+# RCF 7.3: decisao deterministica sem I/O, subprocessos ou midia.
+function Get-CollectionMarkerDecision {
+    [CmdletBinding()]
+    param(
+        [AllowNull()][AllowEmptyString()][string]$CurrentValue = '',
+        [AllowNull()][AllowEmptyString()][string]$RequestedValue = ''
+    )
+    $normalizedRequested = ConvertTo-CollectionMarker -Value $RequestedValue
+    if ([string]::IsNullOrEmpty($normalizedRequested)) {
+        return [PSCustomObject]@{ Action = 'keep'; Value = $CurrentValue; Reason = 'absent' }
+    }
+    if ([string]::IsNullOrEmpty($CurrentValue)) {
+        return [PSCustomObject]@{ Action = 'apply'; Value = $normalizedRequested; Reason = 'empty_field' }
+    }
+    if ([string]::Equals($normalizedRequested, $CurrentValue, [StringComparison]::Ordinal)) {
+        return [PSCustomObject]@{ Action = 'keep'; Value = $CurrentValue; Reason = 'already_present' }
+    }
+    return [PSCustomObject]@{ Action = 'unsupported'; Value = $CurrentValue; Reason = 'multiple_values_not_validated' }
+}
