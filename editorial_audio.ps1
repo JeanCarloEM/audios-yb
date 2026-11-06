@@ -53,3 +53,38 @@ function Get-CollectionMarkerDecision {
     }
     return [PSCustomObject]@{ Action = 'unsupported'; Value = $CurrentValue; Reason = 'multiple_values_not_validated' }
 }
+
+# RCF 7.3: hash comprimido de áudio via ffmpeg hash mode
+function Get-CompressedAudioHash {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$File,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Ffmpeg
+    )
+
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
+        throw [System.IO.FileNotFoundException]::new("Arquivo não encontrado: $File", $File)
+    }
+
+    $result = Invoke-Ytdlp -Executable $Ffmpeg -Arguments @('-v', 'error', '-i', $File, '-map', '0:a:0', '-c:a', 'copy', '-f', 'hash', '-hash', 'sha256', '-') -TimeoutSeconds 30
+
+    if ($result.timeout -eq $true) {
+        throw [System.TimeoutException]::new("Timeout ao processar: $File")
+    }
+
+    if ($result.code -ne 0) {
+        throw [System.InvalidOperationException]::new("Comando falhou: $($result.err)")
+    }
+
+    $match = [regex]::Match($result.out, '(?im)^SHA256=([0-9a-f]{64})\s*$')
+    if (-not $match.Success) {
+        throw [System.InvalidOperationException]::new("Hash não encontrado na saída: $($result.out)")
+    }
+
+    return $match.Groups[1].Value.ToUpperInvariant()
+}
