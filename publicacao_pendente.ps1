@@ -58,3 +58,65 @@ function New-PublicationIntentSnapshot {
   registro=$copy.registro;auditoria=$copy.auditoria;probe=$copy.probe;criado_utc=[DateTime]::UtcNow.ToString('o')
  }
 }
+
+# Recusa reparse points existentes; nao promete imunidade a alteracoes externas concorrentes.
+function Assert-PublicationPathWithoutLinks {
+ param([Parameter(Mandatory)][string]$Path)
+ $current=[IO.Path]::GetFullPath($Path)
+ while(-not [string]::IsNullOrEmpty($current)){
+  $item=Get-Item -LiteralPath $current -Force -ErrorAction Stop
+  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw [NotSupportedException]::new('Reparse point nao suportado: '+$current)}
+  $current=[IO.Path]::GetDirectoryName([IO.Path]::TrimEndingDirectorySeparator($current))
+ }
+}
+
+# Persistencia de dados apenas. Nenhuma autorizacao de mover audio ou restaurar State.
+function Save-PublicationIntentFile {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][hashtable]$Snapshot,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Control,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Out)
+ if(-not [string]::Equals([string]$Snapshot.schema,'audios-yb-publication-intent/v1',[StringComparison]::Ordinal) -or -not [string]::Equals([string]$Snapshot.status,'preparada_nao_persistida',[StringComparison]::Ordinal)){throw [ArgumentException]::new('Schema/status do snapshot invalido')}
+ foreach($key in @('pronto_relativo','arquivo','criado_utc','sha256')){
+  if($Snapshot[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($Snapshot[$key])){throw [ArgumentException]::new('Campo ausente: '+$key)}
+ }
+ if([IO.Path]::IsPathRooted($Snapshot.pronto_relativo) -or -not [string]::Equals([IO.Path]::GetFileName($Snapshot.arquivo),$Snapshot.arquivo,[StringComparison]::Ordinal)){throw [ArgumentException]::new('Caminho do snapshot invalido')}
+ $controlPath=[IO.Path]::GetFullPath($Control)
+ $outPath=[IO.Path]::GetFullPath($Out)
+ $ready=[IO.Path]::GetFullPath([IO.Path]::Combine($controlPath,$Snapshot.pronto_relativo.Replace([char]'/',[IO.Path]::DirectorySeparatorChar)))
+ $null=Assert-PublicationPathWithoutLinks -Path $controlPath
+ $null=Assert-PublicationPathWithoutLinks -Path $outPath
+ $null=Assert-PublicationPathWithoutLinks -Path $ready
+ $fresh=New-PublicationIntentSnapshot -Ready $ready -Target (Join-Path $outPath $Snapshot.arquivo) -Control $controlPath -Out $outPath -VideoId $Snapshot.video_id -Record $Snapshot.registro -Audit $Snapshot.auditoria -Probe $Snapshot.probe
+ if(-not [string]::Equals($Snapshot.pronto_relativo,$fresh.pronto_relativo,[StringComparison]::Ordinal) -or $Snapshot.tamanho -isnot [long] -and $Snapshot.tamanho -isnot [int]){throw [IO.InvalidDataException]::new('Dados de caminho/tamanho divergentes')}
+ if($Snapshot.tamanho -ne $fresh.tamanho -or -not [string]::Equals($Snapshot.sha256,$fresh.sha256,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Hash/tamanho do snapshot divergente')}
+ try{$created=[DateTimeOffset]::Parse($Snapshot.criado_utc,[Globalization.CultureInfo]::InvariantCulture)}catch{throw [ArgumentException]::new('Timestamp invalido')}
+ if($created.Offset -ne [TimeSpan]::Zero){throw [ArgumentException]::new('Timestamp deve ser UTC')}
+ $fresh.criado_utc=$Snapshot.criado_utc
+ $fresh.status='preparada'
+ $fresh.persistido_utc=[DateTime]::UtcNow.ToString('o')
+ $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($fresh|ConvertTo-Json -Depth 25 -WarningAction Stop))
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{
+  $name=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($fresh.video_id))).Replace('-','').ToLowerInvariant()+'.json'
+  $expectedHash=[BitConverter]::ToString($sha.ComputeHash($bytes)).Replace('-','').ToLowerInvariant()
+ }finally{$sha.Dispose()}
+ $directory=Join-Path $controlPath 'publicacoes_pendentes'
+ if((Test-Path -LiteralPath $directory) -and -not (Test-Path -LiteralPath $directory -PathType Container)){throw [IO.IOException]::new('Diretorio de intencoes invalido')}
+ $null=[IO.Directory]::CreateDirectory($directory)
+ $null=Assert-PublicationPathWithoutLinks -Path $directory
+ $path=Join-Path $directory $name
+ if(Test-Path -LiteralPath $path){throw [IO.IOException]::new('Intencao existente preservada')}
+ $temp=Join-Path $directory ('.'+[guid]::NewGuid().ToString('N')+'.tmp')
+ $owned=$false
+ try{
+  $stream=[IO.FileStream]::new($temp,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  $owned=$true
+  try{$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}finally{$stream.Dispose()}
+  [IO.File]::Move($temp,$path)
+ }finally{
+  if($owned -and [IO.File]::Exists($temp)){[IO.File]::Delete($temp)}
+ }
+ if(-not [string]::Equals((Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant(),$expectedHash,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Arquivo persistido divergente; evidencia preservada')}
+ return @{Path=$path;Sha256=$expectedHash;Status='persistida_nao_autorizada'}
+}
