@@ -88,3 +88,17 @@ function Get-CompressedAudioHash {
 
     return $match.Groups[1].Value.ToUpperInvariant()
 }
+
+
+function Get-AudioMetadataSnapshot {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$File,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Ffprobe)
+ if(-not (Test-Path -LiteralPath $File -PathType Leaf)){throw [IO.FileNotFoundException]::new('Arquivo ausente',$File)}
+ $run=Invoke-Ytdlp -Executable $Ffprobe -Arguments @('-v','error','-protocol_whitelist','file','-show_streams','-show_format','-of','json','-i',$File) -TimeoutSeconds 30
+ if($run.timeout){throw [TimeoutException]::new('Timeout ao ler metadados')}
+ if($run.code -ne 0){throw [InvalidOperationException]::new('ffprobe: '+$run.err)}
+ $info=ConvertFrom-Json -InputObject $run.out -ErrorAction Stop
+ if($null -eq $info.format -or @($info.streams).Count -ne 1 -or $info.streams[0].codec_type -cne 'audio'){throw [IO.InvalidDataException]::new('Exigir formato e exatamente um stream de audio')}
+ return $info
+}
