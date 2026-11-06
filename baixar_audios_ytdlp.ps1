@@ -27,7 +27,8 @@ param(
     [switch]$ReavaliarPendentes,
     [ValidateRange(3, 12)][int]$ResultadosPorBusca = 7,
     [ValidateRange(1, 4)][int]$MaxTentativas = 2,
-    [string]$Destino
+    [string]$Destino,
+    [AllowNull()][AllowEmptyString()][string]$Marcador = ''
 )
 
 Set-StrictMode -Version 1.0
@@ -35,6 +36,11 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ambiente_portatil.ps1')
 $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
+$script:MarcadorSolicitado = ''
+if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
+    . (Join-Path $script:Root 'editorial_audio.ps1')
+    $script:MarcadorSolicitado = ConvertTo-CollectionMarker -Value $Marcador
+}
 # Fluxo interativo na mesma execucao.
 . (Join-Path $script:Root 'execucao_unica.ps1')
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
@@ -463,7 +469,7 @@ function Audit-Legacy {
         [IO.File]::Move($file.FullName, (Join-Path $dir $name))
     }
 }
-function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$Song) {
+function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$Song, [string]$Marcador = '') {
     if (-not $script:State.videos.ContainsKey($Id)) { return $null }
     $v = $script:State.videos[$Id]
     if (-not $v.auditoria -or $v.auditoria.politica -ne $script:Policy -or -not $v.auditoria.validado) {
@@ -484,7 +490,23 @@ function Existing-Video([string]$Id, [string]$Order, [string]$Artist, [string]$S
     if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$v.sha256) { return $null }
     $probe = Probe-Audio $file
     if (-not (Test-FinalAudio $file $probe)) { return @{conflito = $true; qualidade = $true; motivo = 'Arquivo existente reprovado na politica de qualidade atual' } }
-    return @{ conflito = $false; arquivo = $name; formato = [string]$v.formato }
+    $result = @{ conflito = $false; arquivo = $name; formato = [string]$v.formato }
+    if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
+        $normalized = ConvertTo-CollectionMarker -Value $Marcador
+        $result.marcador = @{status='limitacao';valor=$normalized;motivo='Arquivo publicado preservado; aplicacao posterior do marcador ainda indisponivel'}
+        try {
+            if ([IO.Path]::GetExtension($file).ToLowerInvariant() -eq '.mp3') {
+                $metadata = Get-AudioMetadataSnapshot -File $file -Ffprobe $script:Ffprobe
+                $decision = Get-CollectionMarkerDecision -CurrentValue ([string]$metadata.format.tags.marcador_coletanea) -RequestedValue $normalized
+                if ($decision.Action -ceq 'keep') {
+                    $result.marcador = @{status='ja_presente';valor=$normalized;motivo=$decision.Reason}
+                } elseif ($decision.Action -ceq 'unsupported') {
+                    $result.marcador.motivo = $decision.Reason
+                }
+            } else { $result.marcador.motivo = 'Mapeamento de marcador validado somente para MP3 via FFmpeg/ffprobe' }
+        } catch { $result.marcador.motivo = $_.Exception.Message }
+    }
+    return $result
 }
 function Sort-AudioFormats([object[]]$Items) {
     $sorted = [System.Collections.Generic.List[object]]::new()
@@ -820,14 +842,19 @@ try {
                 if ($null -eq $reuseProof) {
                     Finalize-Record $rec 'pendente_auditoria' 'Arquivo preservado: versao e ausencia de vocais sem aprovacao musical valida'; continue
                 }
-                $prior = Existing-Video $reuseId $order $artist $song
+                $prior = Existing-Video $reuseId $order $artist $song -Marcador $script:MarcadorSolicitado
                 if ($prior -and -not $prior.conflito) {
+                    $markerNote = ''
+                    if (-not [string]::IsNullOrEmpty($script:MarcadorSolicitado)) {
+                        $rec.marcador_reuso = $prior.marcador
+                        if ($prior.marcador.status -ceq 'limitacao') { $markerNote = ' | Marcador: ' + $prior.marcador.motivo }
+                    }
                     $script:State.videos[$reuseId].aprovacao_musical = $reuseProof
                     $rec.aprovacao_musical = $reuseProof
                     $rec.auditoria = $script:State.videos[$reuseId].auditoria
                     $rec.auditoria['aprovacao_musical'] = $reuseProof
                     $rec.arquivo = $prior.arquivo; $rec.formato = $prior.formato
-                    Finalize-Record $rec 'existente' 'Reexecucao: arquivo integro e aprovacao musical revalidados'
+                    Finalize-Record $rec 'existente' ('Reexecucao: arquivo integro e aprovacao musical revalidados' + $markerNote)
                     continue
                 }
                 $reason = if ($prior -and $prior.qualidade) { $prior.motivo }else { 'Registro anterior sem arquivo integro; investigar antes de baixar novamente' }
@@ -921,12 +948,17 @@ try {
                 continue
             }
             $rec.aprovacao_musical = $musicalProof
-            $prev = Existing-Video $videoId $order $artist $song
+            $prev = Existing-Video $videoId $order $artist $song -Marcador $script:MarcadorSolicitado
             if ($prev -and $prev.conflito) { $status = if ($prev.qualidade) { 'pendente_qualidade' }else { 'falha' }; Finalize-Record $rec $status $prev.motivo; continue }
             if ($prev) {
+                $markerNote = ''
+                if (-not [string]::IsNullOrEmpty($script:MarcadorSolicitado)) {
+                    $rec.marcador_reuso = $prev.marcador
+                    if ($prev.marcador.status -ceq 'limitacao') { $markerNote = ' | Marcador: ' + $prev.marcador.motivo }
+                }
                 $script:State.videos[$videoId].aprovacao_musical = $musicalProof
                 $rec.arquivo = $prev.arquivo; $rec.formato = $prev.formato
-                Finalize-Record $rec 'existente' 'Arquivo auditado, tamanho e SHA-256 preservados; download dispensado'; continue
+                Finalize-Record $rec 'existente' ('Arquivo auditado, tamanho e SHA-256 preservados; download dispensado' + $markerNote); continue
             }
             if ($script:NetworkSuspended) { Finalize-Record $rec 'pendente_acesso' 'Acesso remoto suspenso apos limite de acesso ou confirmacao anti-bot'; continue }
             $infoCheck = Get-Info $videoId
@@ -1006,7 +1038,7 @@ try {
                     $lastError = 'Arquivo inferior a 97% do tamanho informado pela origem; nao aceitar como completo'
                     break
                 }
-                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) }
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado }
                 catch {
                     $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
                         auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
