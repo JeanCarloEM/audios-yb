@@ -102,3 +102,25 @@ function Get-AudioMetadataSnapshot {
  if($null -eq $info.format -or @($info.streams).Count -ne 1 -or $info.streams[0].codec_type -cne 'audio'){throw [IO.InvalidDataException]::new('Exigir formato e exatamente um stream de audio')}
  return $info
 }
+
+# Candidato ainda nao validado: validar qualidade, tags e payload antes de publicar.
+function New-Mp3MarkerCandidate {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$File,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Output,
+       [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string]$Marker,
+       [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Ffmpeg)
+ if(-not (Test-Path -LiteralPath $File -PathType Leaf)){throw [IO.FileNotFoundException]::new('Arquivo ausente',$File)}
+ $sourcePath=[IO.Path]::GetFullPath($File); $candidatePath=[IO.Path]::GetFullPath($Output)
+ $comparison=if($IsWindows){[StringComparison]::OrdinalIgnoreCase}else{[StringComparison]::Ordinal}
+ if([string]::Equals($sourcePath,$candidatePath,$comparison)){throw [ArgumentException]::new('Candidato deve diferir da fonte')}
+ if(Test-Path -LiteralPath $candidatePath){throw [IO.IOException]::new('Destino ja existe')}
+ $normalized=ConvertTo-CollectionMarker -Value $Marker
+ if([string]::IsNullOrEmpty($normalized)){throw [ArgumentException]::new('Marcador vazio')}
+ $run=Invoke-Ytdlp -Executable $Ffmpeg -Arguments @('-nostdin','-v','error','-protocol_whitelist','file','-i',$sourcePath,'-map','0:a:0','-map_metadata','0','-c:a','copy','-id3v2_version','3','-metadata',('marcador_coletanea='+$normalized),'-n',$candidatePath) -TimeoutSeconds 180
+ if($run.timeout){throw [TimeoutException]::new('Timeout ao criar candidato')}
+ if($run.code -ne 0){throw [InvalidOperationException]::new('ffmpeg: '+$run.err)}
+ if(-not (Test-Path -LiteralPath $candidatePath -PathType Leaf)){throw [IO.InvalidDataException]::new('Candidato ausente')}
+ if((Get-Item -LiteralPath $candidatePath).Length -le 0){throw [IO.InvalidDataException]::new('Candidato vazio')}
+ return [pscustomobject]@{SourcePath=$sourcePath;CandidatePath=$candidatePath;Marker=$normalized;Validated=$false}
+}
