@@ -103,17 +103,26 @@ function To-Hashtable($Item) {
     return $Item
 }
 function Save-State {
+    # Recusar truncamento antes de criar arquivos ou substituir o estado anterior.
+    $json = $script:State | ConvertTo-Json -Depth 25 -WarningAction Stop
+    $bytes = $script:Utf8.GetBytes($json)
     $tmp = Join-Path $script:Control ('.estado.' + [guid]::NewGuid().ToString('N') + '.tmp')
     $backup = Join-Path $script:Control ('.estado.' + [guid]::NewGuid().ToString('N') + '.bak')
-    [IO.File]::WriteAllText($tmp, ($script:State | ConvertTo-Json -Depth 25), $script:Utf8)
+    $committed = $false
     try {
-        # PowerShell 7/.NET atual rejeita backup nulo em File.Replace.
+        $stream = [IO.FileStream]::new($tmp, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        try {
+            $stream.Write($bytes, 0, $bytes.Length)
+            $stream.Flush($true)
+        } finally { $stream.Dispose() }
         if ([IO.File]::Exists($script:StateFile)) { [IO.File]::Replace($tmp, $script:StateFile, $backup) }
         else { [IO.File]::Move($tmp, $script:StateFile) }
+        $committed = $true
     }
     finally {
         if ([IO.File]::Exists($tmp)) { [IO.File]::Delete($tmp) }
-        if ([IO.File]::Exists($backup)) { [IO.File]::Delete($backup) }
+        # Uma falha de substituicao nao autoriza descartar o backup recuperavel.
+        if ($committed -and [IO.File]::Exists($backup)) { [IO.File]::Delete($backup) }
     }
 }
 function Quote-WindowsArg([string]$Argument) {
