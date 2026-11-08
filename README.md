@@ -125,3 +125,19 @@ Na inicializacao seguinte, as referencias persistidas sao reconciliadas antes da
 Evidencias Windows: tests/publicacao_produtor_cli.tests.ps1 verificou referencia duravel antes do movimento, publicacao normal, falha real de I/O apos o movimento e retomada offline sem novo transporte/perguntas. tests/publicacao_retomada_cli.tests.ps1 verificou recuperacao na inicializacao e protecao durante auditoria. tests/estado_duravel.tests.ps1 verificou serializacao recusada antes de efeitos, escrita/substituicao e preservacao de temporario alheio em colisao real de CreateNew; o controle negativo detectou o escritor anterior a correcao f303115. Midia, ferramentas e filesystem reais; transporte e confirmacoes musicais simulados.
 
 A versao 7ad976f foi tambem executada no Ubuntu WSL 24.04.1, PS7.6.9, com ferramentas ELF em /tmp: referencia/journal/hash, publicacao MP3 sintetica, reuso sem novo download, CSV canonico de 372 linhas e rejeicao de PE foram confirmados. As provas locais ficam em tests/.runtime-publication-linux-current/ (ignorado pelo Git). A correcao posterior f303115 de propriedade do temporario foi testada no Windows; nao foi reexecutada nesse ensaio Linux. Nao houve novo download remoto nem homologacao de macOS ou aderencia integral ao RCF.
+
+## Nomeação musical opcional
+
+O padrão continua sendo `-ModeloNome Legado`: `Ordem - Artista - Musica [ID].ext`, a partir do CSV canônico. Para selecionar a convenção musical, declare as colunas cujo significado foi conferido. Quando `Musica` contém o título musical:
+
+```powershell
+pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -ModeloNome Musical -ColunaTitulo Musica
+```
+
+`-ColunaAutor`, `-ColunaTrack` e `-ColunaTitulo` recebem nomes literais de colunas do mesmo CSV; a comparação distingue maiúsculas/minúsculas. Autor e faixa não mapeados são omitidos. Não se presume que `Artista` seja compositor nem que `Ordem` seja faixa: qualquer equivalência exige declaração e conferência. Os componentes presentes seguem `Autor - Track - Titulo [ID].ext`, com sanitização e limites de caminho existentes.
+
+`-LarguraTrack` é opcional: aceita 1..145, preenche zeros somente quando informada e nunca trunca números maiores. Sem largura, não há padding automático. Em modo Musical, título insuficiente ou mapeamento inválido mantém o nome legado e registra `nomeacao.pendente_editorial=true`. O estado e o journal guardam o modelo, as colunas declaradas e o motivo. Arquivos válidos já publicados conservam nome e áudio mesmo com opções diferentes no reuso.
+
+Mantenha `nomeacao_editorial.ps1` e `mapeamento_nomeacao.ps1` junto do principal para usar Musical; seu carregamento é condicional. Isso não muda a descoberta do CSV, sua função canônica para URLs, as aprovações ou a qualidade exigida, nem grava tags ou capas.
+
+Verificação Windows/PowerShell 7+: cinco cenários de publicação, journal e reuso offline preservaram nome e hashes de CSV/áudio, sem novo transporte ou perguntas no reuso. Foi usada mídia MP3 sintética real com transporte e confirmações simulados. Esses novos parâmetros não foram ensaiados em Linux/macOS; não houve novo download remoto nem comprovação de 372 downloads.
