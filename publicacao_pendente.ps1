@@ -344,3 +344,30 @@ function Assert-PublicationContext {
  if(-not [string]::Equals($controlPath,[IO.Path]::GetFullPath($script:Control),$comparison) -or -not [string]::Equals($outPath,[IO.Path]::GetFullPath($script:Out),$comparison) -or -not [string]::Equals([IO.Path]::GetFullPath($script:StateFile),(Join-Path $controlPath 'estado.json'),$comparison)){throw [ArgumentException]::new('Contexto de estado divergente')}
  if($script:Lock -isnot [IO.FileStream] -or -not $script:Lock.CanRead -or -not $script:Lock.CanWrite -or -not [string]::Equals($script:Lock.Name,(Join-Path $controlPath 'execucao.lock'),$comparison)){throw [InvalidOperationException]::new('Lock do destino requerido')}
 }
+
+# Confere apenas referencia persistida; nao autoriza mover audio nem certifica prova humana.
+function Read-PersistedPublicationReference {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$ReferenceName,
+       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+ if($ReferenceName -cnotmatch '^[0-9a-f]{64}[.]json$'){throw [ArgumentException]::new('Nome de referencia invalido')}
+ $comparison=if($IsWindows){[StringComparison]::OrdinalIgnoreCase}else{[StringComparison]::Ordinal}
+ $controlPath=[IO.Path]::GetFullPath($Control);$outPath=[IO.Path]::GetFullPath($Out)
+ if(-not [string]::Equals($controlPath,[IO.Path]::GetFullPath($script:Control),$comparison) -or -not [string]::Equals($outPath,[IO.Path]::GetFullPath($script:Out),$comparison) -or -not [string]::Equals([IO.Path]::GetFullPath($script:StateFile),(Join-Path $controlPath 'estado.json'),$comparison)){throw [ArgumentException]::new('Contexto de estado divergente')}
+ if($script:Lock -isnot [IO.FileStream] -or -not $script:Lock.CanRead -or -not $script:Lock.CanWrite -or -not [string]::Equals($script:Lock.Name,(Join-Path $controlPath 'execucao.lock'),$comparison)){throw [InvalidOperationException]::new('Lock do destino requerido')}
+ if(-not $script:State.ContainsKey('publicacoes_pendentes') -or -not $script:State.publicacoes_pendentes.ContainsKey($ReferenceName)){throw [IO.InvalidDataException]::new('Referencia nao persistida')}
+ $reference=$script:State.publicacoes_pendentes[$ReferenceName]
+ if($reference -isnot [hashtable] -or ($reference.versao -isnot [int] -and $reference.versao -isnot [long]) -or $reference.versao -ne 1){throw [IO.InvalidDataException]::new('Referencia de publicacao invalida')}
+ foreach($key in @('arquivo','sha256','video_id','registro_chave')){
+  if($reference[$key] -isnot [string] -or [string]::IsNullOrWhiteSpace($reference[$key])){throw [IO.InvalidDataException]::new('Referencia incompleta')}
+ }
+ if(-not [string]::Equals($reference.arquivo,$ReferenceName,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia nao corresponde ao arquivo')}
+ $null=Assert-PublicationPathWithoutLinks -Path $script:StateFile
+ $disk=ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText($script:StateFile,[Text.UTF8Encoding]::new($false,$true)))
+ if(-not $disk.ContainsKey('publicacoes_pendentes') -or -not $disk.publicacoes_pendentes.ContainsKey($ReferenceName)){throw [IO.InvalidDataException]::new('Referencia nao persistida')}
+ $persisted=$disk.publicacoes_pendentes[$ReferenceName]
+ foreach($key in @('versao','arquivo','sha256','video_id','registro_chave')){
+  if(-not [string]::Equals([string]$persisted[$key],[string]$reference[$key],[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia persistida divergente')}
+ }
+  return $reference.Clone()
+}
