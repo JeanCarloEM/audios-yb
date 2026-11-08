@@ -428,9 +428,14 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
     [IO.File]::Move($ready, $target)
     return @{ok = $true; arquivo = [IO.Path]::GetFileName($target); auditoria = $audit; probe = $resultProbe }
 }
-function Audit-Legacy {
+function Audit-Legacy([string[]]$ProtectedFiles = @(), [bool]$PreserveAllFiles = $false) {
+    if ($PreserveAllFiles) { return }
+    $fileComparer = if ($IsWindows) { [StringComparer]::OrdinalIgnoreCase } else { [StringComparer]::Ordinal }
+    $protectedNames = [Collections.Generic.HashSet[string]]::new($fileComparer)
+    foreach ($protectedName in $ProtectedFiles) { if (-not [string]::IsNullOrWhiteSpace($protectedName)) { [void]$protectedNames.Add($protectedName) } }
     foreach ($id in @($script:State.videos.Keys)) {
         $v = $script:State.videos[$id]
+        if ($protectedNames.Contains([string]$v.arquivo)) { continue }
         if ($v.auditoria -and $v.auditoria.politica -eq $script:Policy -and $v.auditoria.validado) { continue }
         $name = [string]$v.arquivo
         if ($name -and $name -eq [IO.Path]::GetFileName($name)) {
@@ -467,6 +472,7 @@ function Audit-Legacy {
         if ($v.arquivo -and $v.auditoria -and $v.auditoria.validado -and $v.auditoria.politica -eq $script:Policy) { $trusted[[string]$v.arquivo] = $true }
     }
     foreach ($file in @(Get-ChildItem -LiteralPath $script:Out -File)) {
+        if ($protectedNames.Contains($file.Name)) { continue }
         if ($trusted.ContainsKey($file.Name) -or $file.Extension.ToLowerInvariant() -notin @('.m4a', '.mp3', '.webm', '.mp4', '.opus', '.ogg', '.oga', '.aac', '.flac', '.wav', '.mka')) { continue }
         $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
         $dir = Join-Path $script:Control 'nao_rastreados'
@@ -787,7 +793,10 @@ try {
     }
 
     if (-not [IO.File]::Exists($script:StateFile)) { Save-State }
-    Audit-Legacy
+    $script:PublicationRecovery = Resume-PendingPublications -Control $script:Control -Out $script:Out -AuditOnly:$SomenteAuditarExistentes
+    foreach ($publicationIssue in $script:PublicationRecovery.Unresolved) { Write-Warning ('Publicacao pendente preservada: ' + $publicationIssue.Reason) }
+    if ($script:PublicationRecovery.PreserveAllFiles) { Write-Warning 'Auditoria de arquivos adiada: nao foi possivel vincular com seguranca os arquivos de uma intencao pendente.' }
+    Audit-Legacy -ProtectedFiles ([string[]]$script:PublicationRecovery.ProtectedFiles) -PreserveAllFiles ([bool]$script:PublicationRecovery.PreserveAllFiles)
     Write-Host ("Registros: $($rows.Count) | Aprovacoes: $($approvals.Count) | Destino: $script:Out")
     $index = 0
     foreach ($row in $rows) {
@@ -818,6 +827,15 @@ try {
             }
             if ($null -ne $approval -and $urlInfo.tipo -eq 'video' -and $approval.id -cne $urlInfo.id) {
                 Finalize-Record $rec 'falha' 'Aprovacao nao corresponde ao ID da URL direta'; continue
+            }
+            $pendingPublication = $script:PublicationRecovery.RecordKeys -contains $key
+            foreach ($pendingVideoId in $script:PublicationRecovery.VideoIds) {
+                if (($urlInfo.tipo -eq 'video' -and [string]::Equals($pendingVideoId, $urlInfo.id, [StringComparison]::Ordinal)) -or
+                    ([string]::Equals($pendingVideoId, [string]$rec.video_id, [StringComparison]::Ordinal))) { $pendingPublication = $true; break }
+            }
+            if ($pendingPublication) {
+                Finalize-Record $rec 'pendente_auditoria' 'Publicacao interrompida pendente de recuperacao; arquivo e checkpoint preservados'
+                continue
             }
             if ($SomenteAuditarExistentes) {
                 if ($rec.resultado -notin @('baixado', 'existente')) {
@@ -930,6 +948,10 @@ try {
                 }
             }
             $rec.video_id = $videoId
+            if (@($script:PublicationRecovery.VideoIds | Where-Object { [string]::Equals($_, $videoId, [StringComparison]::Ordinal) }).Count -gt 0) {
+                Finalize-Record $rec 'pendente_auditoria' 'Video possui publicacao pendente de recuperacao; arquivo e checkpoint preservados'
+                continue
+            }
             $rec.url_video = 'https://www.youtube.com/watch?v=' + $videoId
             if ($urlInfo.tipo -eq 'busca' -and $approval) {
                 # O usuario atesta a escolha; nao tratar resultado de busca como video.
