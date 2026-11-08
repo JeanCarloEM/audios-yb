@@ -265,8 +265,8 @@ function Get-UrlInfo([string]$Text) {
     if ($id -notmatch '^[a-zA-Z0-9_-]{11}$') { throw 'Pagina de pesquisa sem search_query ou URL sem ID de video valido' }
     return @{ tipo = 'video'; id = $id; url = ('https://www.youtube.com/watch?v=' + $id) }
 }
-function File-Base([string]$Order, [string]$Artist, [string]$Song, [string]$Id) {
-    $value = "$Order - $Artist - $Song [$Id]"
+function File-Base([string]$Order, [string]$Artist, [string]$Song, [string]$Id, [string]$MusicalStem = '') {
+    $value = if ([string]::IsNullOrWhiteSpace($MusicalStem)) { "$Order - $Artist - $Song [$Id]" } else { "$MusicalStem [$Id]" }
     $value = [regex]::Replace($value, '[<>:"/\\|?*\x00-\x1F]', '_')
     $value = [regex]::Replace($value, '[\s\.]+$', '')
     $value = [regex]::Replace($value, '\s+', ' ')
