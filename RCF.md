@@ -323,3 +323,10 @@ A versão 7ad976f passou em uma fixture nova no Ubuntu WSL 24.04.1, PS7.6.9 e fe
 A correção f303115 limita a limpeza de Save-State ao temporário criado pela chamada. tests/estado_duravel.tests.ps1 injeta somente a entropia de nomes na função real, mantendo CreateNew e I/O reais; o controle negativo detectou o escritor anterior e o teste corrigido preservou temporário alheio/estado. Passaram também as verificações de serialização/tipos e a regressão do produtor com falha real após o movimento. Esse ajuste posterior foi testado no Windows e não foi reexecutado no ensaio Linux acima. O aviso provocado pela prova negativa de profundidade JSON corresponde à serialização recusada antes de efeitos, não a estado truncado aceito.
 
 Esses resultados encerram apenas os microescopos descritos. As lacunas editoriais, outras plataformas e demais condições não verificadas continuam vigentes; não há aceite integral do RCF.
+
+### Evidencia posterior de relatorios auxiliares [A]
+
+<!-- reports-io-evidence-v1 -->
+No Windows/PowerShell 7, tests/relatorios_falha_io.tests.ps1 extrai por AST Safe-Cell, Export-Reports e o try/catch da chamada no finally do principal. Uma fixture isolada bloqueia relatorio.csv por FileStream com FileShare.None; a IOException antes da abertura preserva os hashes dos tres CSVs sentinela, a ausencia de aprovacoes_modelo.csv e os snapshots de estado/RowsForReport em memoria e JSON. Apos liberar o bloqueio, a chamada real gera relatorio.csv, pendencias.csv, sugestoes_aprovacao.csv e aprovacoes_modelo.csv com uma linha esperada cada, confirmacoes humanas vazias e sem aviso; os snapshots continuam intactos.
+
+Este ensaio nao executa o lote/downloads nem o processo principal completo; os JSONs persistidos pertencem a fixture. Nao comprova interrupcao durante escrita, atomicidade conjunta dos relatorios, todas as janelas de crash ou homologacao de outros sistemas. As demais lacunas e requisitos desta secao continuam vigentes, sem aceite integral do RCF.

@@ -166,3 +166,10 @@ Para album, faixa e compositor, declare colunas que realmente existam e tenham e
 O candidato preserva tags existentes e payload comprimido. Conflito, valor invalido ou falha tecnica preserva o audio admissivel e registra limitacao, sem sobrescrever tags conflitantes. Os hashes da fonte e dos bytes finais ficam separados; o recurso combina-se com marcador e nomeacao Musical. Arquivos validos ja publicados nao sao retagados no reuso, mesmo com -Metatags ou mudanca de CSV/opcoes. Sem -Metatags, mantem-se o comportamento anterior.
 
 Verificacao: tests/metatags_cli.tests.ps1 e tests/metatags_marcador_nomeacao_cli.tests.ps1 passaram em dois casos cada, normal e falha real de I/O apos o movimento, com journal e reuso offline sem novo transporte. Escopo Windows/PowerShell 7; midia, FFmpeg e ffprobe reais, transporte e aprovacoes simulados. Nao comprova Linux/macOS, players GUI, novo download remoto, 372 downloads ou aderencia integral ao RCF. Capa continua indisponivel.
+
+## Falha e retomada dos relatorios
+
+<!-- reports-io-evidence-v1 -->
+No Windows/PowerShell 7, tests/relatorios_falha_io.tests.ps1 usa as funcoes e a chamada de relatorios do finally extraidas por AST do principal. Bloqueio real de relatorio.csv com FileShare.None provoca IOException antes da abertura: os tres CSVs sentinela conservam seus hashes, o modelo de aprovacao permanece ausente e os snapshots da fixture em memoria e JSON ficam intactos. Depois de liberar o bloqueio, a chamada real gera os quatro CSVs com os valores esperados e confirmacoes humanas vazias, sem aviso.
+
+O ensaio usa fixture isolada e nao executa downloads. Nao comprova falha durante uma escrita ja iniciada, atomicidade conjunta dos CSVs, reinicio completo do processo ou outros sistemas.
