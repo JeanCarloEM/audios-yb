@@ -28,14 +28,24 @@ param(
     [ValidateRange(3, 12)][int]$ResultadosPorBusca = 7,
     [ValidateRange(1, 4)][int]$MaxTentativas = 2,
     [string]$Destino,
-    [AllowNull()][AllowEmptyString()][string]$Marcador = ''
+    [AllowNull()][AllowEmptyString()][string]$Marcador = '',
+    [ValidateSet('Legado', 'Musical')][string]$ModeloNome = 'Legado',
+    [Nullable[int]]$LarguraTrack = $null,
+    [string]$ColunaAutor,
+    [string]$ColunaTrack,
+    [string]$ColunaTitulo
 )
 
 Set-StrictMode -Version 1.0
 $ErrorActionPreference = 'Stop'
+if ($null -ne $LarguraTrack -and ($LarguraTrack -lt 1 -or $LarguraTrack -gt 145)) { throw [ArgumentOutOfRangeException]::new('LarguraTrack', 'Valor deve estar entre 1 e 145.') }
 . (Join-Path $PSScriptRoot 'ambiente_portatil.ps1')
 $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
+if ($ModeloNome -eq 'Musical') {
+    . (Join-Path $script:Root 'nomeacao_editorial.ps1')
+    . (Join-Path $script:Root 'mapeamento_nomeacao.ps1')
+}
 $script:MarcadorSolicitado = ''
 if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
     . (Join-Path $script:Root 'editorial_audio.ps1')
@@ -1034,7 +1044,38 @@ try {
             foreach ($form in @($infoCheck.formats)) { $formatQueue.Add($form) }
             $refreshed = $false
             $attemptedFormats = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
-            $baseName = File-Base $order $artist $song $videoId
+            $baseName = if ($ModeloNome -eq 'Musical') {
+                $result = Get-CsvMusicalNameComponents -Row $row -ColunaAutor $ColunaAutor -ColunaTrack $ColunaTrack -ColunaTitulo $ColunaTitulo -LarguraTrack $LarguraTrack;
+                if ($result.usar_legado) {
+                    $rec.nomeacao = @{
+                        modelo_solicitado = $ModeloNome;
+                        modelo_aplicado = 'Legado';
+                        colunas = @{ autor = $ColunaAutor; track = $ColunaTrack; titulo = $ColunaTitulo };
+                        motivo = $result.motivo;
+                        pendente_editorial = $true;
+                    };
+                    File-Base $order $artist $song $videoId;
+                } else {
+                    $stem = if ($result.componentes.Count -eq 0) { '' } else { $result.componentes -join ' - ' };
+                    $rec.nomeacao = @{
+                        modelo_solicitado = $ModeloNome;
+                        modelo_aplicado = 'Musical';
+                        colunas = @{ autor = $ColunaAutor; track = $ColunaTrack; titulo = $ColunaTitulo };
+                        motivo = $result.motivo;
+                        pendente_editorial = $false;
+                    };
+                    File-Base $order $artist $song $videoId -MusicalStem $stem;
+                }
+            } else {
+                $rec.nomeacao = @{
+                    modelo_solicitado = $ModeloNome;
+                    modelo_aplicado = 'Legado';
+                    colunas = @{ autor = $ColunaAutor; track = $ColunaTrack; titulo = $ColunaTitulo };
+                    motivo = 'Modelo legado solicitado';
+                    pendente_editorial = $false;
+                };
+                File-Base $order $artist $song $videoId;
+            };
             $completed = $false
             $lastError = ''
             $lastDiagnostic = ''
