@@ -359,7 +359,7 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
     }
     return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
-function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '') {
+function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '', [AllowNull()][hashtable]$PublicationRecord = $null) {
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
@@ -425,6 +425,22 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
         return @{ok = $false; motivo = 'Candidato mudou depois da verificacao editorial; fonte preservada'; auditoria = $audit }
     }
     # Publicar apenas depois de todas as verificacoes. A fonte excepcional fica no controle.
+    # O CLI sempre vincula o registro canonico; chamadas internas antigas sem esse argumento mantem contrato.
+    if ($PSBoundParameters.ContainsKey('PublicationRecord')) {
+        try {
+            if ($null -eq $PublicationRecord) { throw [IO.InvalidDataException]::new('Registro canonico de publicacao ausente') }
+            $snapshot = New-PublicationIntentSnapshot -Ready $ready -Target $target -Control $script:Control -Out $script:Out -VideoId $Id -Record $PublicationRecord -Audit $audit -Probe $resultProbe
+            $savedIntent = Save-PublicationIntentFile -Snapshot $snapshot -Control $script:Control -Out $script:Out
+            $reference = Register-PublicationReference -Path $savedIntent.Path -ExpectedSha256 $savedIntent.Sha256 -Control $script:Control -Out $script:Out
+            $publication = Invoke-PublicationRecovery -ReferenceName $reference.arquivo -Control $script:Control -Out $script:Out
+            if ($publication.Status -cne 'reconciliada') { throw [IO.InvalidDataException]::new('Publicacao nao confirmou reconciliacao') }
+            $publishedVideo = $script:State.videos[$Id]
+            return @{ok = $true; arquivo = $publishedVideo.arquivo; auditoria = $publishedVideo.auditoria; probe = $publishedVideo.auditoria.resultado; publicacao_intencao = $publishedVideo.publicacao_intencao.Clone() }
+        }
+        catch {
+            return @{ok = $false; publicacao_pendente = $true; motivo = ('Publicacao nao concluida; arquivos de trabalho preservados: ' + $_.Exception.Message); auditoria = $audit }
+        }
+    }
     [IO.File]::Move($ready, $target)
     return @{ok = $true; arquivo = [IO.Path]::GetFileName($target); auditoria = $audit; probe = $resultProbe }
 }
@@ -1072,7 +1088,7 @@ try {
                     $lastError = 'Arquivo inferior a 97% do tamanho informado pela origem; nao aceitar como completo'
                     break
                 }
-                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado }
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado -PublicationRecord $rec }
                 catch {
                     $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
                         auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
@@ -1081,6 +1097,12 @@ try {
                 $rec.auditoria = $result.auditoria
                 $rec.auditoria['aprovacao_musical'] = $musicalProof
                 if (-not $result.ok) {
+                    if ($result.ContainsKey('publicacao_pendente') -and $result.publicacao_pendente) {
+                        $lastDiagnostic = 'publicacao_pendente'; $lastError = $result.motivo
+                        $script:PublicationRecovery.RecordKeys = @($script:PublicationRecovery.RecordKeys) + @($key)
+                        $script:PublicationRecovery.VideoIds = @($script:PublicationRecovery.VideoIds) + @($videoId)
+                        break
+                    }
                     $lastDiagnostic = 'qualidade'; $lastError = $result.motivo
                     $rec.rejeicoes += @(@{formato_id = $fmt.id; motivo = $lastError; auditoria = $result.auditoria })
                     continue
@@ -1094,6 +1116,7 @@ try {
                     codec = $result.probe.codec; bitrate_kbps = $result.probe.bitrate_medido_kbps;
                     auditoria = $result.auditoria; aprovacao_musical = $musicalProof; verificado_utc = [DateTime]::UtcNow.ToString('o') 
                 }
+                if ($result.ContainsKey('publicacao_intencao')) { $script:State.videos[$videoId].publicacao_intencao = $result.publicacao_intencao.Clone() }
                 $rec.formato = [IO.Path]::GetExtension($filename).TrimStart('.'); $rec.codec = $result.probe.codec
                 $rec.bitrate_kbps = [string]$result.probe.bitrate_medido_kbps; $rec.arquivo = $filename
                 $completed = $true
@@ -1101,7 +1124,7 @@ try {
                 break
             }
             if (-not $completed) {
-                $finalStatus = if ($lastDiagnostic -in @('acesso_limitado_http_403', 'confirmacao_anti_bot', 'autenticacao_ou_controle_de_acesso', 'http_429', 'http_5xx', 'dns', 'rede_ou_timeout', 'timeout')) { 'pendente_acesso' } elseif ($lastDiagnostic -eq 'qualidade') { 'pendente_qualidade' } else { 'falha' }
+                $finalStatus = if ($lastDiagnostic -eq 'publicacao_pendente') { 'pendente_auditoria' } elseif ($lastDiagnostic -in @('acesso_limitado_http_403', 'confirmacao_anti_bot', 'autenticacao_ou_controle_de_acesso', 'http_429', 'http_5xx', 'dns', 'rede_ou_timeout', 'timeout')) { 'pendente_acesso' } elseif ($lastDiagnostic -eq 'qualidade') { 'pendente_qualidade' } else { 'falha' }
                 Finalize-Record $rec $finalStatus $lastError
             }
         }

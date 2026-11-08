@@ -18,16 +18,21 @@ $hook=@'
  . ([scriptblock]::Create($saveDefinitions[0].Extent.Text))
  $script:Out=$dest;$script:Control=Join-Path $dest '.controle';$script:StateFile=Join-Path $script:Control 'estado.json';$script:Utf8=[Text.UTF8Encoding]::new($false)
  $published=$finals[0].FullName;$publishedName=[IO.Path]::GetFileName($published)
- $ready=Join-Path $script:Control 'fontes/checkpoint-proxy/ready.mp3'
- [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($ready))
+ $ready=$null
+
  $script:Lock=$null
  try{
   $script:Lock=[IO.File]::Open((Join-Path $script:Control 'execucao.lock'),[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
   $script:State=ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText($script:StateFile))
   $checkpointRecord=@($script:State.registros.Values)[0]
+  $publicationTrace=$script:State.videos.TestVideo01.publicacao_intencao
+  $journalPath=Join-Path (Join-Path $script:Control 'publicacoes_pendentes') $publicationTrace.arquivo
+  $storedIntent=Read-PublicationIntentFile -Path $journalPath -ExpectedSha256 $publicationTrace.sha256 -Control $script:Control
+  $ready=Join-Path $script:Control $storedIntent.Data.pronto_relativo
+  [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($ready))
   [IO.File]::Move($published,$ready)
-  $snapshot=New-PublicationIntentSnapshot -Ready $ready -Target $published -Control $script:Control -Out $script:Out -VideoId 'TestVideo01' -Record $checkpointRecord -Audit $checkpointRecord.auditoria -Probe $checkpointRecord.auditoria.resultado
-  $saved=Save-PublicationIntentFile -Snapshot $snapshot -Control $script:Control -Out $script:Out
+
+  $saved=@{Path=$journalPath;Sha256=$publicationTrace.sha256}
   $pendingRef=New-PublicationReference -VideoId 'TestVideo01' -RecordKey $checkpointRecord.chave -IntentSha256 $saved.Sha256
   $script:State.publicacoes_pendentes[$pendingRef.arquivo]=$pendingRef
   # Forcar caminho de legado conhecido: o checkpoint nao pode ter metadados rebaixados.
