@@ -330,3 +330,33 @@ Esses resultados encerram apenas os microescopos descritos. As lacunas editoriai
 No Windows/PowerShell 7, tests/relatorios_falha_io.tests.ps1 extrai por AST Safe-Cell, Export-Reports e o try/catch da chamada no finally do principal. Uma fixture isolada bloqueia relatorio.csv por FileStream com FileShare.None; a IOException antes da abertura preserva os hashes dos tres CSVs sentinela, a ausencia de aprovacoes_modelo.csv e os snapshots de estado/RowsForReport em memoria e JSON. Apos liberar o bloqueio, a chamada real gera relatorio.csv, pendencias.csv, sugestoes_aprovacao.csv e aprovacoes_modelo.csv com uma linha esperada cada, confirmacoes humanas vazias e sem aviso; os snapshots continuam intactos.
 
 Este ensaio nao executa o lote/downloads nem o processo principal completo; os JSONs persistidos pertencem a fixture. Nao comprova interrupcao durante escrita, atomicidade conjunta dos relatorios, todas as janelas de crash ou homologacao de outros sistemas. As demais lacunas e requisitos desta secao continuam vigentes, sem aceite integral do RCF.
+
+## 9. Norma posterior: autossuficiencia e codecs exclusivos
+
+<!-- autonomy-codecs-user-v1 -->
+Esta norma prevalece sobre exigencias anteriores conflitantes deste documento, inclusive aprovacoes humanas obrigatorias e aceitacao de outros codecs. O registro da norma nao significa que sua implementacao esteja concluida.
+
+Um script AUTOSSUFICIENTE DEVE cumprir sua missao de ponta a ponta sem depender de supervisao, aprovacao, resposta, interpretacao, decisao, descoberta, preparacao, intervencao ou iteracao humana, direta ou indireta, imediata ou posterior. A ausencia de perguntas durante a execucao, por si so, NAO demonstra autossuficiencia.
+
+Se a conclusao exigir que o usuario aprove, confirme, escolha, interprete pendencias, descubra a proxima providencia, prepare condicoes, corrija estados, forneca informacoes ou reinvoque o script depois de uma providencia humana, o criterio NAO foi atendido.
+
+O script DEVE decidir e resolver autonomamente o que estiver em seu escopo, resolver dependencias, antecipar e tratar condicoes previsiveis, utilizar alternativas seguras quando cabiveis e concluir ou declarar tecnicamente uma impossibilidade real, fundamentada em evidencias. NAO DEVE simular sucesso, transferir silenciosamente responsabilidades nem trocar uma dependencia humana por uma pendencia meramente renomeada. A falta de um sinal de aprovacao humana nao constitui, isoladamente, impossibilidade tecnica. Relatorios e notificacoes sao permitidos quando nenhuma acao humana for necessaria para considerar a missao concluida.
+
+Lista FECHADA de codecs de audio aceitos: AAC e AC3. Na identificacao canonica do ffprobe, os valores permitidos sao somente aac e ac3; eac3 e todos os demais sao excluidos. Nao validar, publicar ou aceitar implicitamente no reuso um audio de outro codec. Extensao, conteiner ou nome do formato nao substituem a identificacao do codec real. Arquivos preexistentes devem ser preservados, mesmo quando nao forem admissiveis segundo esta regra.
+
+As verificacoes de integridade, qualidade, ausencia de inflacao artificial, identidade e rastreabilidade compativeis continuam obrigatorias. A substituicao de etapas humanas DEVE empregar decisoes e evidencias tecnicas explicitas, sem fabricar confirmacoes, procedencia ou certeza musical.
+
+## 10. Escopo de audios, deteccao de vocais e dependencias
+
+<!-- audio-scope-dependencies-user-v1 -->
+Esta norma posterior prevalece sobre qualquer disposicao conflitante anterior, inclusive a proibicao absoluta de interacao da secao 9: a unica excecao admitida e a solicitacao antecipada de elevacao de privilegios efetivamente indispensavel. A lista exclusiva AAC/AC3 permanece vigente.
+
+O produto e um BAIXADOR DE AUDIOS: musicas sao o foco principal, nao exclusivo. Listas podem conter musicas com ou sem vocais, audios de outras naturezas ou conteudos mistos. NAO restringir o processamento a musicas nem a musicas instrumentais; classificacao musical ou ausencia de vocais NAO pode ser condicao para baixar.
+
+Quando tecnicamente viavel, a identificacao de vocais DEVE utilizar bibliotecas open source existentes, preferencialmente mantidas, seguras e confiaveis. NAO implementar detector proprio. A analise e informativa e NAO deve excluir musicas vocalizadas, fala, outros audios ou limitar o escopo de download. Falta de resultado confiavel NAO deve ser convertida em ausencia comprovada de vocais.
+
+O script DEVE identificar, instalar, configurar e validar autonomamente TODAS as dependencias externas necessarias, sem exigir preparacao ou intervencao do usuario. Dependencias e artefatos obtidos devem ter origem e integridade verificadas. As instalacoes devem usar os privilegios realmente necessarios, sem elevar indiscriminadamente.
+
+A necessidade real de privilegios elevados DEVE ser verificada nos primeiros segundos da execucao, antes de operacoes demoradas ou de qualquer etapa dependente desses privilegios. Quando indispensavel, solicitar elevacao imediatamente. Depois de concedida, prosseguir autonomamente, preservando os argumentos e sem reinvocacao manual ou outra aprovacao, confirmacao ou preparacao humana. Nenhuma solicitacao tardia de elevacao pode substituir essa verificacao inicial.
+
+Registrar esta norma nao comprova sua implementacao: dependencias automaticas, elevacao antecipada, escopo geral e deteccao vocal precisam ser integrados e verificados antes do aceite.
