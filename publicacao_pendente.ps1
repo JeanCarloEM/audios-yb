@@ -335,3 +335,12 @@ function Invoke-PublicationRecovery {
  # JSON original e mantido como evidencia imutavel, referenciado pelo video concluido.
  return @{Status='reconciliada';Action=$plan.Action;VideoId=$data.video_id;RecordKey=$record.chave;Arquivo=$data.arquivo;Sha256=$data.sha256}
 }
+
+function Assert-PublicationContext {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+ $comparison=if($IsWindows){[StringComparison]::OrdinalIgnoreCase}else{[StringComparison]::Ordinal}
+ $controlPath=[IO.Path]::GetFullPath($Control);$outPath=[IO.Path]::GetFullPath($Out)
+ if(-not [string]::Equals($controlPath,[IO.Path]::GetFullPath($script:Control),$comparison) -or -not [string]::Equals($outPath,[IO.Path]::GetFullPath($script:Out),$comparison) -or -not [string]::Equals([IO.Path]::GetFullPath($script:StateFile),(Join-Path $controlPath 'estado.json'),$comparison)){throw [ArgumentException]::new('Contexto de estado divergente')}
+ if($script:Lock -isnot [IO.FileStream] -or -not $script:Lock.CanRead -or -not $script:Lock.CanWrite -or -not [string]::Equals($script:Lock.Name,(Join-Path $controlPath 'execucao.lock'),$comparison)){throw [InvalidOperationException]::new('Lock do destino requerido')}
+}
