@@ -141,3 +141,28 @@ pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -ModeloNome Musical -ColunaTitul
 Mantenha `nomeacao_editorial.ps1` e `mapeamento_nomeacao.ps1` junto do principal para usar Musical; seu carregamento é condicional. Isso não muda a descoberta do CSV, sua função canônica para URLs, as aprovações ou a qualidade exigida, nem grava tags ou capas.
 
 Verificação Windows/PowerShell 7+: cinco cenários de publicação, journal e reuso offline preservaram nome e hashes de CSV/áudio, sem novo transporte ou perguntas no reuso. Foi usada mídia MP3 sintética real com transporte e confirmações simulados. Esses novos parâmetros não foram ensaiados em Linux/macOS; não houve novo download remoto nem comprovação de 372 downloads.
+
+## Metatags editoriais opcionais
+
+<!-- metatags-cli-doc-v1 -->
+Use -Metatags para habilitar o enriquecimento de novos MP3. O padrao e desabilitado. Os parametros abaixo recebem nomes literais de colunas do CSV, com comparacao Ordinal; colunas opcionais nao declaradas sao omitidas.
+
+| Parametro | Coluna padrao | Tag MP3 |
+| --- | --- | --- |
+| -ColunaArtistaTag | Artista | artist |
+| -ColunaTituloTag | Musica | title |
+| -ColunaAlbumTag | nao definida | album |
+| -ColunaTrackTag | nao definida | track |
+| -ColunaAutorTag | nao definida | composer |
+
+Exemplo com as colunas existentes no CSV canonico:
+
+```powershell
+pwsh -NoProfile -File ./baixar_audios_ytdlp.ps1 -Metatags
+```
+
+Para album, faixa e compositor, declare colunas que realmente existam e tenham esse significado. Nao se presume compositor=Artista ou faixa=Ordem. Mantenha os helpers editoriais distribuidos junto do principal.
+
+O candidato preserva tags existentes e payload comprimido. Conflito, valor invalido ou falha tecnica preserva o audio admissivel e registra limitacao, sem sobrescrever tags conflitantes. Os hashes da fonte e dos bytes finais ficam separados; o recurso combina-se com marcador e nomeacao Musical. Arquivos validos ja publicados nao sao retagados no reuso, mesmo com -Metatags ou mudanca de CSV/opcoes. Sem -Metatags, mantem-se o comportamento anterior.
+
+Verificacao: tests/metatags_cli.tests.ps1 e tests/metatags_marcador_nomeacao_cli.tests.ps1 passaram em dois casos cada, normal e falha real de I/O apos o movimento, com journal e reuso offline sem novo transporte. Escopo Windows/PowerShell 7; midia, FFmpeg e ffprobe reais, transporte e aprovacoes simulados. Nao comprova Linux/macOS, players GUI, novo download remoto, 372 downloads ou aderencia integral ao RCF. Capa continua indisponivel.
