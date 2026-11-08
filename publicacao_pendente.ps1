@@ -371,3 +371,22 @@ function Read-PersistedPublicationReference {
  }
   return $reference.Clone()
 }
+
+# Registra somente intencao existente validada; exige estado inicial salvo e nao move audio.
+# O caller carrega referencia_publicacao.ps1. Validacoes/provas seguem o plano ja existente.
+function Register-PublicationReference {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$Path,[Parameter(Mandatory)][string]$ExpectedSha256,
+       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+ $null=Assert-PublicationContext -Control $Control -Out $Out
+ if($script:State -isnot [hashtable]){throw [IO.InvalidDataException]::new('Estado invalido')}
+ if($script:State.ContainsKey('publicacoes_pendentes') -and $script:State.publicacoes_pendentes -isnot [hashtable]){throw [IO.InvalidDataException]::new('Mapa de referencias invalido')}
+ $plan=Get-PublicationRecoveryPlan -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control -Out $Out
+ $reference=New-PublicationReference -VideoId $plan.Data.video_id -RecordKey $plan.Data.registro.chave -IntentSha256 $ExpectedSha256
+ if($script:State.ContainsKey('publicacoes_pendentes') -and $script:State.publicacoes_pendentes.ContainsKey($reference.arquivo)){throw [InvalidOperationException]::new('Referencia existente preservada')}
+ $null=Assert-PublicationPathWithoutLinks -Path $script:StateFile
+ if(-not $script:State.ContainsKey('publicacoes_pendentes')){$script:State.publicacoes_pendentes=@{}}
+ $script:State.publicacoes_pendentes[$reference.arquivo]=$reference.Clone()
+ $null=Save-State
+ return (Read-PersistedPublicationReference -ReferenceName $reference.arquivo -Control $Control -Out $Out)
+}
