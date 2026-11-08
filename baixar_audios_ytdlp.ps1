@@ -111,8 +111,10 @@ function Save-State {
     $tmp = Join-Path $script:Control ('.estado.' + [guid]::NewGuid().ToString('N') + '.tmp')
     $backup = Join-Path $script:Control ('.estado.' + [guid]::NewGuid().ToString('N') + '.bak')
     $committed = $false
+    $tmpOwned = $false
     try {
         $stream = [IO.FileStream]::new($tmp, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $tmpOwned = $true
         try {
             $stream.Write($bytes, 0, $bytes.Length)
             $stream.Flush($true)
@@ -122,7 +124,7 @@ function Save-State {
         $committed = $true
     }
     finally {
-        if ([IO.File]::Exists($tmp)) { [IO.File]::Delete($tmp) }
+        if ($tmpOwned -and [IO.File]::Exists($tmp)) { [IO.File]::Delete($tmp) }
         # Uma falha de substituicao nao autoriza descartar o backup recuperavel.
         if ($committed -and [IO.File]::Exists($backup)) { [IO.File]::Delete($backup) }
     }

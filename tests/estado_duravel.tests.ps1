@@ -56,4 +56,28 @@ if((Get-FileHash -LiteralPath $canary).Hash -cne $canaryHash){throw 'Backup alhe
 Save-State
 $read=ConvertFrom-Json ([IO.File]::ReadAllText($script:StateFile))
 if($read.videos.id.tamanho -ne 42 -or (Get-FileHash -LiteralPath $canary).Hash -cne $canaryHash){throw 'Recuperacao apos falha perdeu dados'}
+
+# Injetar somente a entropia de nomes na funcao real: CreateNew/IO/limpeza permanecem reais.
+$collisionSource=$defs[0].Extent.Text
+$entropy="[guid]::NewGuid().ToString('N')"
+if(($collisionSource.Split($entropy,[StringSplitOptions]::None).Count-1) -ne 2){throw 'Contrato de entropia mudou'}
+$collisionSource=$collisionSource.Replace('function Save-State {','function Save-StateCollision {').Replace($entropy,"'collision-fixture'")
+. ([scriptblock]::Create($collisionSource))
+$foreignTmp=Join-Path $script:Control '.estado.collision-fixture.tmp'
+[IO.File]::WriteAllText($foreignTmp,'temporario preexistente; nao pertence a esta gravacao',$script:Utf8)
+$foreignHash=(Get-FileHash -LiteralPath $foreignTmp).Hash
+$stateHash=(Get-FileHash -LiteralPath $script:StateFile).Hash
+$caught=$false
+try{Save-StateCollision}catch{
+ $failure=$_.Exception
+ while($null -ne $failure.InnerException){$failure=$failure.InnerException}
+ if($failure -isnot [IO.IOException]){throw}
+ $caught=$true
+}
+if(-not $caught){throw 'Colisao nao recusada por CreateNew'}
+if(-not [IO.File]::Exists($foreignTmp) -or (Get-FileHash -LiteralPath $foreignTmp).Hash -cne $foreignHash -or (Get-FileHash -LiteralPath $script:StateFile).Hash -cne $stateHash){throw 'Colisao apagou temporario alheio ou alterou estado'}
+Save-State
+if((Get-FileHash -LiteralPath $foreignTmp).Hash -cne $foreignHash){throw 'Gravacao seguinte apagou temporario alheio'}
+Write-Output 'ESTADO_COLISAO_TEMPORARIO_ALHEIO_PASS'
+
 Write-Output 'ESTADO_DURAVEL_PASS'
