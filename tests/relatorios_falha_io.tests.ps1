@@ -121,3 +121,44 @@ $proof = [ordered]@{
 [IO.File]::WriteAllText((Join-Path $controlDir 'proof.json'),($proof | ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
 Write-Host ('Artefatos em: '+$controlDir)
 Write-Host 'REPORTS_LOCKED_FILE_PASS'
+
+# Recuperacao apos liberar bloqueio: executar a chamada real do finally.
+$recoveryNodes = @($productionAst.FindAll({param($node)
+    $node -is [Management.Automation.Language.TryStatementAst] -and $node.Body.Extent.Text -ceq '{ if ($script:Lock) { Export-Reports } }'
+},$true))
+if ($recoveryNodes.Count -ne 1) { throw 'Chamada real de relatorios nao unica' }
+$recoveryCall = [scriptblock]::Create($recoveryNodes[0].Extent.Text)
+$script:Lock = $true
+$recoveryWarnings = @(& $recoveryCall 3>&1)
+if ($recoveryWarnings.Count -ne 0) { throw 'Aviso inesperado depois de liberar bloqueio' }
+$reportRows = @(Import-Csv -LiteralPath $reportFile -Encoding UTF8)
+$pendingRows = @(Import-Csv -LiteralPath $pendingFile -Encoding UTF8)
+$suggestionRows = @(Import-Csv -LiteralPath $suggestionsFile -Encoding UTF8)
+$modelRows = @(Import-Csv -LiteralPath $modeloFile -Encoding UTF8)
+foreach ($count in @($reportRows.Count,$pendingRows.Count,$suggestionRows.Count,$modelRows.Count)) {
+    if ($count -ne 1) { throw 'Quantidade de linhas CSV inesperada' }
+}
+if ($reportRows[0].Ordem -cne '001' -or $reportRows[0].Artista -cne 'Artista Teste' -or $reportRows[0].Musica -cne 'Música Teste' -or $reportRows[0].Resultado -cne 'falha') { throw 'Relatorio divergente da fixture literal' }
+if ($pendingRows[0].Ordem -cne '001' -or $pendingRows[0].VideoId_sugerido -cne 'abc123' -or $pendingRows[0].Candidato_1 -cne 'https://example.com/2') { throw 'Pendencias divergentes da fixture literal' }
+if ($suggestionRows[0].Ordem -cne '001' -or $suggestionRows[0].VideoId -cne 'abc123' -or $suggestionRows[0].URL_para_ouvir -cne 'https://example.com/2') { throw 'Sugestoes divergentes da fixture literal' }
+foreach ($row in @($suggestionRows[0],$modelRows[0])) {
+    foreach ($field in @('ArtistaMusicaConferidos','VersaoConferida','SemVocaisConferido')) {
+        if ([string]$row.$field -cne '') { throw ('Confirmacao humana preenchida: '+$field) }
+    }
+}
+if ($modelRows[0].Ordem -cne '' -or $modelRows[0].VideoId -cne '') { throw 'Modelo de aprovacao preenchido' }
+$recoveredState = $script:State.registros | ConvertTo-Json -Depth 15
+$recoveredRows = $script:RowsForReport | ConvertTo-Json -Depth 15
+if (-not [string]::Equals($recoveredState,$memState,[StringComparison]::Ordinal) -or -not [string]::Equals($recoveredRows,$memRows,[StringComparison]::Ordinal)) { throw 'Memoria alterada na recuperacao dos relatorios' }
+if (-not [string]::Equals([IO.File]::ReadAllText((Join-Path $controlDir 'State.registros.json')),$memState,[StringComparison]::Ordinal) -or -not [string]::Equals([IO.File]::ReadAllText((Join-Path $controlDir 'RowsForReport.json')),$memRows,[StringComparison]::Ordinal)) { throw 'Estado persistido alterado na recuperacao' }
+$recoveryProof = [ordered]@{
+    SourceSHA256 = (Get-FileHash -LiteralPath $productionPath -Algorithm SHA256).Hash
+    CallSiteLine = $recoveryNodes[0].Extent.StartLineNumber
+    CSVRowCounts = @($reportRows.Count,$pendingRows.Count,$suggestionRows.Count,$modelRows.Count)
+    HumanConfirmationsBlank = $true
+    NoWarningAfterUnlock = ($recoveryWarnings.Count -eq 0)
+    MemoryStateUnchanged = $true
+    DiskStateUnchanged = $true
+}
+[IO.File]::WriteAllText((Join-Path $controlDir 'recovery-proof.json'),($recoveryProof | ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
+Write-Host 'REPORTS_RECOVERY_PASS'
