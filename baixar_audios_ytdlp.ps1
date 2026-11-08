@@ -33,7 +33,13 @@ param(
     [Nullable[int]]$LarguraTrack = $null,
     [string]$ColunaAutor,
     [string]$ColunaTrack,
-    [string]$ColunaTitulo
+    [string]$ColunaTitulo,
+    [switch]$Metatags,
+    [string]$ColunaArtistaTag = 'Artista',
+    [string]$ColunaTituloTag = 'Musica',
+    [string]$ColunaAlbumTag,
+    [string]$ColunaTrackTag,
+    [string]$ColunaAutorTag
 )
 
 Set-StrictMode -Version 1.0
@@ -51,6 +57,17 @@ if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
     . (Join-Path $script:Root 'editorial_audio.ps1')
     $script:MarcadorSolicitado = ConvertTo-CollectionMarker -Value $Marcador
 }
+if ($Metatags) {
+    $script:ColunasMetatags = @{artist=$ColunaArtistaTag;title=$ColunaTituloTag;album=$ColunaAlbumTag;track=$ColunaTrackTag;composer=$ColunaAutorTag}
+    foreach ($column in $script:ColunasMetatags.Values) {
+        if ($null -ne $column -and $column.Contains([char]0)) { throw [ArgumentException]::new('Coluna de metatags nao pode conter NUL.') }
+    }
+    if ([string]::IsNullOrWhiteSpace($Marcador)) { . (Join-Path $script:Root 'editorial_audio.ps1') }
+    foreach ($dependency in @('decisao_metatags.ps1','argumentos_metatags_mp3.ps1','candidato_metatags_mp3.ps1','comparacao_tags_ordinal.ps1','mapa_tags_editoriais.ps1','validacao_tags_editoriais.ps1','validacao_candidato_metatags_mp3.ps1','plano_metatags_editoriais.ps1','leitura_campo_editorial.ps1','mapeamento_metatags_editoriais.ps1','preparo_metatags_editoriais.ps1')) {
+        . (Join-Path $script:Root $dependency)
+    }
+}
+
 # Fluxo interativo na mesma execucao.
 . (Join-Path $script:Root 'execucao_unica.ps1')
 . (Join-Path $script:Root 'evidencias_fonte.ps1')
@@ -371,7 +388,7 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
     }
     return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
-function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '', [AllowNull()][hashtable]$PublicationRecord = $null) {
+function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '', [AllowNull()][hashtable]$PublicationRecord = $null, [AllowNull()][object]$EditorialRow = $null, [AllowNull()][object]$EditorialColumns = $null) {
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
@@ -421,6 +438,25 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
         $audit.marcador = $prepared.MarkerAudit
         $ready = $prepared.Path
     }
+    if ($PSBoundParameters.ContainsKey('EditorialColumns')) {
+        $tagPrepared = Get-EditorialPreparedAudio -File $ready -Row $EditorialRow -Columns $EditorialColumns
+        $audit.metatags = $tagPrepared.TagAudit
+        if ($tagPrepared.Changed) {
+            if ($audit.metatags.status -cne 'aplicado' -or $audit.metatags.validado -isnot [bool] -or -not $audit.metatags.validado) {
+                return @{ok=$false;motivo='Selecao de metatags sem verificacao; arquivos preservados';auditoria=$audit}
+            }
+            if ($audit.ContainsKey('marcador') -and $audit.marcador.status -ceq 'aplicado') {
+                $markerHash = [string]$audit.marcador.resultado_sha256
+                if (-not [string]::Equals($markerHash.ToLowerInvariant(),([string]$audit.metatags.origem_sha256).ToLowerInvariant(),[StringComparison]::Ordinal)) {
+                    return @{ok=$false;motivo='Cadeia marcador/metatags divergente; arquivos preservados';auditoria=$audit}
+                }
+                $audit.marcador.resultado_intermediario_sha256 = $markerHash
+                $audit.marcador.resultado_sha256 = $audit.metatags.resultado_sha256
+                $audit.marcador.encadeamento = 'metatags_editoriais'
+            }
+        }
+        $ready = $tagPrepared.Path
+    }
     $resultProbe = Probe-Audio $ready
     if (-not (Test-FinalAudio $ready $resultProbe) -or
         [Math]::Abs($resultProbe.duracao - $sourceProbe.duracao) -gt [Math]::Max(0.25, $sourceProbe.duracao * 0.005) -or
@@ -435,6 +471,11 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
         -not [string]::Equals($audit.resultado_sha256, ([string]$audit.marcador.resultado_sha256).ToLowerInvariant(), [StringComparison]::Ordinal)) {
         $audit.validado = $false
         return @{ok = $false; motivo = 'Candidato mudou depois da verificacao editorial; fonte preservada'; auditoria = $audit }
+    }
+    if ($audit.ContainsKey('metatags') -and $audit.metatags.status -ceq 'aplicado' -and
+        -not [string]::Equals($audit.resultado_sha256,([string]$audit.metatags.resultado_sha256).ToLowerInvariant(),[StringComparison]::Ordinal)) {
+        $audit.validado = $false
+        return @{ok=$false;motivo='Candidato mudou depois da verificacao de metatags; fonte preservada';auditoria=$audit}
     }
     # Publicar apenas depois de todas as verificacoes. A fonte excepcional fica no controle.
     # O CLI sempre vincula o registro canonico; chamadas internas antigas sem esse argumento mantem contrato.
@@ -1131,7 +1172,9 @@ try {
                     $lastError = 'Arquivo inferior a 97% do tamanho informado pela origem; nao aceitar como completo'
                     break
                 }
-                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado -PublicationRecord $rec }
+                $editorialCallArgs = @{}
+                if ($Metatags) { $editorialCallArgs = @{EditorialRow=$row;EditorialColumns=$script:ColunasMetatags} }
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado -PublicationRecord $rec @editorialCallArgs }
                 catch {
                     $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
                         auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
