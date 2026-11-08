@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 $harness=Join-Path $repo 'tests/execucao_unica.tests.ps1'
-if((Get-FileHash -LiteralPath $harness).Hash -cne 'E1B13CDB449EC9DDD19556A5C45E4E64D08A40FC54E8204B47DA4185C5D18727'){throw 'Harness mudou: revisar adaptacao ISO'}
+if((Get-FileHash -LiteralPath $harness).Hash -cne '63917D9605ECBC278F57327DE88176403E2C51C588C2E1E44827425EA146CB9F'){throw 'Harness mudou: revisar adaptacao ISO'}
 $source=[IO.File]::ReadAllText($harness)
 $rootLine='$repo=Split-Path $PSScriptRoot -Parent'
 if(([regex]::Matches($source,[regex]::Escape($rootLine))).Count -ne 1){throw 'Raiz do harness ambigua'}

@@ -27,13 +27,14 @@ As novas normas prevalecem nos conflitos expressos; as garantias anteriores comp
 | `evidencias_fonte.ps1` | Descoberta local, leitura e vinculação de manifestos de procedência a documentos locais e hashes; reúne duplicatas idênticas entre manifestos e exclui chaves conflitantes. |
 | `autenticacao_ytdlp.ps1` | Argumentos de sessão explicitamente fornecida por cookies Netscape ou navegador suportado. |
 | `publicacao_pendente.ps1` | Leitura JSON do estado preservando strings e tipos; utilitários de intenção e reconciliação testados isoladamente. Integração automática da recuperação na orquestração ainda pendente. |
+| `referencia_publicacao.ps1` | Referência canônica com identidade sensível a maiúsculas/minúsculas e nome SHA-256 do identificador. Carregado pelo principal; publicação e recuperação automáticas ainda pendentes de integração. |
 | `editorial_audio.ps1` | Normalização/decisão do marcador, leitura e preservação de tags/payload, candidato MP3 e verificação técnica antes da publicação; carregado somente para marcador não vazio. |
 | `coletanea_uber_instrumental_candidatas.csv` | Entrada canônica existente: 372 linhas, 370 buscas e dois vídeos diretos; sugestões NÃO são auditoria musical. |
 | `evidencias.exemplo.json` | Modelo com valores fictícios; NÃO é evidência utilizável. |
 | `ferramentas.json` | Registro de fornecedor, versão FFmpeg e hashes de três executáveis; NÃO é um instalador nem uma verificação automática de confiança. |
 | `tests/*.tests.ps1` | Roteiros de verificação, incluindo integração Linux, descoberta nativa, ordenação, evidências, aprovação musical e preflight. Cobertura parametrizada é distinguida de execução por sistema. |
 
-**[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os seis helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
+**[A]** Não há serviço, banco de dados externo, interface web, gerenciador de filas nem instalação automática de dependências. A execução usa PowerShell/.NET e processos externos. Os sete helpers são parte obrigatória da distribuição; “autossuficiente” NÃO significa que o principal isolado contenha tudo.
 
 **[A] Fluxo real:** carregar helpers → descobrir/testar ferramentas e Node opcional → validar autenticação explícita → localizar/importar CSV e validar cabeçalhos → importar aprovações e evidências → criar controle/adquirir lock → carregar estado → auditar legado → validar/processar linhas na ordem → identificar/reutilizar/buscar → obter metadados e exigir aprovação musical → tentar formatos/validar procedência → preservar/remuxar/converter excepcionalmente → validar/publicar → persistir resultados/relatórios e liberar lock.
 

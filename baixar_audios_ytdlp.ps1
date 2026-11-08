@@ -47,6 +47,7 @@ if (-not [string]::IsNullOrWhiteSpace($Marcador)) {
 . (Join-Path $script:Root 'autenticacao_ytdlp.ps1')
 . (Join-Path $script:Root 'ferramentas_portateis.ps1')
 . (Join-Path $script:Root 'publicacao_pendente.ps1')
+. (Join-Path $script:Root 'referencia_publicacao.ps1')
 $script:Out = if ([string]::IsNullOrWhiteSpace($Destino)) { $script:Layout.Out } else { Resolve-ScriptInput -Path $Destino -Root $script:Root }
 $script:Control = Join-Path $script:Out '.controle'
 $script:Utf8 = New-Object System.Text.UTF8Encoding -ArgumentList $false
@@ -54,7 +55,7 @@ $script:StateFile = Join-Path $script:Control 'estado.json'
 $script:ReportFile = Join-Path $script:Control 'relatorio.csv'
 $script:PendingFile = Join-Path $script:Control 'pendencias.csv'
 $script:Lock = $null
-$script:State = @{ versao = 1; registros = @{}; videos = @{}; buscas = @{} }
+$script:State = @{ versao = 1; registros = @{}; videos = @{}; buscas = @{}; publicacoes_pendentes = @{} }
 $script:RowsForReport = New-Object 'System.Collections.Generic.List[string]'
 $script:RateLimitStreak = 0
 $script:NetworkSuspended = $false
@@ -779,12 +780,13 @@ try {
     catch { throw 'Outra instancia esta usando este destino (ou lock indisponivel).' }
     if ([IO.File]::Exists($script:StateFile)) {
         $script:State = ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText($script:StateFile,[Text.UTF8Encoding]::new($false,$true)))
-        foreach ($section in @('registros', 'videos', 'buscas')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
+        foreach ($section in @('registros', 'videos', 'buscas', 'publicacoes_pendentes')) { if (-not $script:State.ContainsKey($section)) { $script:State[$section] = @{} } }
     }
     foreach ($tool in @($script:Ffmpeg, $script:Ffprobe)) {
         if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw ('Ferramenta de validacao ausente: ' + $tool) }
     }
 
+    if (-not [IO.File]::Exists($script:StateFile)) { Save-State }
     Audit-Legacy
     Write-Host ("Registros: $($rows.Count) | Aprovacoes: $($approvals.Count) | Destino: $script:Out")
     $index = 0

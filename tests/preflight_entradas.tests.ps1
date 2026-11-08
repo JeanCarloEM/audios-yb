@@ -24,7 +24,7 @@ function Snapshot([string]$Directory){
 foreach($kind in @('csv_vazio','aprovacao_ausente','aprovacao_cabecalho','aprovacao_duplicada','evidencia_invalida')){
  $case=Join-Path $work $kind
  [void][IO.Directory]::CreateDirectory($case)
- foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){[IO.File]::Copy((Join-Path $repo $helper),(Join-Path $case $helper))}
+ foreach($helper in @('ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1','referencia_publicacao.ps1')){[IO.File]::Copy((Join-Path $repo $helper),(Join-Path $case $helper))}
  [IO.File]::WriteAllText((Join-Path $case 'repo.txt'),$repo)
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,[Text.UTF8Encoding]::new($true))

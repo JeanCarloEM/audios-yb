@@ -7,7 +7,7 @@ $case=Join-Path $work 'script com acento á'
 $foreign=Join-Path $work 'cwd externo'
 [void][IO.Directory]::CreateDirectory($case)
 [void][IO.Directory]::CreateDirectory($foreign)
-foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1','yt-dlp.exe','ffmpeg.exe','ffprobe.exe')){
+foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1','referencia_publicacao.ps1','yt-dlp.exe','ffmpeg.exe','ffprobe.exe')){
  [IO.File]::Copy((Join-Path $repo $name),(Join-Path $case $name))
 }
 $csv=Join-Path $case 'fonte canônica.csv'
@@ -88,7 +88,7 @@ for($i=0;$i -lt $values.Count;$i++){if($got[$i] -cne $values[$i]){throw ('Argume
 # Sem yt-dlp: inicializacao deve falhar antes de criar destino/estado.
 $missing=Join-Path $work 'ferramenta ausente'
 [void][IO.Directory]::CreateDirectory($missing)
-foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1')){
+foreach($name in @('baixar_audios_ytdlp.ps1','ambiente_portatil.ps1','ferramentas_portateis.ps1','execucao_unica.ps1','evidencias_fonte.ps1','autenticacao_ytdlp.ps1','publicacao_pendente.ps1','referencia_publicacao.ps1')){
  [IO.File]::Copy((Join-Path $repo $name),(Join-Path $missing $name))
 }
 $failedLog=& $pwsh -NoProfile -File (Join-Path $missing 'baixar_audios_ytdlp.ps1') -SomenteAuditarExistentes -NaoInterativo 2>&1
