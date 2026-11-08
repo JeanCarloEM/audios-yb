@@ -390,3 +390,65 @@ function Register-PublicationReference {
  $null=Save-State
  return (Read-PersistedPublicationReference -ReferenceName $reference.arquivo -Control $Control -Out $Out)
 }
+
+# Coordena somente checkpoints existentes. Protecao devolvida ao caller nao autoriza audio.
+function Resume-PendingPublications {
+ [CmdletBinding()]
+ param([Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out,[switch]$AuditOnly)
+ $null=Assert-PublicationContext -Control $Control -Out $Out
+ if($script:State -isnot [hashtable]){throw [IO.InvalidDataException]::new('Estado invalido')}
+ $result=@{Recovered=@();Unresolved=@();ProtectedFiles=@();RecordKeys=@();VideoIds=@();PreserveAllFiles=$false}
+ if(-not $script:State.ContainsKey('publicacoes_pendentes')){return $result}
+ if($script:State.publicacoes_pendentes -isnot [hashtable]){
+  $result.Unresolved=@(@{ReferenceName='';VideoId='';RecordKey='';Arquivo='';Reason='Mapa de referencias invalido'})
+  $result.PreserveAllFiles=$true
+  return $result
+ }
+ $names=[string[]]@($script:State.publicacoes_pendentes.Keys)
+ [Array]::Sort($names,[StringComparer]::Ordinal)
+ $recovered=New-Object 'System.Collections.Generic.List[hashtable]'
+ $unresolved=New-Object 'System.Collections.Generic.List[hashtable]'
+ $protected=New-Object 'System.Collections.Generic.List[string]'
+ $keys=New-Object 'System.Collections.Generic.List[string]'
+ $ids=New-Object 'System.Collections.Generic.List[string]'
+ foreach($name in $names){
+  $captured=$script:State.publicacoes_pendentes[$name]
+  if($captured -is [hashtable]){$captured=$captured.Clone()}
+  $videoId='';$recordKey='';$leaf='';$reason=''
+  if($captured -is [hashtable]){
+   if($captured.video_id -is [string] -and $captured.video_id -cmatch '^[A-Za-z0-9_-]{11}$'){$videoId=$captured.video_id}
+   if($captured.registro_chave -is [string] -and $captured.registro_chave -cmatch '^[0-9a-f]{64}$'){$recordKey=$captured.registro_chave}
+  }
+  try{
+   $reference=Read-PersistedPublicationReference -ReferenceName $name -Control $Control -Out $Out
+   $journal=Read-PublicationIntentFile -Path (Join-Path (Join-Path $Control 'publicacoes_pendentes') $name) -ExpectedSha256 $reference.sha256 -Control $Control
+   if(-not [string]::Equals($journal.Data.video_id,$reference.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals($journal.Data.registro.chave,$reference.registro_chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia e journal divergentes')}
+   $candidate=$journal.Data.arquivo
+   if($candidate -isnot [string] -or [string]::IsNullOrWhiteSpace($candidate) -or -not [string]::Equals([IO.Path]::GetFileName($candidate),$candidate,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Nome de publicacao invalido')}
+   $leaf=$candidate
+   if($AuditOnly){
+    $reason='Publicacao pendente preservada no modo de auditoria'
+   }else{
+    $completed=Invoke-PublicationRecovery -ReferenceName $name -Control $Control -Out $Out
+    if($completed.Status -cne 'reconciliada'){throw [IO.InvalidDataException]::new('Recuperacao nao confirmou reconciliacao')}
+    $completed.ReferenceName=$name
+    $recovered.Add($completed)
+    continue
+   }
+  }catch{
+   $reason=$_.Exception.Message
+   # Save2 pode falhar apos retirar a referencia da memoria; preservar checkpoint recuperavel.
+   if($captured -is [hashtable] -and $script:State.publicacoes_pendentes -is [hashtable] -and -not $script:State.publicacoes_pendentes.ContainsKey($name)){$script:State.publicacoes_pendentes[$name]=$captured.Clone()}
+  }
+  if([string]::IsNullOrWhiteSpace($leaf)){$result.PreserveAllFiles=$true}else{if(-not $protected.Contains($leaf)){$protected.Add($leaf)}}
+  if($recordKey -and -not $keys.Contains($recordKey)){$keys.Add($recordKey)}
+  if($videoId -and -not $ids.Contains($videoId)){$ids.Add($videoId)}
+  $unresolved.Add(@{ReferenceName=$name;VideoId=$videoId;RecordKey=$recordKey;Arquivo=$leaf;Reason=$reason})
+ }
+ $result.Recovered=@($recovered.ToArray())
+ $result.Unresolved=@($unresolved.ToArray())
+ $result.ProtectedFiles=@($protected.ToArray())
+ $result.RecordKeys=@($keys.ToArray())
+ $result.VideoIds=@($ids.ToArray())
+ return $result
+}
