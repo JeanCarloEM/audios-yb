@@ -1,7 +1,7 @@
 #requires -Version 7.0
 <#
 .SYNOPSIS
-    Audita um CSV e publica somente M4A/MP3 com fonte documentada e minimo medido de 128 kbps.
+    Audita um CSV e publica somente AAC/AC3 com fonte documentada e minimo medido de 128 kbps.
 .EXAMPLE
     pwsh -NoProfile -ExecutionPolicy Bypass -File .\baixar_audios_ytdlp.ps1 -Csv .\coletanea_uber_instrumental_candidatas.csv
 .EXAMPLE
@@ -13,6 +13,7 @@
     Use SIM nas tres colunas de confirmacao SOMENTE apos ouvir e conferir.
     ffprobe/ffmpeg nativos adjacentes ou no PATH: validacao integral e conversao excepcional.
     EvidenciasJson documenta procedencia e historico, vinculados ao hash da fonte.
+    Preferencia_vocal opcional por linha prevalece sobre -PreferenciaVocal (vocais, instrumentais, indiferentes).
 #>
 [CmdletBinding()]
 param(
@@ -39,7 +40,8 @@ param(
     [string]$ColunaTituloTag = 'Musica',
     [string]$ColunaAlbumTag,
     [string]$ColunaTrackTag,
-    [string]$ColunaAutorTag
+    [string]$ColunaAutorTag,
+    [string]$PreferenciaVocal = 'indiferentes'
 )
 
 Set-StrictMode -Version 1.0
@@ -49,6 +51,7 @@ if ($null -ne $LarguraTrack -and ($LarguraTrack -lt 1 -or $LarguraTrack -gt 145)
 $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
 . (Join-Path $script:Root 'codecs_permitidos.ps1')
+. (Join-Path $script:Root 'preferencia_vocal.ps1')
 if ($ModeloNome -eq 'Musical') {
     . (Join-Path $script:Root 'nomeacao_editorial.ps1')
     . (Join-Path $script:Root 'mapeamento_nomeacao.ps1')
@@ -890,6 +893,13 @@ try {
         $rec = if ($script:State.registros.ContainsKey($key)) { $script:State.registros[$key] } else { New-Record $row $key }
         Write-Progress -Activity 'Auditoria/download de audio original' -Status "$index/$($rows.Count): $artist - $song" -PercentComplete (100.0 * $index / $rows.Count)
         try {
+            # vocal-preference-input-v1-begin
+            $rec['preferencia_vocal'] = ''
+            $rec['deteccao_vocal'] = @{ status = 'nao_verificado'; motivo = 'Deteccao vocal ainda nao integrada' }
+            $vocalPreferenceColumn = $row.PSObject.Properties['Preferencia_vocal']
+            $individualPreference = if ($null -eq $vocalPreferenceColumn) { $null } else { [string]$vocalPreferenceColumn.Value }
+            $rec['preferencia_vocal'] = Resolve-VocalPreference -Global $PreferenciaVocal -Individual $individualPreference
+            # vocal-preference-input-v1-end
             if ($order -notmatch '^\d+$' -or ($seenOrders.ContainsKey($order) -and $seenOrders[$order] -gt 1)) {
                 Finalize-Record $rec 'falha' 'Ordem invalida ou duplicada no CSV; demais linhas serao processadas'; continue
             }
