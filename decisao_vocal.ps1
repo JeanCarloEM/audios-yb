@@ -95,3 +95,26 @@ function Get-VocalPreferenceDecision {
     }
 }
 
+
+function Get-SourceVocalPreferenceDecision {
+    [CmdletBinding()]
+    param(
+        [string]$Preference = 'indiferentes',
+        [object]$Detection = $null,
+        [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][string]$SourceSha256
+    )
+    if ([string]::IsNullOrEmpty($SourceSha256) -or
+        -not [regex]::IsMatch($SourceSha256, '\A[0-9a-fA-F]{64}\z')) {
+        throw [ArgumentException]::new('SourceSha256 deve ser SHA256 hexadecimal de 64 caracteres.')
+    }
+    $eligible = $null
+    if ($Detection -is [hashtable]) {
+        $declared = $Detection['origem_sha256']
+        if ($declared -is [string] -and
+            [regex]::IsMatch($declared, '\A[0-9a-fA-F]{64}\z') -and
+            [string]::Equals($declared, $SourceSha256, [StringComparison]::OrdinalIgnoreCase)) {
+            $eligible = $Detection
+        }
+    }
+    return Get-VocalPreferenceDecision -Preference $Preference -Detection $eligible
+}
