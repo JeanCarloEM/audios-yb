@@ -417,8 +417,8 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
     else {
         $work = Join-Path ([IO.Path]::GetDirectoryName($Source)) ('resultado-' + [guid]::NewGuid().ToString('N') + '.m4a')
         $ready = $null
-        if ($sourceProbe.codec -in @('aac', 'alac', 'mp3')) {
-            if ($sourceProbe.codec -eq 'mp3') { $work = [IO.Path]::ChangeExtension($work, 'mp3') }
+        if (Test-AllowedAudioCodec -Codec $sourceProbe.codec) {
+
             $encoding = @('-c:a', 'copy'); $audit.conversao = 'remux_sem_recodificacao'
             $rates = @(0)
         }
