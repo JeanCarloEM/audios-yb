@@ -322,6 +322,7 @@ function Verify-Signature([string]$File, [string]$Ext) {
                 { $_ -in @('opus', 'ogg', 'oga') } { return ($head.StartsWith('OggS') -or (($b[0] -eq 0x1A) -and ($b[1] -eq 0x45))) }
                 'mp3' { return ($head.StartsWith('ID3') -or ($b[0] -eq 0xFF -and ($b[1] -band 0xE0) -eq 0xE0)) }
                 'aac' { return ($b[0] -eq 0xFF -and ($b[1] -band 0xF0) -eq 0xF0) }
+                'ac3' { return ($b[0] -eq 0x0B -and $b[1] -eq 0x77) }
                 'flac' { return $head.StartsWith('fLaC') }
                 'wav' { return ($head.StartsWith('RIFF') -and $head.Substring(8, 4) -eq 'WAVE') }
                 default { return $false }
