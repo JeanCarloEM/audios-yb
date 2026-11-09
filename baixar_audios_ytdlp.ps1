@@ -52,6 +52,7 @@ $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
 . (Join-Path $script:Root 'codecs_permitidos.ps1')
 . (Join-Path $script:Root 'preferencia_vocal.ps1')
+. (Join-Path $script:Root 'decisao_vocal.ps1')
 if ($ModeloNome -eq 'Musical') {
     . (Join-Path $script:Root 'nomeacao_editorial.ps1')
     . (Join-Path $script:Root 'mapeamento_nomeacao.ps1')
@@ -396,20 +397,27 @@ function Test-SourceEvidence([string]$Id, [string]$FormatId, [string]$Hash, $Pro
     }
     return @{ok = $true; evidencia = $e; motivo = 'Evidencia externa vinculada ao hash; validacao tecnica independente concluida' }
 }
-function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '', [AllowNull()][hashtable]$PublicationRecord = $null, [AllowNull()][object]$EditorialRow = $null, [AllowNull()][object]$EditorialColumns = $null) {
+function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt, [switch]$SolicitarEvidencia, [AllowNull()][AllowEmptyString()][string]$Marcador = '', [AllowNull()][hashtable]$PublicationRecord = $null, [AllowNull()][object]$EditorialRow = $null, [AllowNull()][object]$EditorialColumns = $null, [string]$VocalPreference = 'indiferentes', [object]$VocalDetection = $null) {
+    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
+    # vocal-source-guard-v1
+    $vocalDecision = Get-SourceVocalPreferenceDecision -Preference $VocalPreference -Detection $VocalDetection -SourceSha256 $sourceHash
+    if (-not $vocalDecision.permitido) {
+        return @{ok = $false; diagnostico = 'preferencia_vocal_incompativel'; motivo = $vocalDecision.motivo;
+            auditoria = @{politica = $script:Policy; validado = $false; origem_sha256 = $sourceHash; vocal = $vocalDecision}
+        }
+    }
     $sourceProbe = Probe-Audio $Source
     if ([double]$Fmt.duracao_origem -gt 0 -and
         [Math]::Abs($sourceProbe.duracao - [double]$Fmt.duracao_origem) -gt [Math]::Max(0.5, [double]$Fmt.duracao_origem * 0.01)) {
         return @{ok = $false; motivo = 'Duracao da fonte diverge dos metadados; possivel truncamento ou fonte incorreta';
-            auditoria = @{politica = $script:Policy; validado = $false; origem = $sourceProbe; duracao_esperada = $Fmt.duracao_origem }
+            auditoria = @{politica = $script:Policy; validado = $false; origem = $sourceProbe; duracao_esperada = $Fmt.duracao_origem; vocal = $vocalDecision }
         }
     }
-    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash.ToLowerInvariant()
     $evidence = Test-SourceEvidence $Id $Fmt.id $sourceHash $sourceProbe
 
     $audit = @{ politica = $script:Policy; origem_sha256 = $sourceHash; origem_formato_id = $Fmt.id;
         origem_url = ('https://www.youtube.com/watch?v=' + $Id); origem = $sourceProbe; conversao = 'nenhuma';
-        evidencia = $evidence; validado = $false 
+        evidencia = $evidence; validado = $false; vocal = $vocalDecision 
     }
     if (-not $evidence.ok) { return @{ok = $false; motivo = $evidence.motivo; auditoria = $audit } }
     $ext = [IO.Path]::GetExtension($Source).ToLowerInvariant()
@@ -1195,7 +1203,7 @@ try {
                 }
                 $editorialCallArgs = @{}
                 if ($Metatags) { $editorialCallArgs = @{EditorialRow=$row;EditorialColumns=$script:ColunasMetatags} }
-                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado -PublicationRecord $rec @editorialCallArgs }
+                try { $result = Complete-Audio $target (Join-Path $script:Out $baseName) $videoId $fmt -SolicitarEvidencia:(-not $NaoInterativo) -Marcador $script:MarcadorSolicitado -PublicationRecord $rec -VocalPreference $rec.preferencia_vocal -VocalDetection $rec.deteccao_vocal @editorialCallArgs }
                 catch {
                     $result = @{ok = $false; motivo = ('Validacao/conversao rejeitada: ' + $_.Exception.Message);
                         auditoria = @{politica = $script:Policy; validado = $false; origem_formato_id = $fmt.id; erro = $_.Exception.Message }
