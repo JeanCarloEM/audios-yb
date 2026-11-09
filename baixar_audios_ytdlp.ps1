@@ -48,6 +48,7 @@ if ($null -ne $LarguraTrack -and ($LarguraTrack -lt 1 -or $LarguraTrack -gt 145)
 . (Join-Path $PSScriptRoot 'ambiente_portatil.ps1')
 $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
+. (Join-Path $script:Root 'codecs_permitidos.ps1')
 if ($ModeloNome -eq 'Musical') {
     . (Join-Path $script:Root 'nomeacao_editorial.ps1')
     . (Join-Path $script:Root 'mapeamento_nomeacao.ps1')
@@ -363,8 +364,11 @@ function Probe-Audio([string]$File) {
 }
 function Test-FinalAudio([string]$File, $Probe) {
     $ext = [IO.Path]::GetExtension($File).ToLowerInvariant()
-    $compatible = ($ext -eq '.m4a' -and $Probe.container -match '(^|,)mov(,|$)' -and $Probe.codec -in @('aac', 'alac')) -or
-    ($ext -eq '.mp3' -and $Probe.container -eq 'mp3' -and $Probe.codec -eq 'mp3')
+    # Rejeitar codec real fora de Test-AllowedAudioCodec, preservando piso medido 128 kbps
+    if (-not (Test-AllowedAudioCodec -Codec $Probe.codec)) { return $false }
+    $compatible = ($ext -eq '.m4a' -and $Probe.container -match '(^|,)mov(,|$)' -and (Test-AllowedAudioCodec $Probe.codec)) -or
+    ($ext -eq '.aac' -and $Probe.container -eq 'aac' -and $Probe.codec -eq 'aac') -or
+    ($ext -eq '.ac3' -and $Probe.container -eq 'ac3' -and $Probe.codec -eq 'ac3')
     # O resultado final tambem obedece ao piso absoluto; nao adicionar padding.
     return ($compatible -and $Probe.bitrate_medido_kbps -ge 128)
 }
