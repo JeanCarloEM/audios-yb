@@ -417,7 +417,7 @@ function Complete-Audio([string]$Source, [string]$TargetBase, [string]$Id, $Fmt,
 
     $audit = @{ politica = $script:Policy; origem_sha256 = $sourceHash; origem_formato_id = $Fmt.id;
         origem_url = ('https://www.youtube.com/watch?v=' + $Id); origem = $sourceProbe; conversao = 'nenhuma';
-        evidencia = $evidence; validado = $false; vocal = $vocalDecision 
+        evidencia = $evidence; validado = $false; vocal = $vocalDecision
     }
     if (-not $evidence.ok) { return @{ok = $false; motivo = $evidence.motivo; auditoria = $audit } }
     $ext = [IO.Path]::GetExtension($Source).ToLowerInvariant()
