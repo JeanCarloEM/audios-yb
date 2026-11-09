@@ -614,11 +614,15 @@ function Sort-AudioFormats([object[]]$Items) {
 }
 
 function Get-Formats($Info) {
+    # Aliases declarados; codec real continua exigido por Probe-Audio.
+    # https://developer.apple.com/documentation/http-live-streaming/hls-authoring-specification-for-apple-devices-appendixes
+    $aacNames = [System.Collections.Generic.HashSet[string]]::new([string[]]@('aac', 'mp4a.40.2', 'mp4a.40.5', 'mp4a.40.29'), [StringComparer]::OrdinalIgnoreCase)
+    $ac3Names = [System.Collections.Generic.HashSet[string]]::new([string[]]@('ac3', 'ac-3'), [StringComparer]::OrdinalIgnoreCase)
     $formats = New-Object 'System.Collections.Generic.List[object]'
     foreach ($f in @($Info.formats)) {
         if ($null -eq $f) { continue }
         $ext = [string]$f.ext
-        if ($ext -notin @('m4a', 'mp3', 'webm', 'opus', 'ogg', 'oga', 'aac', 'flac', 'wav', 'mp4', 'mka')) { continue }
+        if ($ext -notin @('m4a', 'mp3', 'webm', 'opus', 'ogg', 'oga', 'aac', 'ac3', 'flac', 'wav', 'mp4', 'mka')) { continue }
         if ([string]$f.vcodec -ne 'none' -or -not $f.acodec -or [string]$f.acodec -eq 'none') { continue }
         # -f aceita expressoes (+,/,...): permitir apenas IDs literais.
         if (-not $f.format_id -or [string]$f.format_id -notmatch '^[A-Za-z0-9_-]{1,45}$') { continue }
@@ -628,9 +632,11 @@ function Get-Formats($Info) {
         $lossless = [string]$f.acodec -match '^(flac|alac|wavpack|ape|pcm_)'
         # Declaracoes baixas sao rejeitadas antes do download; desconhecidas exigem medicao.
         if (-not $lossless -and $abr -gt 0 -and $abr -lt 128) { continue }
-        $native = ($ext -eq 'm4a' -and [string]$f.acodec -match '^(mp4a|aac|alac)') -or
-        ($ext -eq 'mp3' -and [string]$f.acodec -match '^mp3')
-        $operation = if ($native) { 'nativo' } elseif ([string]$f.acodec -match '^(mp4a|aac|alac|mp3)') { 'remux' } else { 'transcodificacao' }
+        $isAac = $aacNames.Contains([string]$f.acodec)
+        $isAc3 = $ac3Names.Contains([string]$f.acodec)
+        $native = ($isAac -and $ext -in @('m4a', 'aac')) -or
+            ($isAc3 -and $ext -in @('m4a', 'ac3'))
+        $operation = if ($native) { 'nativo' } elseif ($isAac -or $isAc3) { 'remux' } else { 'transcodificacao' }
         $tier = if ($native) { 0 } elseif ($operation -eq 'remux') { 1 } else { 2 }
         $distance = if ($lossless) { 0 } elseif ($abr -ge 128) { $abr - 128 } else { [double]::MaxValue }
         $formats.Add([pscustomobject]@{ id = [string]$f.format_id; ext = $ext; codec = [string]$f.acodec;
