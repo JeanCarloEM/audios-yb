@@ -65,3 +65,135 @@ function New-DirectAudioSelectionProof {
         }
     }
 }
+
+
+function Resolve-DirectAudioSelectionProof {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$VideoId = '',
+
+        [Parameter(Mandatory = $false)]
+        [string]$Artist = '',
+
+        [Parameter(Mandatory = $false)]
+        [string]$Song = '',
+
+        [Parameter(Mandatory = $false)]
+        [object]$StoredProof = $null
+    )
+
+    # Se StoredProof for nulo ou não for IDictionary, retorna null
+    if ($null -eq $StoredProof) {
+        return $null
+    }
+
+    $storedDict = $StoredProof -as [System.Collections.IDictionary]
+    if ($null -eq $storedDict) {
+        return $null
+    }
+
+    # Verifica exatamente 6 chaves no nível superior (Ordinal)
+    if ($storedDict.Count -ne 6) {
+        return $null
+    }
+
+    $requiredKeys = [Collections.Generic.HashSet[string]]::new([string[]]@('versao', 'tipo', 'video_id', 'criterio', 'metadados', 'referencia'), [StringComparer]::Ordinal)
+    foreach ($key in $storedDict.Keys) {
+        if ($key -isnot [string] -or -not $requiredKeys.Contains($key)) { return $null }
+    }
+
+    # versao: int/long exatamente 2 (não string/double/bool)
+    $versao = $storedDict['versao']
+    if ($versao -isnot [int] -and $versao -isnot [long]) {
+        return $null
+    }
+    if ($versao -ne 2) {
+        return $null
+    }
+
+    # tipo: string exatamente 'selecao_tecnica'
+    $tipo = $storedDict['tipo']
+    if ($tipo -isnot [string] -or -not [string]::Equals($tipo, 'selecao_tecnica', [StringComparison]::Ordinal)) {
+        return $null
+    }
+
+    # video_id: string que deve cumprir regra ASCII 11 e ser igual a VideoId (Ordinal)
+    $videoIdStored = $storedDict['video_id']
+    if ($videoIdStored -isnot [string]) {
+        return $null
+    }
+    if (-not [regex]::IsMatch($videoIdStored, '\A[A-Za-z0-9_-]{11}\z')) {
+        return $null
+    }
+    if (-not [string]::Equals($videoIdStored, $VideoId, [StringComparison]::Ordinal)) {
+        return $null
+    }
+
+    # criterio: string exatamente 'url_direta_id_literal'
+    $criterio = $storedDict['criterio']
+    if ($criterio -isnot [string] -or -not [string]::Equals($criterio, 'url_direta_id_literal', [StringComparison]::Ordinal)) {
+        return $null
+    }
+
+    # metadados: IDictionary fechado com exatamente 2 chaves: id, title
+    $metadados = $storedDict['metadados']
+    if ($null -eq $metadados) {
+        return $null
+    }
+    $metaDict = $metadados -as [System.Collections.IDictionary]
+    if ($null -eq $metaDict) {
+        return $null
+    }
+    if ($metaDict.Count -ne 2) {
+        return $null
+    }
+    $allowedKeys = [Collections.Generic.HashSet[string]]::new([string[]]@('id', 'title'), [StringComparer]::Ordinal)
+    foreach ($key in $metaDict.Keys) {
+        if ($key -isnot [string] -or -not $allowedKeys.Contains($key)) { return $null }
+    }
+    # id: string igual a videoIdStored (Ordinal)
+    $metaId = $metaDict['id']
+    if ($metaId -isnot [string] -or -not [string]::Equals($metaId, $videoIdStored, [StringComparison]::Ordinal)) {
+        return $null
+    }
+    # title: string não branco
+    $metaTitle = $metaDict['title']
+    if ($metaTitle -isnot [string] -or [string]::IsNullOrWhiteSpace($metaTitle)) {
+        return $null
+    }
+
+    # referencia: IDictionary fechado com exatamente 2 chaves: artista, musica
+    $referencia = $storedDict['referencia']
+    if ($null -eq $referencia) {
+        return $null
+    }
+    $refDict = $referencia -as [System.Collections.IDictionary]
+    if ($null -eq $refDict) {
+        return $null
+    }
+    if ($refDict.Count -ne 2) {
+        return $null
+    }
+    $allowedKeys = [Collections.Generic.HashSet[string]]::new([string[]]@('artista', 'musica'), [StringComparer]::Ordinal)
+    foreach ($key in $refDict.Keys) {
+        if ($key -isnot [string] -or -not $allowedKeys.Contains($key)) { return $null }
+    }
+    # artista: string igual a Artist (Ordinal)
+    $refArtist = $refDict['artista']
+    if ($refArtist -isnot [string] -or -not [string]::Equals($refArtist, $Artist, [StringComparison]::Ordinal)) {
+        return $null
+    }
+    # musica: string igual a Song (Ordinal)
+    $refSong = $refDict['musica']
+    if ($refSong -isnot [string] -or -not [string]::Equals($refSong, $Song, [StringComparison]::Ordinal)) {
+        return $null
+    }
+
+    # Tudo válido: invoca construtor
+    try {
+        return New-DirectAudioSelectionProof -VideoId $VideoId -Info @{ id = $videoIdStored; title = $metaTitle } -Artist $Artist -Song $Song
+    } catch [System.ArgumentException] {
+        return $null
+    }
+}
