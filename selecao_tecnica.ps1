@@ -211,7 +211,10 @@ function Resolve-PublicationSelectionProof {
         [string]$Song = '',
 
         [Parameter(Mandatory = $false)]
-        [object]$Record = $null
+        [object]$Record = $null,
+
+        [Parameter(Mandatory = $false)]
+        [object]$SourceUrl = $null
     )
 
     # Se Record for nulo ou não for IDictionary, retorna null
@@ -238,9 +241,15 @@ function Resolve-PublicationSelectionProof {
         }
     }
 
-    # Se tiver selecao_tecnica, resolve SOMENTE por Resolve-DirectAudioSelectionProof
+    # Prova tecnica presente deve ser validada pela versao correspondente.
     if ($hasTechnical) {
         $storedProof = $recordDict['selecao_tecnica']
+        # Dispatch v3 exige contexto externo; nunca usa fallback humano.
+        if ($storedProof -is [Collections.IDictionary] -and ($storedProof['versao'] -is [int] -or $storedProof['versao'] -is [long]) -and $storedProof['versao'] -eq 3) {
+            $result = Resolve-AutoSearchAudioSelectionProof -VideoId $VideoId -SourceUrl $SourceUrl -Artist $Artist -Song $Song -StoredProof $storedProof
+            if ($null -eq $result) { return $null }
+            return @{ Kind = 'technical_v3'; Field = 'selecao_tecnica'; Proof = $result }
+        }
         $result = Resolve-DirectAudioSelectionProof -VideoId $VideoId -Artist $Artist -Song $Song -StoredProof $storedProof
         if ($null -eq $result) {
             return $null
