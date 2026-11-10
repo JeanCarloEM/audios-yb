@@ -52,6 +52,8 @@ $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
 . (Join-Path $script:Root 'selecao_tecnica.ps1')
 . (Join-Path $script:Root 'selecao_automatica.ps1')
+. (Join-Path $script:Root 'consulta_busca.ps1')
+. (Join-Path $script:Root 'selecao_busca.ps1')
 . (Join-Path $script:Root 'codecs_permitidos.ps1')
 . (Join-Path $script:Root 'preferencia_vocal.ps1')
 . (Join-Path $script:Root 'decisao_vocal.ps1')
@@ -950,9 +952,13 @@ try {
                     }
                 }
                 if ($hasTechnicalReuse) {
-                    $reuseSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $reuseVideo
-                    $recordSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $rec
-                    if ($null -eq $reuseSelection -or $null -eq $recordSelection -or $reuseSelection.Kind -cne 'technical_v2' -or $recordSelection.Kind -cne 'technical_v2') {
+                    # cache-search-v3-context: expectativa vem do CSV atual.
+                    if (-not [string]::Equals([string]$rec.url_original, $url, [StringComparison]::Ordinal) -or -not [string]::Equals([string]$rec.chave, $key, [StringComparison]::Ordinal)) {
+                        Finalize-Record $rec 'pendente_auditoria' 'Registro existente diverge da fonte canonica do CSV; arquivo preservado'; continue
+                    }
+                    $reuseSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $reuseVideo -SourceUrl $url
+                    $recordSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $rec -SourceUrl $url
+                    if ($null -eq $reuseSelection -or $null -eq $recordSelection -or $reuseSelection.Kind -cnotin @('technical_v2','technical_v3') -or $recordSelection.Kind -cne $reuseSelection.Kind) {
                         Finalize-Record $rec 'pendente_auditoria' 'Prova tecnica de reuso invalida; arquivo preservado sem recorrer a aprovacao humana'; continue
                     }
                     $reuseEvidence = Test-SourceEvidence -Id $reuseId -FormatId ([string]$reuseVideo.auditoria.origem_formato_id) -Hash ([string]$reuseVideo.auditoria.origem_sha256) -Probe $reuseVideo.auditoria.origem
