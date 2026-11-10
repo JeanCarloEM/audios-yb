@@ -38,7 +38,7 @@ function New-PublicationIntentSnapshot {
  if(-not [string]::Equals($Record.chave,$keyHash,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Record.chave divergente')}
  $hasTechnical=@($Record.Keys|Where-Object {[string]::Equals([string]$_,'selecao_tecnica',[StringComparison]::OrdinalIgnoreCase)}).Count -gt 0
  if($hasTechnical){
-  $selection=Resolve-PublicationSelectionProof -VideoId $VideoId -Artist $Record.artista.Trim() -Song $Record.musica.Trim() -Record $Record
+  $selection=Resolve-PublicationSelectionProof -VideoId $VideoId -Artist $Record.artista.Trim() -Song $Record.musica.Trim() -Record $Record -SourceUrl $Record.url_original
   if($null -eq $selection){throw [ArgumentException]::new('Selecao tecnica invalida')}
  }elseif(-not $Record.ContainsKey('aprovacao_musical') -or $Record.aprovacao_musical -isnot [hashtable] -or $Record.aprovacao_musical.Count -eq 0){throw [ArgumentException]::new('Aprovacao ausente')}
  if($Audit.validado -isnot [bool] -or -not $Audit.validado -or $Audit.politica -isnot [string] -or [string]::IsNullOrWhiteSpace($Audit.politica)){throw [ArgumentException]::new('Audit invalida')}
