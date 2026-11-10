@@ -312,13 +312,16 @@ function Invoke-PublicationRecovery {
  foreach($key in @('versao','arquivo','sha256','video_id','registro_chave')){
   if(-not [string]::Equals([string]$persisted[$key],[string]$reference[$key],[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia persistida divergente')}
  }
+ . (Join-Path $PSScriptRoot 'selecao_tecnica.ps1')
  $path=Join-Path (Join-Path $controlPath 'publicacoes_pendentes') $ReferenceName
- $plan=Get-PublicationRecoveryPlan -Path $path -ExpectedSha256 $reference.sha256 -Control $controlPath -Out $outPath
+ $plan=Get-PublicationRecoveryPlan -Path $path -ExpectedSha256 $reference.sha256 -Control $controlPath -Out $outPath -AllowTechnicalSelection
  $data=$plan.Data
  if(-not [string]::Equals($data.video_id,$reference.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals($data.registro.chave,$reference.registro_chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia e registro divergentes')}
  if($script:State.videos.ContainsKey($data.video_id)){
   $old=$script:State.videos[$data.video_id]
-  if(-not [string]::Equals([string]$old.arquivo,$data.arquivo,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.sha256,$data.sha256,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.artista,$plan.Artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.musica,$plan.Song,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.aprovacao_musical.video_id,$data.video_id,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Conflito com video existente no estado')}
+  $oldSelection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $plan.Artist -Song $plan.Song -Record $old
+  if($null -eq $oldSelection -or $oldSelection.Kind -cne $plan.Selection.Kind){throw [IO.InvalidDataException]::new('Conflito de selecao com video existente no estado')}
+  if(-not [string]::Equals([string]$old.arquivo,$data.arquivo,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.sha256,$data.sha256,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.artista,$plan.Artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.musica,$plan.Song,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$oldSelection.Proof.video_id,$data.video_id,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Conflito com video existente no estado')}
  }
  if((Get-FileHash -LiteralPath $plan.Path).Hash.ToLowerInvariant() -cne $data.sha256 -or (Get-Item -LiteralPath $plan.Path).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant() -cne $reference.sha256){throw [IO.InvalidDataException]::new('Arquivo mudou antes da reconciliacao')}
  if($plan.Action -ceq 'publish'){
@@ -330,13 +333,18 @@ function Invoke-PublicationRecovery {
  if((Get-Item -LiteralPath $plan.Target).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $plan.Target).Hash.ToLowerInvariant() -cne $data.sha256){throw [IO.InvalidDataException]::new('Resultado publicado divergente; referencia preservada')}
  $now=[DateTime]::UtcNow.ToString('o')
  $audit=$data.auditoria
- $audit.resultado=$plan.Probe;$audit.evidencia=$plan.Evidence;$audit.aprovacao_musical=$plan.MusicalApproval
+ $selectionField=$plan.Selection.Field
+ $otherField=if($selectionField -ceq 'selecao_tecnica'){'aprovacao_musical'}else{'selecao_tecnica'}
+ $null=$audit.Remove($otherField)
+ $audit.resultado=$plan.Probe;$audit.evidencia=$plan.Evidence;$audit[$selectionField]=$plan.Selection.Proof
  $audit.recuperacao=@{acao=$plan.Action;intencao_sha256=$reference.sha256;verificado_utc=$now}
  $trace=$reference.Clone();$trace.situacao='concluida'
  $format=[IO.Path]::GetExtension($data.arquivo).TrimStart('.').ToLowerInvariant()
- $script:State.videos[$data.video_id]=@{artista=$plan.Artist;musica=$plan.Song;arquivo=$data.arquivo;tamanho=$data.tamanho;sha256=$data.sha256;formato=$format;codec=$plan.Probe.codec;bitrate_kbps=$plan.Probe.bitrate_medido_kbps;auditoria=$audit;aprovacao_musical=$plan.MusicalApproval;verificado_utc=$now;publicacao_intencao=$trace}
+ $script:State.videos[$data.video_id]=@{artista=$plan.Artist;musica=$plan.Song;arquivo=$data.arquivo;tamanho=$data.tamanho;sha256=$data.sha256;formato=$format;codec=$plan.Probe.codec;bitrate_kbps=$plan.Probe.bitrate_medido_kbps;auditoria=$audit;verificado_utc=$now;publicacao_intencao=$trace}
+ $script:State.videos[$data.video_id][$selectionField]=$plan.Selection.Proof
  $record=$data.registro
- $record.auditoria=$audit;$record.aprovacao_musical=$plan.MusicalApproval;$record.arquivo=$data.arquivo;$record.formato=$format;$record.codec=$plan.Probe.codec;$record.bitrate_kbps=[string]$plan.Probe.bitrate_medido_kbps
+ $null=$record.Remove($otherField)
+ $record.auditoria=$audit;$record[$selectionField]=$plan.Selection.Proof;$record.arquivo=$data.arquivo;$record.formato=$format;$record.codec=$plan.Probe.codec;$record.bitrate_kbps=[string]$plan.Probe.bitrate_medido_kbps
  $record.resultado=if($plan.Action -ceq 'publish'){'baixado'}else{'existente'}
  $record.motivo='Publicacao recuperada: identidade, evidencia e audio revalidados'
  $record.atualizado_utc=$now
