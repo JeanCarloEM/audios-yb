@@ -312,6 +312,10 @@ function Invoke-PublicationRecovery {
  foreach($key in @('versao','arquivo','sha256','video_id','registro_chave')){
   if(-not [string]::Equals([string]$persisted[$key],[string]$reference[$key],[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia persistida divergente')}
  }
+ # Dependencias puras da prova de busca v3.
+ . (Join-Path $PSScriptRoot 'consulta_busca.ps1')
+ . (Join-Path $PSScriptRoot 'selecao_automatica.ps1')
+ . (Join-Path $PSScriptRoot 'selecao_busca.ps1')
  . (Join-Path $PSScriptRoot 'selecao_tecnica.ps1')
  $path=Join-Path (Join-Path $controlPath 'publicacoes_pendentes') $ReferenceName
  $plan=Get-PublicationRecoveryPlan -Path $path -ExpectedSha256 $reference.sha256 -Control $controlPath -Out $outPath -AllowTechnicalSelection
@@ -319,7 +323,7 @@ function Invoke-PublicationRecovery {
  if(-not [string]::Equals($data.video_id,$reference.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals($data.registro.chave,$reference.registro_chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Referencia e registro divergentes')}
  if($script:State.videos.ContainsKey($data.video_id)){
   $old=$script:State.videos[$data.video_id]
-  $oldSelection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $plan.Artist -Song $plan.Song -Record $old
+  $oldSelection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $plan.Artist -Song $plan.Song -Record $old -SourceUrl $data.registro.url_original
   if($null -eq $oldSelection -or $oldSelection.Kind -cne $plan.Selection.Kind){throw [IO.InvalidDataException]::new('Conflito de selecao com video existente no estado')}
   if(-not [string]::Equals([string]$old.arquivo,$data.arquivo,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.sha256,$data.sha256,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.artista,$plan.Artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$old.musica,$plan.Song,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$oldSelection.Proof.video_id,$data.video_id,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Conflito com video existente no estado')}
  }
@@ -402,6 +406,10 @@ function Register-PublicationReference {
  $null=Assert-PublicationContext -Control $Control -Out $Out
  if($script:State -isnot [hashtable]){throw [IO.InvalidDataException]::new('Estado invalido')}
  if($script:State.ContainsKey('publicacoes_pendentes') -and $script:State.publicacoes_pendentes -isnot [hashtable]){throw [IO.InvalidDataException]::new('Mapa de referencias invalido')}
+ # Dependencias puras da prova de busca v3.
+ . (Join-Path $PSScriptRoot 'consulta_busca.ps1')
+ . (Join-Path $PSScriptRoot 'selecao_automatica.ps1')
+ . (Join-Path $PSScriptRoot 'selecao_busca.ps1')
  . (Join-Path $PSScriptRoot 'selecao_tecnica.ps1')
  $plan=Get-PublicationRecoveryPlan -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control -Out $Out -AllowTechnicalSelection
  $reference=New-PublicationReference -VideoId $plan.Data.video_id -RecordKey $plan.Data.registro.chave -IntentSha256 $ExpectedSha256
