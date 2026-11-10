@@ -197,3 +197,78 @@ function Resolve-DirectAudioSelectionProof {
         return $null
     }
 }
+
+function Resolve-PublicationSelectionProof {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$VideoId = '',
+
+        [Parameter(Mandatory = $false)]
+        [string]$Artist = '',
+
+        [Parameter(Mandatory = $false)]
+        [string]$Song = '',
+
+        [Parameter(Mandatory = $false)]
+        [object]$Record = $null
+    )
+
+    # Se Record for nulo ou não for IDictionary, retorna null
+    if ($null -eq $Record) {
+        return $null
+    }
+
+    $recordDict = $Record -as [System.Collections.IDictionary]
+    if ($null -eq $recordDict) {
+        return $null
+    }
+
+    # Os nomes dos campos persistidos devem ser exatamente canonicos.
+    $hasTechnical = $false
+    $hasMusical = $false
+    foreach ($key in $recordDict.Keys) {
+        if ($key -isnot [string]) { continue }
+        foreach ($field in @('selecao_tecnica', 'aprovacao_musical')) {
+            if ([string]::Equals($key, $field, [StringComparison]::OrdinalIgnoreCase)) {
+                if (-not [string]::Equals($key, $field, [StringComparison]::Ordinal)) { return $null }
+                if ($field -ceq 'selecao_tecnica') { $hasTechnical = $true }
+                else { $hasMusical = $true }
+            }
+        }
+    }
+
+    # Se tiver selecao_tecnica, resolve SOMENTE por Resolve-DirectAudioSelectionProof
+    if ($hasTechnical) {
+        $storedProof = $recordDict['selecao_tecnica']
+        $result = Resolve-DirectAudioSelectionProof -VideoId $VideoId -Artist $Artist -Song $Song -StoredProof $storedProof
+        if ($null -eq $result) {
+            return $null
+        }
+        # Retorna hashtable exatamente 3 chaves
+        return @{
+            Kind = 'technical_v2'
+            Field = 'selecao_tecnica'
+            Proof = $result
+        }
+    }
+
+    # Se NÃO tem selecao_tecnica e tem aprovacao_musical, chama Resolve-MusicalApprovalProof
+    if ($hasMusical) {
+        $storedProof = $recordDict['aprovacao_musical']
+        if ($storedProof -isnot [Collections.IDictionary]) { return $null }
+        $result = Resolve-MusicalApprovalProof -VideoId $VideoId -Artist $Artist -Song $Song -StoredProof $storedProof
+        if ($null -eq $result) {
+            return $null
+        }
+        # Retorna hashtable exatamente 3 chaves
+        return @{
+            Kind = 'legacy_human_v1'
+            Field = 'aprovacao_musical'
+            Proof = $result
+        }
+    }
+
+    # Se nenhum dos campos presentes, retorna null
+    return $null
+}
