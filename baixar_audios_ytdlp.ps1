@@ -951,7 +951,7 @@ try {
                     Finalize-Record $rec 'falha' 'Registro anterior nao corresponde ao ID da URL direta'; continue
                 }
                 $reuseRaw = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
-                $reuseStored = $null
+                $reuseStored = $null; $reuseVideo = $null
                 if ($script:State.videos.ContainsKey($reuseId)) {
                     $reuseVideo = $script:State.videos[$reuseId]
                     if ([string]$reuseVideo.auditoria.origem_url -cne ('https://www.youtube.com/watch?v=' + $reuseId)) {
@@ -959,17 +959,39 @@ try {
                     }
                     $reuseStored = $reuseVideo['aprovacao_musical']
                 }
-                $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $reuseRaw -StoredProof $reuseStored
-                if ($null -eq $reuseProof -and $null -eq $reuseRaw -and -not $NaoInterativo) {
-                    $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $reuseId -NonInteractive:$NaoInterativo
-                    if ($null -ne $decision) {
-                        $approvals[$order] = $decision
-                        $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
-                        if ($null -ne $reuseProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
+                $reuseField = 'aprovacao_musical'; $reuseProof = $null
+                $hasTechnicalReuse = $false
+                foreach ($storedRecord in @($rec, $reuseVideo)) {
+                    if ($storedRecord -is [Collections.IDictionary]) {
+                        foreach ($fieldName in $storedRecord.Keys) {
+                            if ([string]::Equals([string]$fieldName, 'selecao_tecnica', [StringComparison]::OrdinalIgnoreCase)) { $hasTechnicalReuse = $true }
+                        }
                     }
                 }
-                if ($null -eq $reuseProof) {
-                    Finalize-Record $rec 'pendente_auditoria' 'Arquivo preservado: versao e ausencia de vocais sem aprovacao musical valida'; continue
+                if ($hasTechnicalReuse) {
+                    $reuseSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $reuseVideo
+                    $recordSelection = Resolve-PublicationSelectionProof -VideoId $reuseId -Artist $artist -Song $song -Record $rec
+                    if ($null -eq $reuseSelection -or $null -eq $recordSelection -or $reuseSelection.Kind -cne 'technical_v2' -or $recordSelection.Kind -cne 'technical_v2') {
+                        Finalize-Record $rec 'pendente_auditoria' 'Prova tecnica de reuso invalida; arquivo preservado sem recorrer a aprovacao humana'; continue
+                    }
+                    $reuseEvidence = Test-SourceEvidence -Id $reuseId -FormatId ([string]$reuseVideo.auditoria.origem_formato_id) -Hash ([string]$reuseVideo.auditoria.origem_sha256) -Probe $reuseVideo.auditoria.origem
+                    if (-not $reuseEvidence.ok) {
+                        Finalize-Record $rec 'pendente_qualidade' ('Procedencia atual de reuso nao confirmada: ' + $reuseEvidence.motivo); continue
+                    }
+                    $reuseField = 'selecao_tecnica'; $reuseProof = $reuseSelection.Proof
+                } else {
+                    $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $reuseRaw -StoredProof $reuseStored
+                    if ($null -eq $reuseProof -and $null -eq $reuseRaw -and -not $NaoInterativo) {
+                        $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $reuseId -NonInteractive:$NaoInterativo
+                        if ($null -ne $decision) {
+                            $approvals[$order] = $decision
+                            $reuseProof = Resolve-MusicalApprovalProof -VideoId $reuseId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
+                            if ($null -ne $reuseProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
+                        }
+                    }
+                    if ($null -eq $reuseProof) {
+                        Finalize-Record $rec 'pendente_auditoria' 'Arquivo preservado: versao e ausencia de vocais sem aprovacao musical valida'; continue
+                    }
                 }
                 $prior = Existing-Video $reuseId $order $artist $song -Marcador $script:MarcadorSolicitado
                 if ($prior -and -not $prior.conflito) {
@@ -978,12 +1000,17 @@ try {
                         $rec.marcador_reuso = $prior.marcador
                         if ($prior.marcador.status -ceq 'limitacao') { $markerNote = ' | Marcador: ' + $prior.marcador.motivo }
                     }
-                    $script:State.videos[$reuseId].aprovacao_musical = $reuseProof
-                    $rec.aprovacao_musical = $reuseProof
+                    $script:State.videos[$reuseId][$reuseField] = $reuseProof
+                    $rec[$reuseField] = $reuseProof
                     $rec.auditoria = $script:State.videos[$reuseId].auditoria
-                    $rec.auditoria['aprovacao_musical'] = $reuseProof
+                    if ($reuseField -ceq 'selecao_tecnica') {
+                        $null = $script:State.videos[$reuseId].Remove('aprovacao_musical')
+                        $null = $rec.Remove('aprovacao_musical')
+                        $null = $rec.auditoria.Remove('aprovacao_musical')
+                    }
+                    $rec.auditoria[$reuseField] = $reuseProof
                     $rec.arquivo = $prior.arquivo; $rec.formato = $prior.formato
-                    Finalize-Record $rec 'existente' ('Reexecucao: arquivo integro e aprovacao musical revalidados' + $markerNote)
+                    Finalize-Record $rec 'existente' ('Reexecucao: arquivo integro e prova de selecao revalidados' + $markerNote)
                     continue
                 }
                 $reason = if ($prior -and $prior.qualidade) { $prior.motivo }else { 'Registro anterior sem arquivo integro; investigar antes de baixar novamente' }

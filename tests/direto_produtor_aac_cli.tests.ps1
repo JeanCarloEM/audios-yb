@@ -154,6 +154,51 @@ foreach($mode in $Modes){
  if(-not (Test-Path -LiteralPath (Join-Path $dest '.controle/relatorio.csv'))){throw 'Relatorio ausente'}
  @{variant=$variant;result=$record.resultado;downloads=$counts.downloads;reads=$counts.reads;source_sha256=$hash;csv_sha256=$csvHash;scope='CLI real/fixture AAC e evidencia sinteticas; transporte simulado; novos IDs diretos somente'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $case 'prova-tecnica.json') -Encoding utf8
  Write-Output ('PASS DIRETO_AAC '+$variant+' '+$record.resultado)
+ if($variant -in @('legacy_csv','technical')){
+  $statePath=Join-Path $dest '.controle/estado.json'
+  $baseline=[IO.File]::ReadAllText($statePath)
+  $published=$finals[0].FullName
+  $reuseCases=if($variant -eq 'technical'){@('valid','bad_proof_id','null_proof_with_legacy','missing_document')}else{@('valid')}
+  foreach($reuseCase in $reuseCases){
+   $inputState=ConvertFrom-Json $baseline
+   $v=$inputState.videos.TestVideo01
+   $savedRecord=@($inputState.registros.PSObject.Properties.Value)[0]
+   $options=@{}
+   if($reuseCase -eq 'bad_proof_id'){$v.selecao_tecnica.video_id='testVideo01'}
+   if($reuseCase -eq 'null_proof_with_legacy'){
+    $v.selecao_tecnica=$null
+    $human=[pscustomobject]@{versao=1;video_id='TestVideo01';artista='Artista';musica='Faixa';artista_musica_conferidos=$true;versao_conferida=$true;sem_vocais_conferido=$true;origem='arquivo_aprovacoes'}
+    $v|Add-Member -NotePropertyName aprovacao_musical -NotePropertyValue $human -Force
+    $savedRecord|Add-Member -NotePropertyName aprovacao_musical -NotePropertyValue $human -Force
+    [pscustomobject]@{Ordem='1';VideoId='TestVideo01';ArtistaMusicaConferidos='SIM';VersaoConferida='SIM';SemVocaisConferido='SIM'}|Export-Csv -LiteralPath $approvalCsv -NoTypeInformation -Encoding UTF8
+    $options.AprovacoesCsv=$approvalCsv
+   }
+   [IO.File]::WriteAllText($statePath,($inputState|ConvertTo-Json -Depth 30),[Text.UTF8Encoding]::new($false))
+   $config.offline=$true;$config.remotes=0;$config.downloads=0;$config.reads=0
+   [IO.File]::WriteAllText((Join-Path $case 'cenario.json'),($config|ConvertTo-Json -Depth 8))
+   $document=Join-Path $case 'origem.txt';$parked=Join-Path $case 'origem-preservada.txt'
+   if($reuseCase -eq 'missing_document'){[IO.File]::Move($document,$parked)}
+   $log=Join-Path $case ('reuso-'+$reuseCase+'.log')
+   try{& $scriptPath @options *> $log;$reuseExit=$LASTEXITCODE}
+   finally{if($reuseCase -eq 'missing_document'){[IO.File]::Move($parked,$document)}}
+   if($reuseExit -ne 0){throw ('Falha CLI no reuso: '+$log)}
+   $afterState=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+   $afterRecord=@($afterState.registros.PSObject.Properties.Value)[0]
+   $offlineCounts=Get-Content -LiteralPath $config.log -Raw|ConvertFrom-Json
+   $expectedStatus=if($reuseCase -eq 'valid'){'existente'}elseif($reuseCase -eq 'missing_document'){'pendente_qualidade'}else{'pendente_auditoria'}
+   if($afterRecord.resultado -cne $expectedStatus -or $offlineCounts.downloads -ne 0 -or $offlineCounts.reads -ne 0 -or $offlineCounts.remotes -ne 0){throw ('Reuso offline divergiu: '+$reuseCase+' '+$afterRecord.resultado+' '+$afterRecord.motivo)}
+   if((Get-FileHash -LiteralPath $published).Hash.ToLowerInvariant() -cne $hash -or (Get-FileHash -LiteralPath $csv).Hash -cne $csvHash -or @(Get-ChildItem -LiteralPath $dest -File|Where-Object Extension -eq '.m4a').Count -ne 1){throw 'Reuso alterou ou duplicou arquivo/CSV'}
+   if($reuseCase -eq 'valid'){
+    foreach($section in @($afterRecord,$afterState.videos.TestVideo01,$afterRecord.auditoria,$afterState.videos.TestVideo01.auditoria)){
+     if($variant -eq 'technical'){
+     if($section.PSObject.Properties.Name -contains 'aprovacao_musical' -or $section.selecao_tecnica.versao -ne 2 -or $section.selecao_tecnica.video_id -cne 'TestVideo01'){throw 'Reuso perdeu prova tecnica ou fabricou aprovacao'}
+     }elseif($section.aprovacao_musical.versao -ne 1 -or -not $section.aprovacao_musical.sem_vocais_conferido){throw 'Reuso legado perdeu prova v1'}
+    }
+   }
+   @{variant=$reuseCase;result=$afterRecord.resultado;downloads=$offlineCounts.downloads;reads=$offlineCounts.reads;remotes=$offlineCounts.remotes;sha256=$hash;scope='reuso offline com AAC real e provas sinteticas'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $case ('prova-reuso-'+$reuseCase+'.json')) -Encoding utf8
+   Write-Output ('PASS REUSO_AAC '+$reuseCase+' '+$afterRecord.resultado)
+  }
+ }
 }
 }
 'DIRETO_AAC_CLI_TECHNICAL_PASS; '+$work
