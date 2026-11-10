@@ -226,7 +226,7 @@ function Read-PublicationIntentFile {
 function Get-PublicationRecoveryPlan {
  [CmdletBinding()]
  param([Parameter(Mandatory)][string]$Path,[Parameter(Mandatory)][string]$ExpectedSha256,
-       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out)
+       [Parameter(Mandatory)][string]$Control,[Parameter(Mandatory)][string]$Out,[switch]$AllowTechnicalSelection)
  $loaded=Read-PublicationIntentFile -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control
  $data=$loaded.Data;$record=$data.registro;$audit=$data.auditoria
  foreach($key in @('chave','ordem','artista','musica','url_original')){
@@ -236,10 +236,19 @@ function Get-PublicationRecoveryPlan {
  $sha=[Security.Cryptography.SHA256]::Create()
  try{$key=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($keyText))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
  if(-not [string]::Equals($key,$record.chave,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Chave canonica do registro divergente')}
- if($record.aprovacao_musical -isnot [Collections.IDictionary]){throw [IO.InvalidDataException]::new('Aprovacao musical ausente')}
  $artist=$record.artista.Trim();$song=$record.musica.Trim()
- $proof=Resolve-MusicalApprovalProof -VideoId $data.video_id -Artist $artist -Song $song -StoredProof $record.aprovacao_musical
- if($null -eq $proof -or -not [string]::Equals([string]$proof.video_id,$data.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.artista,$artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.musica,$song,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Aprovacao musical invalida')}
+ $hasTechnical=@($record.Keys|Where-Object {[string]::Equals([string]$_,'selecao_tecnica',[StringComparison]::OrdinalIgnoreCase)}).Count -gt 0
+ if($hasTechnical){
+  if(-not $AllowTechnicalSelection){throw [IO.InvalidDataException]::new('Selecao tecnica ainda nao habilitada na recuperacao')}
+  $selection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $artist -Song $song -Record $record
+  if($null -eq $selection){throw [IO.InvalidDataException]::new('Selecao tecnica invalida')}
+  $proof=$null
+ }else{
+  if($record.aprovacao_musical -isnot [Collections.IDictionary]){throw [IO.InvalidDataException]::new('Aprovacao musical ausente')}
+  $proof=Resolve-MusicalApprovalProof -VideoId $data.video_id -Artist $artist -Song $song -StoredProof $record.aprovacao_musical
+  if($null -eq $proof -or -not [string]::Equals([string]$proof.video_id,$data.video_id,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.artista,$artist,[StringComparison]::Ordinal) -or -not [string]::Equals([string]$proof.musica,$song,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Aprovacao musical invalida')}
+  $selection=@{Kind='legacy_human_v1';Field='aprovacao_musical';Proof=$proof}
+ }
  if($audit.validado -isnot [bool] -or -not $audit.validado -or -not [string]::Equals([string]$audit.politica,$script:Policy,[StringComparison]::Ordinal)){throw [IO.InvalidDataException]::new('Politica de auditoria invalida')}
  if($audit.origem_sha256 -isnot [string] -or $audit.origem_sha256 -cnotmatch '^[0-9a-fA-F]{64}$' -or $audit.origem_formato_id -isnot [string] -or [string]::IsNullOrWhiteSpace($audit.origem_formato_id) -or $audit.origem -isnot [hashtable]){throw [IO.InvalidDataException]::new('Procedencia incompleta')}
  if(-not [string]::Equals(([string]$audit.resultado_sha256).ToLowerInvariant(),$data.sha256,[StringComparison]::Ordinal) -or $audit.origem.lossless -isnot [bool] -or -not [double]::IsFinite([double]$audit.origem.bitrate_medido_kbps) -or [double]$audit.origem.bitrate_medido_kbps -le 0){throw [IO.InvalidDataException]::new('Auditoria de origem/resultado divergente')}
@@ -276,7 +285,7 @@ function Get-PublicationRecoveryPlan {
   if(-not [double]::IsFinite($stored) -or -not [double]::IsFinite($current) -or $stored -le 0 -or $current -le 0 -or [Math]::Abs($stored-$current) -gt 0.001){throw [IO.InvalidDataException]::new('Parametro medido divergente: '+$key)}
  }
  if((Get-Item -LiteralPath $chosen).Length -ne $data.tamanho -or (Get-FileHash -LiteralPath $chosen).Hash.ToLowerInvariant() -cne $data.sha256 -or (Get-FileHash -LiteralPath $loaded.Path).Hash.ToLowerInvariant() -cne $ExpectedSha256){throw [IO.InvalidDataException]::new('Arquivo mudou durante plano')}
- return @{Status='plano_validado_sem_efeitos';Action=$action;Path=$chosen;Target=$target;Ready=$ready;IntentPath=$loaded.Path;IntentSha256=$ExpectedSha256;Data=$data;Probe=$probe;MusicalApproval=$proof;Artist=$artist;Song=$song;Evidence=$sourceEvidence}
+ return @{Status='plano_validado_sem_efeitos';Action=$action;Path=$chosen;Target=$target;Ready=$ready;IntentPath=$loaded.Path;IntentSha256=$ExpectedSha256;Data=$data;Probe=$probe;MusicalApproval=$proof;Selection=$selection;Artist=$artist;Song=$song;Evidence=$sourceEvidence}
 }
 
 # Requer o lock exclusivo adquirido pelo chamador. Mantem referencia ate State confirmado.

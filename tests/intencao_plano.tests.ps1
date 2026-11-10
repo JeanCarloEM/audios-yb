@@ -7,6 +7,7 @@ $script:Exe=Join-Path $repo 'yt-dlp.exe'
 $script:Ffmpeg=Join-Path $repo 'ffmpeg.exe'
 $script:Ffprobe=Join-Path $repo 'ffprobe.exe'
 $script:Policy='fidelidade-128-v1'
+. (Join-Path $repo 'codecs_permitidos.ps1')
 . (Join-Path $repo 'execucao_unica.ps1')
 . (Join-Path $repo 'publicacao_pendente.ps1')
 $tokens=$null;$errors=$null
@@ -18,13 +19,14 @@ foreach($name in @('Invoke-Ytdlp','Probe-Audio','Test-FinalAudio','Test-SourceEv
  . ([scriptblock]::Create($defs[0].Extent.Text))
 }
 # Historico/prova desta fixture sao declaracoes sinteticas; nenhum video real e homologado.
-$generated=@(& (Join-Path $repo 'tests/criar_fixture_marcador_mp3.ps1'))|Out-String
-$receipt=ConvertFrom-PublicationJson -Json ([IO.File]::ReadAllText((ConvertFrom-PublicationJson -Json $generated).receipt_path))
-$source=$receipt.fixture.sourcepath
-$sourceHash=$receipt.fixture.hash.ToLowerInvariant()
-if((Get-FileHash -LiteralPath $source).Hash.ToLowerInvariant() -cne $sourceHash){throw 'Fonte diverge do recibo independente'}
+$fixtureRoot=Join-Path $PSScriptRoot ('.runtime-plano-aac-'+[guid]::NewGuid().ToString('N'))
+$null=New-Item -ItemType Directory -Path $fixtureRoot
+$source=Join-Path $fixtureRoot 'source.m4a'
+$generated=Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin','-v','error','-f','lavfi','-i','anoisesrc=sample_rate=44100:duration=3:seed=713','-ac','2','-c:a','aac','-b:a','256k','-map_metadata','-1','-n',$source)
+if($generated.code -ne 0 -or $generated.timeout -or -not (Test-Path -LiteralPath $source)){throw 'Fixture AAC falhou'}
+$sourceHash=(Get-FileHash -LiteralPath $source).Hash.ToLowerInvariant()
 $sourceProbe=Probe-Audio -File $source
-$script:Evidencias=@{('TestVideo01|fixture-192|'+$sourceHash)=@{qualidade='perdas_verificadas';bitrate_minimo_historico_kbps=192;origem='PCM sintetico local codificado uma unica vez';historico='Fixture FFmpeg, nao video remoto'}}
+$script:Evidencias=@{('TestVideo01|fixture-aac-256|'+$sourceHash)=@{qualidade='perdas_verificadas';bitrate_minimo_historico_kbps=128;origem='PCM sintetico local codificado uma unica vez';historico='Fixture FFmpeg, nao video remoto'}}
 $proof=@{versao=1;video_id='TestVideo01';artista='AC/DC';musica='iTunes DJ';artista_musica_conferidos=$true;versao_conferida=$true;sem_vocais_conferido=$true;origem='arquivo_aprovacoes'}
 $sha=[Security.Cryptography.SHA256]::Create()
 try{$key=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes([string]::Join([char]31,@('1','AC/DC','iTunes DJ','https://www.youtube.com/watch?v=TestVideo01'))))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
@@ -33,10 +35,10 @@ $null=New-Item -ItemType Directory -Path $work
 function New-PlanFixture([string]$Name,[hashtable]$Approval=$proof,[string]$Policy='fidelidade-128-v1',[string]$InputFile=$source){
  $out=Join-Path $work $Name;$control=Join-Path $out '.controle';$fontes=Join-Path $control 'fontes'
  $null=New-Item -ItemType Directory -Path $fontes
- $ready=Join-Path $fontes 'source.mp3';$target=Join-Path $out 'final.mp3'
+ $ready=Join-Path $fontes 'source.m4a';$target=Join-Path $out 'final.m4a'
  Copy-Item -LiteralPath $InputFile -Destination $ready
  $record=@{chave=$key;ordem='1';artista='AC/DC';musica='iTunes DJ';url_original='https://www.youtube.com/watch?v=TestVideo01';video_id='TestVideo01';aprovacao_musical=$Approval}
- $audit=@{politica=$Policy;validado=$true;origem_sha256=$sourceHash;resultado_sha256=(Get-FileHash -LiteralPath $ready).Hash.ToLowerInvariant();origem_formato_id='fixture-192';origem=$sourceProbe}
+ $audit=@{politica=$Policy;validado=$true;origem_sha256=$sourceHash;resultado_sha256=(Get-FileHash -LiteralPath $ready).Hash.ToLowerInvariant();origem_formato_id='fixture-aac-256';origem=$sourceProbe}
  $snapshot=New-PublicationIntentSnapshot -Ready $ready -Target $target -Control $control -Out $out -VideoId 'TestVideo01' -Record $record -Audit $audit -Probe (Probe-Audio -File $ready)
  $saved=Save-PublicationIntentFile -Snapshot $snapshot -Control $control -Out $out
  return @{Args=@{Path=$saved.Path;ExpectedSha256=$saved.Sha256;Control=$control;Out=$out};Ready=$ready;Target=$target}
@@ -44,12 +46,12 @@ function New-PlanFixture([string]$Name,[hashtable]$Approval=$proof,[string]$Poli
 $main=New-PlanFixture -Name 'valid'
 $arguments=$main.Args
 $plan=Get-PublicationRecoveryPlan @arguments
-if($plan.Status -cne 'plano_validado_sem_efeitos' -or $plan.Action -cne 'publish' -or $plan.Path -cne $main.Ready -or $plan.Data.sha256 -cne $sourceHash -or $plan.Probe.codec -cne 'mp3' -or $plan.Probe.bitrate_medido_kbps -lt 128 -or (Test-Path -LiteralPath $main.Target)){throw 'Plano de publicacao invalido ou teve efeitos'}
+if($plan.Status -cne 'plano_validado_sem_efeitos' -or $plan.Action -cne 'publish' -or $plan.Path -cne $main.Ready -or $plan.Data.sha256 -cne $sourceHash -or $plan.Probe.codec -cne 'aac' -or $plan.Probe.bitrate_medido_kbps -lt 128 -or (Test-Path -LiteralPath $main.Target)){throw 'Plano de publicacao invalido ou teve efeitos'}
 $badProof=$proof.Clone();$badProof.sem_vocais_conferido=$false
 $proofCase=New-PlanFixture -Name 'proof' -Approval $badProof
 $policyCase=New-PlanFixture -Name 'policy' -Policy 'policy-invalida'
-$low=Join-Path $work 'low96.mp3'
-$run=Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin','-v','error','-f','lavfi','-i','anoisesrc=sample_rate=44100:duration=2:seed=8','-ac','2','-c:a','libmp3lame','-b:a','96k','-n',$low)
+$low=Join-Path $work 'low96.m4a'
+$run=Invoke-Ytdlp -Executable $script:Ffmpeg -Arguments @('-nostdin','-v','error','-f','lavfi','-i','anoisesrc=sample_rate=44100:duration=2:seed=8','-ac','2','-c:a','aac','-b:a','96k','-n',$low)
 if($run.code -ne 0 -or $run.timeout){throw 'Fixture 96k falhou'}
 $qualityCase=New-PlanFixture -Name 'quality' -InputFile $low
 $keyCase=New-PlanFixture -Name 'key'
