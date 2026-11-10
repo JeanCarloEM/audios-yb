@@ -402,7 +402,8 @@ function Register-PublicationReference {
  $null=Assert-PublicationContext -Control $Control -Out $Out
  if($script:State -isnot [hashtable]){throw [IO.InvalidDataException]::new('Estado invalido')}
  if($script:State.ContainsKey('publicacoes_pendentes') -and $script:State.publicacoes_pendentes -isnot [hashtable]){throw [IO.InvalidDataException]::new('Mapa de referencias invalido')}
- $plan=Get-PublicationRecoveryPlan -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control -Out $Out
+ . (Join-Path $PSScriptRoot 'selecao_tecnica.ps1')
+ $plan=Get-PublicationRecoveryPlan -Path $Path -ExpectedSha256 $ExpectedSha256 -Control $Control -Out $Out -AllowTechnicalSelection
  $reference=New-PublicationReference -VideoId $plan.Data.video_id -RecordKey $plan.Data.registro.chave -IntentSha256 $ExpectedSha256
  if($script:State.ContainsKey('publicacoes_pendentes') -and $script:State.publicacoes_pendentes.ContainsKey($reference.arquivo)){throw [InvalidOperationException]::new('Referencia existente preservada')}
  $null=Assert-PublicationPathWithoutLinks -Path $script:StateFile

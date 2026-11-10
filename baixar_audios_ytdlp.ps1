@@ -50,6 +50,7 @@ if ($null -ne $LarguraTrack -and ($LarguraTrack -lt 1 -or $LarguraTrack -gt 145)
 . (Join-Path $PSScriptRoot 'ambiente_portatil.ps1')
 $script:Layout = Get-ScriptLayout -ScriptPath $PSCommandPath
 $script:Root = $script:Layout.Root
+. (Join-Path $script:Root 'selecao_tecnica.ps1')
 . (Join-Path $script:Root 'codecs_permitidos.ps1')
 . (Join-Path $script:Root 'preferencia_vocal.ps1')
 . (Join-Path $script:Root 'decisao_vocal.ps1')
@@ -1055,32 +1056,37 @@ try {
                 # O usuario atesta a escolha; nao tratar resultado de busca como video.
                 $rec.candidatos = @(@{id = $videoId; url = $rec.url_video; titulo = 'Aprovado pelo usuario' })
             }
-            $rawMusicalApproval = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
-            $storedMusicalProof = $null
-            if ($script:State.videos.ContainsKey($videoId)) {
-                $storedVideo = $script:State.videos[$videoId]
-                if ([string]$storedVideo.auditoria.origem_url -cne $rec.url_video) {
-                    Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'
+            $newDirectTechnical = ($urlInfo.tipo -eq 'video' -and $null -eq $approval -and -not $script:State.videos.ContainsKey($videoId))
+            $selectionField = 'aprovacao_musical'; $selectionProof = $null; $musicalProof = $null
+            if (-not $newDirectTechnical) {
+                $rawMusicalApproval = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
+                $storedMusicalProof = $null
+                if ($script:State.videos.ContainsKey($videoId)) {
+                    $storedVideo = $script:State.videos[$videoId]
+                    if ([string]$storedVideo.auditoria.origem_url -cne $rec.url_video) {
+                        Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'
+                        continue
+                    }
+                    $storedMusicalProof = $storedVideo['aprovacao_musical']
+                }
+                $musicalOrigin = if ($rec.criterio_selecao -eq 'aprovacao_na_execucao') { 'interativo' } else { 'arquivo_aprovacoes' }
+                $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $rawMusicalApproval -StoredProof $storedMusicalProof -Origin $musicalOrigin
+                if ($null -eq $musicalProof -and $null -eq $rawMusicalApproval -and -not $NaoInterativo) {
+                    $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $videoId -NonInteractive:$NaoInterativo
+                    if ($null -ne $decision) {
+                        $approvals[$order] = $decision
+                        $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
+                        if ($null -ne $musicalProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
+                    }
+                }
+                if ($null -eq $musicalProof) {
+                    Finalize-Record $rec 'pendente_auditoria' 'Versao e ausencia de vocais sem aprovacao explicita; metadados nao substituem auditoria musical'
                     continue
                 }
-                $storedMusicalProof = $storedVideo['aprovacao_musical']
+                $rec.aprovacao_musical = $musicalProof
+                $selectionProof = $musicalProof
             }
-            $musicalOrigin = if ($rec.criterio_selecao -eq 'aprovacao_na_execucao') { 'interativo' } else { 'arquivo_aprovacoes' }
-            $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $rawMusicalApproval -StoredProof $storedMusicalProof -Origin $musicalOrigin
-            if ($null -eq $musicalProof -and $null -eq $rawMusicalApproval -and -not $NaoInterativo) {
-                $decision = Request-InRunApproval -Order $order -Artist $artist -Song $song -VideoId $videoId -NonInteractive:$NaoInterativo
-                if ($null -ne $decision) {
-                    $approvals[$order] = $decision
-                    $musicalProof = Resolve-MusicalApprovalProof -VideoId $videoId -Artist $artist -Song $song -RawApproval $decision -Origin interativo
-                    if ($null -ne $musicalProof) { $rec.criterio_selecao = 'aprovacao_na_execucao' }
-                }
-            }
-            if ($null -eq $musicalProof) {
-                Finalize-Record $rec 'pendente_auditoria' 'Versao e ausencia de vocais sem aprovacao explicita; metadados nao substituem auditoria musical'
-                continue
-            }
-            $rec.aprovacao_musical = $musicalProof
-            $prev = Existing-Video $videoId $order $artist $song -Marcador $script:MarcadorSolicitado
+            $prev = if ($newDirectTechnical) { $null } else { Existing-Video $videoId $order $artist $song -Marcador $script:MarcadorSolicitado }
             if ($prev -and $prev.conflito) { $status = if ($prev.qualidade) { 'pendente_qualidade' }else { 'falha' }; Finalize-Record $rec $status $prev.motivo; continue }
             if ($prev) {
                 $markerNote = ''
@@ -1103,7 +1109,15 @@ try {
                 Finalize-Record $rec $status ($diag + ': ' + [string]$infoCheck.run.err); continue
             }
             $rec.titulo_video = [string]$infoCheck.info.title
-            if (-not (Identity-Matches $infoCheck.info $artist $song)) {
+            if ($newDirectTechnical) {
+                try { $selectionProof = New-DirectAudioSelectionProof -VideoId $videoId -Info (To-Hashtable $infoCheck.info) -Artist $artist -Song $song }
+                catch [ArgumentException] { Finalize-Record $rec 'falha' ('Selecao tecnica da URL direta invalida: ' + $_.Exception.Message); continue }
+                $selectionField = 'selecao_tecnica'
+                $null = $rec.Remove('aprovacao_musical')
+                $rec.selecao_tecnica = $selectionProof
+                $rec.criterio_selecao = 'url_direta_id_literal'
+            }
+            if (-not $newDirectTechnical -and -not (Identity-Matches $infoCheck.info $artist $song)) {
                 Finalize-Record $rec 'nao_identificado' 'Metadados do video nao confirmam artista e titulo; revisar manualmente'; continue
             }
             if ($null -ne $autoCandidate -and -not (Is-ExactArtistAudio ([string]$infoCheck.info.title) ([string]$infoCheck.info.channel) $artist $song)) {
@@ -1210,7 +1224,8 @@ try {
                     } 
                 }
                 $rec.auditoria = $result.auditoria
-                $rec.auditoria['aprovacao_musical'] = $musicalProof
+                if ($selectionField -ceq 'selecao_tecnica') { $null = $rec.auditoria.Remove('aprovacao_musical') }
+                $rec.auditoria[$selectionField] = $selectionProof
                 if (-not $result.ok) {
                     if ($result.ContainsKey('publicacao_pendente') -and $result.publicacao_pendente) {
                         $lastDiagnostic = 'publicacao_pendente'; $lastError = $result.motivo
@@ -1229,8 +1244,9 @@ try {
                 $script:State.videos[$videoId] = @{ artista = $artist; musica = $song; arquivo = $filename;
                     tamanho = $size; sha256 = $sha; formato = [IO.Path]::GetExtension($filename).TrimStart('.');
                     codec = $result.probe.codec; bitrate_kbps = $result.probe.bitrate_medido_kbps;
-                    auditoria = $result.auditoria; aprovacao_musical = $musicalProof; verificado_utc = [DateTime]::UtcNow.ToString('o') 
+                    auditoria = $result.auditoria; verificado_utc = [DateTime]::UtcNow.ToString('o')
                 }
+                $script:State.videos[$videoId][$selectionField] = $selectionProof
                 if ($result.ContainsKey('publicacao_intencao')) { $script:State.videos[$videoId].publicacao_intencao = $result.publicacao_intencao.Clone() }
                 $rec.formato = [IO.Path]::GetExtension($filename).TrimStart('.'); $rec.codec = $result.probe.codec
                 $rec.bitrate_kbps = [string]$result.probe.bitrate_medido_kbps; $rec.arquivo = $filename

@@ -37,6 +37,10 @@ function Search-Candidates([string]$Query,[string]$Artist,[string]$Song) {
 function Get-Info([string]$Id) {
  if($script:E2E.offline){$script:E2E.remotes++;Save-E2E;throw 'Metadados remotos proibidos na retomada'}
  $info=[pscustomobject]@{id=$Id;title='Artista - Faixa';channel='Artista - Topic';uploader='Artista';artist='Artista';track='Faixa';duration=4}
+ if($script:E2E.variant -ne 'legacy_csv'){
+  $info.title='Entrevista com voz';$info.channel='Canal de entrevistas';$info.uploader='Apresentador';$info.artist='';$info.track=''
+ }
+ if($script:E2E.variant -eq 'bad_id'){$info.id='testVideo01'}
  $fmt=@{id='256';ext='m4a';codec='aac';abr=256;tier=0;quality=0;operacao='nativo';filesize=(Get-Item -LiteralPath $script:E2E.fixture).Length;duracao_origem=4}
  $formatItems=@($fmt)
  if($script:E2E.fallback){$upper=$fmt.Clone();$upper.id='A';$lower=$fmt.Clone();$lower.id='a';$formatItems=@($upper,$lower)}
@@ -76,13 +80,14 @@ $testSource=$source.Insert($mainTry[0].Extent.StartOffset,$mocks+[Environment]::
 $t=$null;$e=$null
 [void][Management.Automation.Language.Parser]::ParseInput($testSource,[ref]$t,[ref]$e)
 if($e.Count){throw ($e|Out-String)}
+foreach($variant in @('legacy_csv','technical','bad_id','missing_evidence')){
 foreach($mode in $Modes){
- $case=Join-Path $work $mode
+ $case=Join-Path $work ($variant+'-'+$mode)
  [void][IO.Directory]::CreateDirectory($case)
  foreach($helper in @(Get-ChildItem -LiteralPath $repo -File -Filter '*.ps1'|Where-Object Name -cne 'baixar_audios_ytdlp.ps1')){[IO.File]::Copy($helper.FullName,(Join-Path $case $helper.Name),$false)}
  $scriptPath=Join-Path $case 'baixar_audios_ytdlp.ps1'
  [IO.File]::WriteAllText($scriptPath,$testSource,(New-Object Text.UTF8Encoding -ArgumentList $true))
- $config=@{repo=$repo;fixture=$fixture;hash=$hash;no_input=$true;unique=($mode -eq 'auto_sem_aprovacao');fixed=($mode -in @('direto_interativo','retomada_musical','formatos_case_sensitive'));fallback=($mode -eq 'formatos_case_sensitive');formatCalls=@();offline=$false;remotes=0;reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
+ $config=@{variant=$variant;repo=$repo;fixture=$fixture;hash=$hash;no_input=$true;unique=($mode -eq 'auto_sem_aprovacao');fixed=($mode -in @('direto_interativo','retomada_musical','formatos_case_sensitive'));fallback=($mode -eq 'formatos_case_sensitive');formatCalls=@();offline=$false;remotes=0;reads=0;downloads=0;log=(Join-Path $case 'contadores.json')}
  [IO.File]::WriteAllText((Join-Path $case 'cenario.json'),($config|ConvertTo-Json -Depth 8))
  $csv=Join-Path $case 'faixas.csv'
  $rows=@([pscustomobject]@{Ordem='1';Artista='Artista';Musica='Faixa';Link_YouTube='https://www.youtube.com/results?search_query=Artista+Faixa';Tipo_link='Busca';Verificacao='Fixture';Observacoes='Fixture sintetica'})
@@ -91,8 +96,8 @@ foreach($mode in $Modes){
  $rows|Export-Csv -LiteralPath $csv -NoTypeInformation -Encoding UTF8
  $csvHash=(Get-FileHash -LiteralPath $csv).Hash
  $approvalCsv=Join-Path $case 'aprovacoes.csv'
- [pscustomobject]@{Ordem='1';VideoId='TestVideo01';ArtistaMusicaConferidos='SIM';VersaoConferida='SIM';SemVocaisConferido='SIM'}|Export-Csv -LiteralPath $approvalCsv -NoTypeInformation -Encoding UTF8
- if($mode -in @('positivo','controle','manifesto_invalido','direto_interativo','retomada_musical','formatos_case_sensitive')){
+ if($variant -eq 'legacy_csv'){[pscustomobject]@{Ordem='1';VideoId='TestVideo01';ArtistaMusicaConferidos='SIM';VersaoConferida='SIM';SemVocaisConferido='SIM'}|Export-Csv -LiteralPath $approvalCsv -NoTypeInformation -Encoding UTF8}
+ if($variant -ne 'missing_evidence'){
   $doc=Join-Path $case 'origem.txt'
   [IO.File]::WriteAllText($doc,'Fixture sintetica: PCM local codificado uma unica vez em AAC 256k para este teste.')
   $entry=@{video_id='TestVideo01';formato_id='256';sha256=$hash;documento='origem.txt';documento_sha256=(Get-FileHash -LiteralPath $doc).Hash.ToLowerInvariant();origem='Fixture sintetica gerada localmente com FFmpeg';historico='PCM local sintetico codificado uma unica vez em AAC 256k';qualidade='perdas_verificadas';bitrate_minimo_historico_kbps=128}
@@ -104,7 +109,7 @@ foreach($mode in $Modes){
  }
  Push-Location $work
  try{
-  & $scriptPath -AprovacoesCsv $approvalCsv
+  if($variant -eq 'legacy_csv'){ & $scriptPath -AprovacoesCsv $approvalCsv }else{ & $scriptPath }
   $caseExit=$LASTEXITCODE
  }finally{Pop-Location}
  if((Get-FileHash -LiteralPath $csv).Hash -ne $csvHash){throw 'CSV canonico foi alterado'}
@@ -121,35 +126,34 @@ foreach($mode in $Modes){
  $record=$records[0]
  $counts=Get-Content -LiteralPath $config.log -Raw|ConvertFrom-Json
  $finals=@(Get-ChildItem -LiteralPath $dest -File|Where-Object {$_.Extension -in @('.mp3','.m4a')})
- if($mode -in @('positivo','controle','direto_interativo','retomada_musical','formatos_case_sensitive')){
-  $expectedReads=0
-  if($record.resultado -ne 'baixado'){throw ('Nao publicou: '+$record.motivo)}
-  if($counts.downloads -ne 1 -or $counts.reads -ne $expectedReads -or $finals.Count -ne 1){throw 'Contagens incorretas na execucao unica'}
-  if(-not $record.auditoria.validado -or $record.criterio_selecao -ne 'aprovacao_manual'){throw 'Auditoria/selecao nao comprovada'}
-  if((Get-FileHash -LiteralPath $finals[0].FullName).Hash.ToLowerInvariant() -ne $hash){throw 'Nativo foi alterado'}
-  if(-not $record.aprovacao_musical.sem_vocais_conferido -or -not $state.videos.TestVideo01.aprovacao_musical.versao_conferida){throw 'Aprovacao musical nao persistida'}
-  if($mode -eq 'formatos_case_sensitive'){
-   if(($counts.formatCalls -join '|') -cne 'A|a'){throw 'ID literal repetido ou descartado na fila'}
-   if(@($record.rejeicoes|Where-Object {$_.formato_id -ceq 'A' -and $_.diagnostico -eq 'formato_indisponivel'}).Count -ne 1){throw 'Rejeicao de formato nao rastreada'}
+ if($records.Count -ne 1 -or $counts.reads -ne 0){throw 'Registro/pergunta divergente'}
+ if($variant -in @('legacy_csv','technical')){
+  if($record.resultado -cne 'baixado' -or $counts.downloads -ne 1 -or $finals.Count -ne 1 -or $record.codec -cne 'aac' -or -not $record.auditoria.validado){throw ('Nao publicou AAC validado: '+$record.motivo)}
+  if((Get-FileHash -LiteralPath $finals[0].FullName).Hash.ToLowerInvariant() -cne $hash){throw 'Nativo alterado'}
+  $sections=@($record,$state.videos.TestVideo01,$record.auditoria,$state.videos.TestVideo01.auditoria)
+  foreach($section in $sections){
+   if($variant -eq 'technical'){
+    if($section.PSObject.Properties.Name -contains 'aprovacao_musical' -or $section.selecao_tecnica.versao -ne 2 -or $section.selecao_tecnica.video_id -cne 'TestVideo01' -or $section.selecao_tecnica.metadados.title -cne 'Entrevista com voz' -or $section.selecao_tecnica.PSObject.Properties.Name -contains 'sem_vocais_conferido'){throw 'Prova v2 perdida ou flags humanas fabricadas'}
+   }elseif(-not $section.aprovacao_musical.sem_vocais_conferido){throw 'Legado explicito nao preservado'}
   }
- }elseif($mode -in @('nao_interativo','autonomo','direto_sem_aprovacao','auto_sem_aprovacao')){
-  if($record.resultado -ne 'pendente_auditoria' -or $counts.downloads -ne 0 -or $counts.reads -ne 0 -or $finals.Count -ne 0){throw 'Caso negativo aprovou sem confirmacao'}
+  $criterion=if($variant -eq 'technical'){'url_direta_id_literal'}else{'aprovacao_manual'}
+  if($record.criterio_selecao -cne $criterion){throw 'Criterio de selecao divergente'}
+  if(@($state.publicacoes_pendentes.PSObject.Properties).Count -ne 0){throw 'Referencia pendente apos publicar'}
+  $journals=@(Get-ChildItem -LiteralPath (Join-Path $dest '.controle/publicacoes_pendentes') -File -Filter '*.json')
+  if($journals.Count -ne 1 -or (Get-FileHash -LiteralPath $journals[0].FullName).Hash.ToLowerInvariant() -cne $state.videos.TestVideo01.publicacao_intencao.sha256){throw 'Journal/rastro divergente'}
+ }elseif($variant -eq 'bad_id'){
+  if($record.resultado -cne 'falha' -or $counts.downloads -ne 0 -or $finals.Count -ne 0){throw 'ID divergente autorizou transporte'}
  }else{
-  $expectedCount=if($mode -eq 'sem_manifesto'){2}else{1}
-  if($records.Count -ne $expectedCount -or $counts.reads -ne (4*$expectedCount) -or $counts.downloads -lt 1 -or $finals.Count -ne 0){throw 'Lote sem evidencia nao continuou corretamente'}
-  foreach($r in $records){if($r.resultado -ne 'pendente_qualidade' -or $r.auditoria.validado){throw 'Fonte sem documento valido foi atestada'}}
-  $keptSource=Join-Path $dest '.controle/fontes/TestVideo01/256.m4a'
-  if(-not [IO.File]::Exists($keptSource) -or (Get-FileHash -LiteralPath $keptSource).Hash.ToLowerInvariant() -ne $hash){throw 'Fonte nao preservada'}
+  if($record.resultado -cne 'pendente_qualidade' -or $counts.downloads -ne 1 -or $finals.Count -ne 0 -or $record.auditoria.validado){throw 'Ausencia de origem autorizou publicacao'}
+  $kept=Join-Path $dest '.controle/fontes/TestVideo01/256.m4a'
+  if((Get-FileHash -LiteralPath $kept).Hash.ToLowerInvariant() -cne $hash -or $record.selecao_tecnica.versao -ne 2){throw 'Fonte/prova nao preservada'}
  }
+ if((Get-FileHash -LiteralPath $fixture).Hash.ToLowerInvariant() -cne $hash -or (Get-FileHash -LiteralPath $csv).Hash -cne $csvHash){throw 'Fonte/CSV alterados'}
  $canonicalUrls=@((Import-Csv -LiteralPath $csv).Link_YouTube)
- foreach($r in $records){if($r.url_original -notin $canonicalUrls){throw 'URL divergiu do CSV canonico'}}
- if(-not (Test-Path -LiteralPath (Join-Path $dest '.controle\relatorio.csv'))){throw 'Relatorio ausente'}
- if(@($state.publicacoes_pendentes.PSObject.Properties).Count -ne 0){throw 'Referencia pendente apos baseline'}
- $journal=@(Get-ChildItem -LiteralPath (Join-Path $dest '.controle/publicacoes_pendentes') -File -Filter '*.json')
- if($journal.Count -ne 1 -or -not $state.videos.TestVideo01.publicacao_intencao.sha256){throw 'Journal/rastro ausente'}
- if((Get-FileHash -LiteralPath $journal[0].FullName).Hash.ToLowerInvariant() -cne $state.videos.TestVideo01.publicacao_intencao.sha256){throw 'Journal divergente'}
- if($record.codec -cne 'aac' -or $state.videos.TestVideo01.codec -cne 'aac'){throw 'Codec baseline nao e AAC'}
- if((Get-FileHash -LiteralPath $fixture).Hash.ToLowerInvariant() -cne $hash){throw 'Fonte alterada'}
- @{record_result=$record.resultado;codec=$record.codec;source_sha256=$hash;downloads=$counts.downloads;reads=$counts.reads;csv_sha256=$csvHash;journal_sha256=$state.videos.TestVideo01.publicacao_intencao.sha256;scope='baseline com aprovacao sintetica; transporte simulado, sem autonomia comprovada'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $case 'prova-baseline.json') -Encoding utf8
+ if($record.url_original -notin $canonicalUrls){throw 'URL divergiu da fonte canonica'}
+ if(-not (Test-Path -LiteralPath (Join-Path $dest '.controle/relatorio.csv'))){throw 'Relatorio ausente'}
+ @{variant=$variant;result=$record.resultado;downloads=$counts.downloads;reads=$counts.reads;source_sha256=$hash;csv_sha256=$csvHash;scope='CLI real/fixture AAC e evidencia sinteticas; transporte simulado; novos IDs diretos somente'}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $case 'prova-tecnica.json') -Encoding utf8
+ Write-Output ('PASS DIRETO_AAC '+$variant+' '+$record.resultado)
 }
-'DIRETO_AAC_CLI_BASELINE_PASS; '+$work
+}
+'DIRETO_AAC_CLI_TECHNICAL_PASS; '+$work
