@@ -4,10 +4,12 @@ $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $repo 'instalacao_ytdlp.ps1')
 $script:Root=$repo
 $main=Join-Path $repo 'baixar_audios_ytdlp.ps1'
-if((Get-FileHash -LiteralPath $main).Hash -cne 'A133D8A6102E8FE055C3443FD55DDE20A5FDBDDD3664C1E35D440DA7DE44C4E2'){throw 'Fonte do invoker mudou'}
 $t=$null;$e=$null;$a=[Management.Automation.Language.Parser]::ParseFile($main,[ref]$t,[ref]$e)
 $f=@($a.FindAll({param($n)$n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -ceq 'Invoke-Ytdlp'},$true))
 if($e.Count -or $f.Count -ne 1){throw 'Invoker ambiguo'}
+$sha=[Security.Cryptography.SHA256]::Create()
+try{$invokerHash=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($f[0].Extent.Text.Replace("`r`n","`n")))).Replace('-','')}finally{$sha.Dispose()}
+if($invokerHash -cne 'D920FC22148930960DA1553742C1216F77F2E7AC381AF3AC847DD6D1DC94EDD4'){throw 'Fonte canonica do invoker mudou'}
 . ([scriptblock]::Create($f[0].Extent.Text.Replace('function Invoke-Ytdlp(','function Invoke-RealYtdlp(')))
 $fixture=Join-Path $PSScriptRoot 'transporte_release_ytdlp.tests.ps1'
 if((Get-FileHash -LiteralPath $fixture).Hash -cne 'EBC2EAD9B426D3E1813F14FEAF29DF2FA5064FB19EDAA1908D2145E100D87C03'){throw 'Fixture HTTP mudou'}

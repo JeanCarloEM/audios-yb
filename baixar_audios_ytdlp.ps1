@@ -806,7 +806,8 @@ function Export-Reports {
 try {
     if ($Interativo -and $NaoInterativo) { throw 'Use apenas um modo: Interativo ou NaoInterativo' }
     $NaoInterativo = -not [bool]$Interativo
-    $tools = Resolve-ScriptTools -Root $script:Root
+    # ytdlp-bootstrap-startup-v1: preparo antes da validacao de versoes e do lote.
+    $tools = Resolve-ScriptTools -Root $script:Root -BootstrapYtdlp
     $script:Exe = $tools.Exe
     $script:Ffmpeg = $tools.Ffmpeg
     $script:Ffprobe = $tools.Ffprobe

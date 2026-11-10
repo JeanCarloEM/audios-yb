@@ -28,14 +28,23 @@ function Find-YtdlpExecutable {
     throw ('yt-dlp nativo ausente; sistema='+$Platform+'; arquitetura='+$Architecture+'; procurar '+($names -join ', ')+' junto ao script ou yt-dlp no PATH')
 }
 
-function Resolve-ScriptTools([string]$Root) {
+function Resolve-ScriptTools([string]$Root, [switch]$BootstrapYtdlp) {
     # tool-inventory-resolver-integrated-v1: coleta todas as ausencias antes do diagnostico.
     $inventory=Get-ScriptToolInventory -Root $Root
+    # resolver-ytdlp-bootstrap-v1: instalador local explicito, somente na ausencia do yt-dlp.
+    $bootstrap=$null
+    if($BootstrapYtdlp -and $IsWindows -and $inventory.tools.Exe -ceq ''){
+        $moduleRoot=Split-Path -Parent $MyInvocation.MyCommand.ScriptBlock.File
+        . (Join-Path $moduleRoot 'instalacao_ytdlp.ps1')
+        $bootstrap=Install-YtdlpDependency -Root $Root
+        $inventory=Get-ScriptToolInventory -Root $Root
+    }
     if($inventory.required_missing.Count -gt 0){
         $names=@{Exe='yt-dlp';Ffmpeg='ffmpeg';Ffprobe='ffprobe'}
         $absent=@($inventory.required_missing|ForEach-Object {$names[$_]})
         throw ('Ferramentas obrigatorias ausentes: '+($absent -join ', ')+'.')
     }
+    if($null -ne $bootstrap){$inventory.tools.YtdlpBootstrap=$bootstrap}
     return $inventory.tools
 }
 function Test-ScriptTools([hashtable]$Tools) {
