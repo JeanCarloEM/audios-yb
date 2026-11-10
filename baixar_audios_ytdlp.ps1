@@ -1085,7 +1085,29 @@ try {
             }
             $newDirectTechnical = ($urlInfo.tipo -eq 'video' -and $null -eq $approval -and -not $script:State.videos.ContainsKey($videoId))
             $selectionField = 'aprovacao_musical'; $selectionProof = $null; $musicalProof = $null
-            if (-not $newDirectTechnical) {
+            $existingDirectTechnical = $false
+            if ($urlInfo.tipo -eq 'video' -and $script:State.videos.ContainsKey($videoId)) {
+                $existingDirectVideo = $script:State.videos[$videoId]
+                $existingDirectTechnical = @($existingDirectVideo.Keys | Where-Object { [string]::Equals([string]$_, 'selecao_tecnica', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
+                if ($existingDirectTechnical) {
+                    if ([string]$existingDirectVideo.auditoria.origem_url -cne $rec.url_video) {
+                        Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'; continue
+                    }
+                    $existingDirectSelection = Resolve-PublicationSelectionProof -VideoId $videoId -Artist $artist -Song $song -Record $existingDirectVideo
+                    if ($null -eq $existingDirectSelection -or $existingDirectSelection.Kind -cne 'technical_v2') {
+                        Finalize-Record $rec 'pendente_auditoria' 'Prova tecnica do video existente invalida; arquivo preservado sem recorrer a aprovacao humana'; continue
+                    }
+                    $existingDirectEvidence = Test-SourceEvidence -Id $videoId -FormatId ([string]$existingDirectVideo.auditoria.origem_formato_id) -Hash ([string]$existingDirectVideo.auditoria.origem_sha256) -Probe $existingDirectVideo.auditoria.origem
+                    if (-not $existingDirectEvidence.ok) {
+                        Finalize-Record $rec 'pendente_qualidade' ('Procedencia atual do video existente nao confirmada: ' + $existingDirectEvidence.motivo); continue
+                    }
+                    $selectionField = 'selecao_tecnica'; $selectionProof = $existingDirectSelection.Proof
+                    $null = $rec.Remove('aprovacao_musical')
+                    $rec.selecao_tecnica = $selectionProof
+                    $rec.criterio_selecao = 'url_direta_id_literal'
+                }
+            }
+            if (-not $newDirectTechnical -and -not $existingDirectTechnical) {
                 $rawMusicalApproval = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
                 $storedMusicalProof = $null
                 if ($script:State.videos.ContainsKey($videoId)) {
@@ -1115,13 +1137,24 @@ try {
             }
             $prev = if ($newDirectTechnical) { $null } else { Existing-Video $videoId $order $artist $song -Marcador $script:MarcadorSolicitado }
             if ($prev -and $prev.conflito) { $status = if ($prev.qualidade) { 'pendente_qualidade' }else { 'falha' }; Finalize-Record $rec $status $prev.motivo; continue }
+            if ($existingDirectTechnical -and $null -eq $prev) {
+                Finalize-Record $rec 'pendente_qualidade' 'Video existente sem arquivo integro; nenhum novo download realizado'; continue
+            }
             if ($prev) {
                 $markerNote = ''
                 if (-not [string]::IsNullOrEmpty($script:MarcadorSolicitado)) {
                     $rec.marcador_reuso = $prev.marcador
                     if ($prev.marcador.status -ceq 'limitacao') { $markerNote = ' | Marcador: ' + $prev.marcador.motivo }
                 }
-                $script:State.videos[$videoId].aprovacao_musical = $musicalProof
+                $script:State.videos[$videoId][$selectionField] = $selectionProof
+                if ($existingDirectTechnical) {
+                    $rec.auditoria = $script:State.videos[$videoId].auditoria
+                    $null = $script:State.videos[$videoId].Remove('aprovacao_musical')
+                    $null = $rec.auditoria.Remove('aprovacao_musical')
+                    $rec.auditoria[$selectionField] = $selectionProof
+                    $rec.codec = $script:State.videos[$videoId].codec
+                    $rec.bitrate_kbps = [string]$script:State.videos[$videoId].bitrate_kbps
+                }
                 $rec.arquivo = $prev.arquivo; $rec.formato = $prev.formato
                 Finalize-Record $rec 'existente' ('Arquivo auditado, tamanho e SHA-256 preservados; download dispensado' + $markerNote); continue
             }

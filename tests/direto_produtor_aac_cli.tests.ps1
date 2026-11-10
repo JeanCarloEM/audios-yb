@@ -199,6 +199,45 @@ foreach($mode in $Modes){
    Write-Output ('PASS REUSO_AAC '+$reuseCase+' '+$afterRecord.resultado)
   }
  }
+
+ if($variant -eq 'technical'){
+  $aliasCsv=Join-Path $case 'duas-linhas.csv'
+  $aliasRows=@(Import-Csv -LiteralPath $csv)
+  $second=$aliasRows[0].PSObject.Copy();$second.Ordem='2';$aliasRows+=$second
+  $aliasRows|Export-Csv -LiteralPath $aliasCsv -NoTypeInformation -Encoding UTF8
+  $aliasCsvHash=(Get-FileHash -LiteralPath $aliasCsv).Hash
+  foreach($aliasCase in @('valid_alias','invalid_technical_with_legacy')){
+   $inputState=ConvertFrom-Json $baseline
+   $options=@{}
+   if($aliasCase -eq 'invalid_technical_with_legacy'){
+    $inputState.videos.TestVideo01.selecao_tecnica=$null
+    $human=[pscustomobject]@{versao=1;video_id='TestVideo01';artista='Artista';musica='Faixa';artista_musica_conferidos=$true;versao_conferida=$true;sem_vocais_conferido=$true;origem='arquivo_aprovacoes'}
+    $inputState.videos.TestVideo01|Add-Member -NotePropertyName aprovacao_musical -NotePropertyValue $human -Force
+    [pscustomobject]@{Ordem='2';VideoId='TestVideo01';ArtistaMusicaConferidos='SIM';VersaoConferida='SIM';SemVocaisConferido='SIM'}|Export-Csv -LiteralPath $approvalCsv -NoTypeInformation -Encoding UTF8
+    $options.AprovacoesCsv=$approvalCsv
+   }
+   [IO.File]::WriteAllText($statePath,($inputState|ConvertTo-Json -Depth 30),[Text.UTF8Encoding]::new($false))
+   $config.offline=$true;$config.downloads=0;$config.reads=0;$config.remotes=0
+   [IO.File]::WriteAllText((Join-Path $case 'cenario.json'),($config|ConvertTo-Json -Depth 8))
+   $log=Join-Path $case ('duas-linhas-'+$aliasCase+'.log')
+   & $scriptPath -Csv $aliasCsv @options *> $log
+   if($LASTEXITCODE -ne 0){throw ('Falha CLI duas linhas: '+$log)}
+   $afterState=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+   $aliasRecords=@($afterState.registros.PSObject.Properties.Value)
+   $newRecords=@($aliasRecords|Where-Object ordem -eq '2')
+   $aliasCounts=Get-Content -LiteralPath $config.log -Raw|ConvertFrom-Json
+   $expectedAlias=if($aliasCase -eq 'valid_alias'){'existente'}else{'pendente_auditoria'}
+   if($aliasRecords.Count -ne 2 -or $newRecords.Count -ne 1 -or @($aliasRecords|Where-Object resultado -cne $expectedAlias).Count -ne 0 -or $aliasCounts.downloads -ne 0 -or $aliasCounts.reads -ne 0 -or $aliasCounts.remotes -ne 0){throw ('Reuso entre linhas divergiu: '+$aliasCase)}
+   if($aliasCase -eq 'valid_alias'){
+    foreach($r in $aliasRecords){
+     if($r.arquivo -cne [IO.Path]::GetFileName($published) -or $r.codec -cne 'aac' -or $r.selecao_tecnica.versao -ne 2 -or $r.auditoria.selecao_tecnica.video_id -cne 'TestVideo01' -or $r.PSObject.Properties.Name -contains 'aprovacao_musical'){throw 'Novo registro perdeu vinculo/prova tecnica'}
+    }
+   }
+   if((Get-FileHash -LiteralPath $published).Hash.ToLowerInvariant() -cne $hash -or (Get-FileHash -LiteralPath $aliasCsv).Hash -cne $aliasCsvHash -or (Get-FileHash -LiteralPath $csv).Hash -cne $csvHash -or @(Get-ChildItem -LiteralPath $dest -File|Where-Object Extension -eq '.m4a').Count -ne 1){throw 'Reuso entre linhas alterou arquivo/CSV ou duplicou audio'}
+   @{variant=$aliasCase;records=$aliasRecords.Count;result=$newRecords[0].resultado;downloads=$aliasCounts.downloads;reads=$aliasCounts.reads;remotes=$aliasCounts.remotes;sha256=$hash;csv_sha256=$aliasCsvHash}|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $case ('prova-duas-linhas-'+$aliasCase+'.json')) -Encoding utf8
+   Write-Output ('PASS DUAS_LINHAS_AAC '+$aliasCase+' '+$newRecords[0].resultado)
+  }
+ }
 }
 }
 'DIRETO_AAC_CLI_TECHNICAL_PASS; '+$work
