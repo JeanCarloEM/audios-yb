@@ -1075,15 +1075,16 @@ try {
             $newSearchTechnical = ($urlInfo.tipo -eq 'busca' -and $null -eq $approval -and $null -ne $autoCandidate -and -not $script:State.videos.ContainsKey($videoId))
             $selectionField = 'aprovacao_musical'; $selectionProof = $null; $musicalProof = $null
             $existingDirectTechnical = $false
-            if ($urlInfo.tipo -eq 'video' -and $script:State.videos.ContainsKey($videoId)) {
+            # existing-search-technical-v3: nova linha usa busca exata e prova vinculada a URL atual.
+            if (($urlInfo.tipo -eq 'video' -or ($urlInfo.tipo -eq 'busca' -and $null -eq $approval -and $null -ne $autoCandidate)) -and $script:State.videos.ContainsKey($videoId)) {
                 $existingDirectVideo = $script:State.videos[$videoId]
                 $existingDirectTechnical = @($existingDirectVideo.Keys | Where-Object { [string]::Equals([string]$_, 'selecao_tecnica', [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
                 if ($existingDirectTechnical) {
                     if ([string]$existingDirectVideo.auditoria.origem_url -cne $rec.url_video) {
                         Finalize-Record $rec 'falha' 'Estado existente pertence a outro ID literal de video; arquivo preservado'; continue
                     }
-                    $existingDirectSelection = Resolve-PublicationSelectionProof -VideoId $videoId -Artist $artist -Song $song -Record $existingDirectVideo
-                    if ($null -eq $existingDirectSelection -or $existingDirectSelection.Kind -cne 'technical_v2') {
+                    $existingDirectSelection = Resolve-PublicationSelectionProof -VideoId $videoId -Artist $artist -Song $song -Record $existingDirectVideo -SourceUrl $url
+                    if ($null -eq $existingDirectSelection -or ($urlInfo.tipo -eq 'video' -and $existingDirectSelection.Kind -cne 'technical_v2') -or ($urlInfo.tipo -eq 'busca' -and $existingDirectSelection.Kind -cne 'technical_v3')) {
                         Finalize-Record $rec 'pendente_auditoria' 'Prova tecnica do video existente invalida; arquivo preservado sem recorrer a aprovacao humana'; continue
                     }
                     $existingDirectEvidence = Test-SourceEvidence -Id $videoId -FormatId ([string]$existingDirectVideo.auditoria.origem_formato_id) -Hash ([string]$existingDirectVideo.auditoria.origem_sha256) -Probe $existingDirectVideo.auditoria.origem
@@ -1093,7 +1094,8 @@ try {
                     $selectionField = 'selecao_tecnica'; $selectionProof = $existingDirectSelection.Proof
                     $null = $rec.Remove('aprovacao_musical')
                     $rec.selecao_tecnica = $selectionProof
-                    $rec.criterio_selecao = 'url_direta_id_literal'
+                    $rec.criterio_selecao = $existingDirectSelection.Proof.criterio
+                    $rec.titulo_video = [string]$existingDirectSelection.Proof.metadados.title
                 }
             }
             if (-not $newDirectTechnical -and -not $newSearchTechnical -and -not $existingDirectTechnical) {
