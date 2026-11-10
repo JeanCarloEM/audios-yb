@@ -100,3 +100,113 @@ function New-AutoSearchAudioSelectionProof([object]$VideoId = $null, [object]$So
         candidatos = $candidatosOutput
     }
 }
+
+function Resolve-AutoSearchAudioSelectionProof([object]$VideoId = $null, [object]$SourceUrl = $null, [object]$Artist = $null, [object]$Song = $null, [object]$StoredProof = $null) {
+    $validateStoredProof = {
+        param([object]$obj)
+        if ($obj -isnot [System.Collections.IDictionary]) { return $false }
+        if ($obj.Count -ne 7) { return $false }
+        $requiredKeys = @('versao', 'tipo', 'video_id', 'criterio', 'metadados', 'referencia', 'candidatos')
+        $keySet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($k in $obj.Keys) {
+            if ($k -isnot [string]) { return $false }
+            if (-not $requiredKeys.Contains($k)) { return $false }
+            [void]$keySet.Add($k)
+        }
+        if ($keySet.Count -ne 7) { return $false }
+        foreach ($k in $requiredKeys) {
+            if (-not $keySet.Contains($k)) { return $false }
+        }
+        if ($obj['versao'] -isnot [int] -and $obj['versao'] -isnot [long]) { return $false }
+        if ($obj['versao'] -ne 3) { return $false }
+        if ($obj['tipo'] -isnot [string] -or $obj['tipo'] -cne 'selecao_tecnica') { return $false }
+        if ($obj['criterio'] -isnot [string] -or $obj['criterio'] -cne 'busca_exata_canal_artista_unica') { return $false }
+        if ($obj['video_id'] -isnot [string]) { return $false }
+        $metadados = $obj['metadados']
+        if ($metadados -isnot [System.Collections.IDictionary]) { return $false }
+        if ($metadados.Count -ne 3) { return $false }
+        $metaKeys = @('id', 'title', 'channel')
+        $metaHashSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($k in $metadados.Keys) {
+            if ($k -isnot [string]) { return $false }
+            if (-not $metaKeys.Contains($k)) { return $false }
+            [void]$metaHashSet.Add($k)
+        }
+        if ($metaHashSet.Count -ne 3) { return $false }
+        foreach ($k in $metaKeys) {
+            if (-not $metaHashSet.Contains($k)) { return $false }
+        }
+        if ($metadados['id'] -isnot [string] -or $metadados['id'].Length -ne 11 -or $metadados['id'] -match '[^A-Za-z0-9_-]') { return $false }
+        if ($metadados['title'] -isnot [string] -or $metadados['title'].Trim() -eq '') { return $false }
+        if ($metadados['channel'] -isnot [string] -or $metadados['channel'].Trim() -eq '') { return $false }
+        $referencia = $obj['referencia']
+        if ($referencia -isnot [System.Collections.IDictionary]) { return $false }
+        if ($referencia.Count -ne 4) { return $false }
+        $refKeys = @('artista', 'musica', 'url_original', 'consulta')
+        $refHashSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($k in $referencia.Keys) {
+            if ($k -isnot [string]) { return $false }
+            if (-not $refKeys.Contains($k)) { return $false }
+            [void]$refHashSet.Add($k)
+        }
+        if ($refHashSet.Count -ne 4) { return $false }
+        foreach ($k in $refKeys) {
+            if (-not $refHashSet.Contains($k)) { return $false }
+        }
+        if ($referencia['artista'] -isnot [string]) { return $false }
+        if ($referencia['musica'] -isnot [string]) { return $false }
+        if ($referencia['url_original'] -isnot [string]) { return $false }
+        if ($referencia['consulta'] -isnot [string]) { return $false }
+        $candidatos = $obj['candidatos']
+        if ($candidatos -isnot [System.Collections.IList]) { return $false }
+        if ($candidatos.Count -eq 0) { return $false }
+        foreach ($c in $candidatos) {
+            if ($c -isnot [System.Collections.IDictionary]) { return $false }
+            if ($c.Count -ne 3) { return $false }
+            $candKeys = @('id', 'titulo', 'canal')
+            $candHashSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+            foreach ($k in $c.Keys) {
+                if ($k -isnot [string]) { return $false }
+                if (-not $candKeys.Contains($k)) { return $false }
+                [void]$candHashSet.Add($k)
+            }
+            if ($candHashSet.Count -ne 3) { return $false }
+            foreach ($k in $candKeys) {
+                if (-not $candHashSet.Contains($k)) { return $false }
+            }
+            if ($c['id'] -isnot [string] -or $c['id'].Length -ne 11 -or $c['id'] -match '[^A-Za-z0-9_-]') { return $false }
+            if ($c['titulo'] -isnot [string] -or $c['titulo'].Trim() -eq '') { return $false }
+            if ($c['canal'] -isnot [string] -or $c['canal'].Trim() -eq '') { return $false }
+        }
+        return $true
+    }
+
+    if (-not (& $validateStoredProof $StoredProof)) { return $null }
+
+    $storedVideoId = $StoredProof['video_id']
+    $storedArtist = $StoredProof['referencia']['artista']
+    $storedSong = $StoredProof['referencia']['musica']
+    $storedSourceUrl = $StoredProof['referencia']['url_original']
+    $storedQuery = $StoredProof['referencia']['consulta']
+    # Contexto esperado e prova devem coincidir literalmente.
+    foreach ($pair in @(@($VideoId,$storedVideoId),@($Artist,$storedArtist),@($Song,$storedSong),@($SourceUrl,$storedSourceUrl))) {
+        if ($pair[0] -isnot [string] -or -not [string]::Equals($pair[0],$pair[1],[StringComparison]::Ordinal)) { return $null }
+    }
+    $storedCandidates = @()
+    foreach ($c in $StoredProof['candidatos']) {
+        $storedCandidates += @{id = $c['id']; titulo = $c['titulo']; canal = $c['canal']}
+    }
+    $storedInfo = @{
+        id = $StoredProof['metadados']['id']
+        title = $StoredProof['metadados']['title']
+        channel = $StoredProof['metadados']['channel']
+    }
+
+    try {
+        $query = Get-CanonicalAudioSearchQuery -SourceUrl $SourceUrl
+        if (-not [string]::Equals($storedQuery,$query,[StringComparison]::Ordinal)) { return $null }
+        return New-AutoSearchAudioSelectionProof -VideoId $VideoId -SourceUrl $SourceUrl -Artist $Artist -Song $Song -Candidates $storedCandidates -Info $storedInfo
+    } catch [ArgumentException] {
+        return $null
+    }
+}

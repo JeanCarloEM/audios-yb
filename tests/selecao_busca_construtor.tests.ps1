@@ -5,7 +5,7 @@ $repo=Split-Path -Parent $PSScriptRoot
 . (Join-Path $repo 'selecao_automatica.ps1')
 $p=Join-Path $repo 'selecao_busca.ps1'
 $t=$null;$e=$null;$a=[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)
-if($e.Count -or $a.EndBlock.Statements.Count -ne 1 -or $a.EndBlock.Statements[0] -isnot [Management.Automation.Language.FunctionDefinitionAst] -or $a.EndBlock.Statements[0].Name -cne 'New-AutoSearchAudioSelectionProof'){throw 'Modulo deve conter somente o construtor puro'}
+if($e.Count -or $a.EndBlock.Statements.Count -ne 2 -or $a.EndBlock.Statements[0] -isnot [Management.Automation.Language.FunctionDefinitionAst] -or $a.EndBlock.Statements[1] -isnot [Management.Automation.Language.FunctionDefinitionAst] -or $a.EndBlock.Statements[0].Name -cne 'New-AutoSearchAudioSelectionProof' -or $a.EndBlock.Statements[1].Name -cne 'Resolve-AutoSearchAudioSelectionProof'){throw 'Modulo deve conter somente construtor e resolver puros'}
 . $p
 $id='AbCdEf012_-';$url='https://www.youtube.com/results?search_query=Artista+Faixa'
 $info=@{id=$id;title='Artista Faixa official audio';channel='Artista - Topic';extra='nao copiar'}
