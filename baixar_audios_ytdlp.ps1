@@ -1071,6 +1071,8 @@ try {
                 $rec.candidatos = @(@{id = $videoId; url = $rec.url_video; titulo = 'Aprovado pelo usuario' })
             }
             $newDirectTechnical = ($urlInfo.tipo -eq 'video' -and $null -eq $approval -and -not $script:State.videos.ContainsKey($videoId))
+            # new-search-technical-v3: unico exato, sem aprovacao e sem video preexistente.
+            $newSearchTechnical = ($urlInfo.tipo -eq 'busca' -and $null -eq $approval -and $null -ne $autoCandidate -and -not $script:State.videos.ContainsKey($videoId))
             $selectionField = 'aprovacao_musical'; $selectionProof = $null; $musicalProof = $null
             $existingDirectTechnical = $false
             if ($urlInfo.tipo -eq 'video' -and $script:State.videos.ContainsKey($videoId)) {
@@ -1094,7 +1096,7 @@ try {
                     $rec.criterio_selecao = 'url_direta_id_literal'
                 }
             }
-            if (-not $newDirectTechnical -and -not $existingDirectTechnical) {
+            if (-not $newDirectTechnical -and -not $newSearchTechnical -and -not $existingDirectTechnical) {
                 $rawMusicalApproval = if ($approvals.ContainsKey($order)) { $approvals[$order] } else { $null }
                 $storedMusicalProof = $null
                 if ($script:State.videos.ContainsKey($videoId)) {
@@ -1164,7 +1166,15 @@ try {
                 $rec.selecao_tecnica = $selectionProof
                 $rec.criterio_selecao = 'url_direta_id_literal'
             }
-            if (-not $newDirectTechnical -and -not (Identity-Matches $infoCheck.info $artist $song)) {
+            if ($newSearchTechnical) {
+                try { $selectionProof = New-AutoSearchAudioSelectionProof -VideoId $videoId -SourceUrl $url -Artist $artist -Song $song -Candidates @($rec.candidatos) -Info (To-Hashtable $infoCheck.info) }
+                catch [ArgumentException] { Finalize-Record $rec 'pendente_auditoria' ('Selecao tecnica de busca invalida: ' + $_.Exception.Message); continue }
+                $selectionField = 'selecao_tecnica'
+                $null = $rec.Remove('aprovacao_musical')
+                $rec.selecao_tecnica = $selectionProof
+                $rec.criterio_selecao = 'busca_exata_canal_artista_unica'
+            }
+            if (-not $newDirectTechnical -and -not $newSearchTechnical -and -not (Identity-Matches $infoCheck.info $artist $song)) {
                 Finalize-Record $rec 'nao_identificado' 'Metadados do video nao confirmam artista e titulo; revisar manualmente'; continue
             }
             if ($null -ne $autoCandidate -and -not (Is-ExactArtistAudio ([string]$infoCheck.info.title) ([string]$infoCheck.info.channel) $artist $song)) {
