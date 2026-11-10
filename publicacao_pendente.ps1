@@ -240,7 +240,7 @@ function Get-PublicationRecoveryPlan {
  $hasTechnical=@($record.Keys|Where-Object {[string]::Equals([string]$_,'selecao_tecnica',[StringComparison]::OrdinalIgnoreCase)}).Count -gt 0
  if($hasTechnical){
   if(-not $AllowTechnicalSelection){throw [IO.InvalidDataException]::new('Selecao tecnica ainda nao habilitada na recuperacao')}
-  $selection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $artist -Song $song -Record $record
+  $selection=Resolve-PublicationSelectionProof -VideoId $data.video_id -Artist $artist -Song $song -Record $record -SourceUrl $record.url_original
   if($null -eq $selection){throw [IO.InvalidDataException]::new('Selecao tecnica invalida')}
   $proof=$null
  }else{
