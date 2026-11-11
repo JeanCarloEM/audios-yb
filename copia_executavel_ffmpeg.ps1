@@ -1,18 +1,20 @@
+#requires -Version 7.0
 function Copy-FfmpegExecutableStream {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [IO.Stream]$SourceStream,
-        [Parameter(Mandatory)]
-        [IO.Stream]$DestinationStream,
+        [AllowNull()]
+        [object]$SourceStream,
+        [AllowNull()]
+        [object]$DestinationStream,
         [AllowNull()]
         [object]$ExpectedSize,
         [ValidateRange(1,300)]
-        [int16]$TimeoutSeconds = 120,
+        [int]$TimeoutSeconds = 120,
         [System.Threading.CancellationToken]$CancellationToken = [System.Threading.CancellationToken]::None
     )
 
     # Validações iniciais
+    if ($SourceStream -isnot [IO.Stream] -or $DestinationStream -isnot [IO.Stream]) { throw 'SourceStream e DestinationStream devem ser IO.Stream.' }
     if (-not $SourceStream.CanRead) { throw 'SourceStream não é legível' }
     if (-not $DestinationStream.CanWrite) { throw 'DestinationStream não é gravável' }
     if ([object]::ReferenceEquals($SourceStream, $DestinationStream)) { throw 'SourceStream e DestinationStream devem ser instâncias distintas' }
