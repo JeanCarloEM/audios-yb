@@ -806,6 +806,9 @@ function Export-Reports {
 try {
     if ($Interativo -and $NaoInterativo) { throw 'Use apenas um modo: Interativo ou NaoInterativo' }
     $NaoInterativo = -not [bool]$Interativo
+    # output-write-preflight-startup-v1: comprova escrita antes de baixar ferramentas.
+    . (Join-Path $script:Root 'preflight_diretorios.ps1')
+    $null = Initialize-OutputWriteAccess -Out $script:Out
     # ytdlp-bootstrap-startup-v1: preparo antes da validacao de versoes e do lote.
     $tools = Resolve-ScriptTools -Root $script:Root -BootstrapYtdlp
     $script:Exe = $tools.Exe
