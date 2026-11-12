@@ -38,9 +38,11 @@ function Publish-VerifiedFfmpegCandidate {
 
     $CancellationToken.ThrowIfCancellationRequested()
 
+    $publishCandidateRoot=$RootDirectory;$publishCandidateTool=$Tool;$publishCandidateSize=$ExpectedSize
+    $publishCandidateSha=$ExpectedSha256;$publishCandidateSeconds=$TimeoutSeconds;$publishCandidateToken=$CancellationToken
     Invoke-WithVerifiedFfmpegCandidate -Path $Path -ExpectedSize $ExpectedSize -ExpectedSha256 $ExpectedSha256 -Tool $Tool -ExpectedBuildVersion $ExpectedBuildVersion -Invoker $Invoker -Action {
         param($metadata, $lockedPath, $readStream)
-        $result = Publish-FfmpegExecutable -RootDirectory $RootDirectory -SourceStream $readStream -Tool $Tool -ExpectedSize $ExpectedSize -ExpectedSha256 $ExpectedSha256 -TimeoutSeconds $TimeoutSeconds -CancellationToken $CancellationToken
+        $result = Publish-FfmpegExecutable -RootDirectory $publishCandidateRoot -SourceStream $readStream -Tool $publishCandidateTool -ExpectedSize $publishCandidateSize -ExpectedSha256 $publishCandidateSha -TimeoutSeconds $publishCandidateSeconds -CancellationToken $publishCandidateToken
         return @{
             status = $result.status
             target_path = $result.target_path
