@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "source": {
+    "receipt_sha256": "A6877DF540EF5C791E9208ADB445713E57F118A91B911A2A5210E477F0B8E41A",
+    "canonical_url": "https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/download/autobuild-2026-11-11-12-39/ffmpeg-n9.0.2-49-gc179411bbb-win64-lgpl-9.0.zip",
+    "release_tag": "autobuild-2026-11-11-12-39",
+    "archive_sha256": "9ccd65428fb0e60a0d574b76145df41f402b754edd2d06c2e24fa506fc1c2b02"
+  },
+  "cases": [
+    {
+      "tool": "ffmpeg",
+      "header": "ffmpeg version n9.0.2-49-gc179411bbb-20261111 Copyright (c) 2000-2026 the FFmpeg developers",
+      "expected_build": "n9.0.2-49-gc179411bbb",
+      "expected_token": "n9.0.2-49-gc179411bbb-20261111"
+    },
+    {
+      "tool": "ffprobe",
+      "header": "ffprobe version n9.0.2-49-gc179411bbb-20261111 Copyright (c) 2007-2026 the FFmpeg developers",
+      "expected_build": "n9.0.2-49-gc179411bbb",
+      "expected_token": "n9.0.2-49-gc179411bbb-20261111"
+    }
+  ]
+}
