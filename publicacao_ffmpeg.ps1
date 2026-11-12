@@ -5,40 +5,67 @@ function Publish-FfmpegExecutable {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true, Position=0)]
-        [string]$RootDirectory,
+        [AllowNull()][object]$RootDirectory,
         [Parameter(Mandatory=$true, Position=1)]
-        [IO.Stream]$SourceStream,
+        [AllowNull()][object]$SourceStream,
         [Parameter(Mandatory=$true, Position=2)]
-        [string]$Tool,
+        [AllowNull()][object]$Tool,
         [Parameter(Mandatory=$true, Position=3)]
         [AllowNull()][object]$ExpectedSize,
         [Parameter(Mandatory=$true, Position=4)]
-        [string]$ExpectedSha256
+        [AllowNull()][object]$ExpectedSha256
     )
 
     # Guardas iniciais
-    if (-not [IO.Directory]::Exists($RootDirectory)) {
-        throw [System.IO.DirectoryNotFoundException]::new("RootDirectory deve existir: $RootDirectory")
+    if ($RootDirectory -isnot [string]) { throw [ArgumentException]::new('RootDirectory deve ser string.', 'RootDirectory') }
+    if ([string]::IsNullOrWhiteSpace($RootDirectory)) {
+        throw [ArgumentException]::new("RootDirectory não pode ser nulo, vazio ou em branco.", 'RootDirectory')
     }
+    if (-not [IO.Path]::IsPathFullyQualified($RootDirectory)) {
+        throw [ArgumentException]::new("RootDirectory deve ser um caminho totalmente qualificado.", 'RootDirectory')
+    }
+    $rootItem = Get-Item -LiteralPath $RootDirectory -ErrorAction Stop
+    if ($rootItem -isnot [IO.DirectoryInfo]) {
+        throw [ArgumentException]::new("RootDirectory deve ser um diretório válido.", 'RootDirectory')
+    }
+    $RootDirectory = $rootItem.FullName
 
+    if ($null -eq $SourceStream -or $SourceStream -isnot [IO.Stream]) {
+        throw [ArgumentException]::new("SourceStream deve ser uma instância de System.IO.Stream.", 'SourceStream')
+    }
     if (-not $SourceStream.CanRead) {
         throw [ArgumentException]::new("SourceStream deve ser legível.", 'SourceStream')
     }
     if (-not $SourceStream.CanSeek) {
         throw [ArgumentException]::new("SourceStream deve permitir seek.", 'SourceStream')
     }
+    if ($SourceStream.CanWrite) {
+        throw [ArgumentException]::new("SourceStream não deve ser gravável.", 'SourceStream')
+    }
 
+    if ($null -eq $Tool -or $Tool -isnot [string]) {
+        throw [ArgumentException]::new("Tool deve ser uma string não nula.", 'Tool')
+    }
     if ($Tool -cnotin @('ffmpeg', 'ffprobe')) {
         throw [ArgumentException]::new("Tool deve ser 'ffmpeg' ou 'ffprobe'.", 'Tool')
     }
 
-    if ($ExpectedSize -isnot [long]) { throw 'ExpectedSize deve ser [long]' }
+    if ($null -eq $ExpectedSize -or $ExpectedSize -isnot [long]) {
+        throw [ArgumentException]::new("ExpectedSize deve ser uma instância de [long].", 'ExpectedSize')
+    }
     if ($ExpectedSize -lt 1 -or $ExpectedSize -gt 536870912) {
         throw [ArgumentOutOfRangeException]::new('ExpectedSize', "Deve estar entre 1 e 536870912.")
     }
 
+    if ($null -eq $ExpectedSha256 -or $ExpectedSha256 -isnot [string]) {
+        throw [ArgumentException]::new("ExpectedSha256 deve ser uma string não nula.", 'ExpectedSha256')
+    }
     if ($ExpectedSha256 -cnotmatch '\A[a-f0-9]{64}\z') {
         throw [ArgumentException]::new("ExpectedSha256 deve ser string de 64 caracteres hexadecimais minúsculos.", 'ExpectedSha256')
+    }
+
+    if ($SourceStream.Length -ne $ExpectedSize) {
+        throw [ArgumentException]::new("SourceStream.Length ($($SourceStream.Length)) deve ser igual a ExpectedSize ($ExpectedSize).", 'SourceStream')
     }
 
     $targetPath = Join-Path $RootDirectory ($Tool + '.exe')
