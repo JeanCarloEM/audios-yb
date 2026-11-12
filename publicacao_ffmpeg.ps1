@@ -13,7 +13,10 @@ function Publish-FfmpegExecutable {
         [Parameter(Mandatory=$true, Position=3)]
         [AllowNull()][object]$ExpectedSize,
         [Parameter(Mandatory=$true, Position=4)]
-        [AllowNull()][object]$ExpectedSha256
+        [AllowNull()][object]$ExpectedSha256,
+        [ValidateRange(1,300)]
+        [int]$TimeoutSeconds = 120,
+        [System.Threading.CancellationToken]$CancellationToken = [System.Threading.CancellationToken]::None
     )
 
     # Guardas iniciais
@@ -71,17 +74,22 @@ function Publish-FfmpegExecutable {
     $targetPath = Join-Path $RootDirectory ($Tool + '.exe')
     $originalPosition = $SourceStream.Position
 
+    # Cancelamento após guardas e antes de targetPath
+    $CancellationToken.ThrowIfCancellationRequested()
+
     try {
         # Se destino existe
         if ([IO.File]::Exists($targetPath)) {
             $existingStream = $null
+            $hasher = $null
             try {
                 $existingStream = [IO.File]::OpenRead($targetPath)
                 if ($existingStream.Length -ne $ExpectedSize) {
-                    throw [System.IO.IOException]::new("Destino divergente: tamanho $([IO.File]::GetLength($targetPath)) != $ExpectedSize")
+                    throw [System.IO.IOException]::new("Destino divergente: tamanho $($existingStream.Length) != $ExpectedSize")
                 }
-                $actualHash = Get-FileHash -LiteralPath $targetPath -Algorithm SHA256
-                $actualHashLower = $actualHash.Hash.ToLowerInvariant()
+                $hasher = [Security.Cryptography.SHA256]::Create()
+                $hashBytes = $hasher.ComputeHash($existingStream)
+                $actualHashLower = [BitConverter]::ToString($hashBytes).Replace('-', '').ToLowerInvariant()
                 if ($actualHashLower -cne $ExpectedSha256) {
                     throw [System.IO.IOException]::new("Destino divergente: hash $actualHashLower != $ExpectedSha256")
                 }
@@ -92,6 +100,7 @@ function Publish-FfmpegExecutable {
                     sha256 = $actualHashLower
                 }
             } finally {
+                if ($null -ne $hasher) { $hasher.Dispose() }
                 if ($null -ne $existingStream) { $existingStream.Dispose() }
             }
         } elseif ([IO.Directory]::Exists($targetPath)) {
@@ -113,7 +122,7 @@ function Publish-FfmpegExecutable {
 
             $hasher = [Security.Cryptography.SHA256]::Create()
 
-            $result = Copy-CheckedFfmpegArchiveStream -Source $SourceStream -Destination $tempStream -ExpectedSize $ExpectedSize -ExpectedSha256 $ExpectedSha256
+            $result = Copy-CheckedFfmpegArchiveStream -Source $SourceStream -Destination $tempStream -ExpectedSize $ExpectedSize -ExpectedSha256 $ExpectedSha256 -TimeoutSeconds $TimeoutSeconds -CancellationToken $CancellationToken
 
             $tempStream.Flush($true)
             $tempStream.Position = 0
@@ -141,6 +150,7 @@ function Publish-FfmpegExecutable {
         if ($null -ne $tempStream) { $tempStream.Dispose() }
 
         try {
+            $CancellationToken.ThrowIfCancellationRequested()
             [IO.File]::Move($tempPath, $targetPath)
         } catch {
             if ($tempOwned -and $null -ne $tempPath -and [IO.File]::Exists($tempPath)) {
