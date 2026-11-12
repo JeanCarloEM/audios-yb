@@ -11,7 +11,7 @@ function Publish-FfmpegExecutable {
         [Parameter(Mandatory=$true, Position=2)]
         [string]$Tool,
         [Parameter(Mandatory=$true, Position=3)]
-        [long]$ExpectedSize,
+        [AllowNull()][object]$ExpectedSize,
         [Parameter(Mandatory=$true, Position=4)]
         [string]$ExpectedSha256
     )
@@ -32,6 +32,7 @@ function Publish-FfmpegExecutable {
         throw [ArgumentException]::new("Tool deve ser 'ffmpeg' ou 'ffprobe'.", 'Tool')
     }
 
+    if ($ExpectedSize -isnot [long]) { throw 'ExpectedSize deve ser [long]' }
     if ($ExpectedSize -lt 1 -or $ExpectedSize -gt 536870912) {
         throw [ArgumentOutOfRangeException]::new('ExpectedSize', "Deve estar entre 1 e 536870912.")
     }
