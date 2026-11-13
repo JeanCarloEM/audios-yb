@@ -52,34 +52,36 @@ function Install-MissingFfmpegTools {
     $CancellationToken.ThrowIfCancellationRequested()
     $descriptor = Get-FfmpegReleaseDescriptor -Architecture $Architecture -TimeoutSeconds $DocumentTimeoutSeconds -Handler $Handler
     $CancellationToken.ThrowIfCancellationRequested()
-
     $plan = $descriptor.release_plan
     $expectedRoot = [IO.Path]::GetFileNameWithoutExtension($plan.asset_name)
-
-    $receipt = Invoke-WithFfmpegDownloadedArchive -RootDirectory $rootPath -Uri $plan.url -ExpectedSize $descriptor.archive_size -ExpectedSha256 $plan.sha256 -TimeoutSeconds $TimeoutSeconds -Handler $Handler -CancellationToken $CancellationToken -Action {
-        param($stream, $downloadReceipt)
-
-        $localTargets = @()
-        foreach ($tool in $missing) {
-            $CancellationToken.ThrowIfCancellationRequested()
-            $receipt = Install-FfmpegArchiveExecutable -RootDirectory $rootPath -ArchiveStream $stream -ExpectedRootDirectory $expectedRoot -Tool $tool -ExpectedBuildVersion $plan.build_version -Invoker $Invoker -TimeoutSeconds $TimeoutSeconds -CancellationToken $CancellationToken
-            $localTargets += $receipt
-        }
-        return $localTargets
+    $ffmpegSuiteContext = @{
+        Root = $rootPath
+        Missing = @($missing)
+        Build = $plan.build_version
+        ExpectedRoot = $expectedRoot
+        Invoker = $Invoker
+        Seconds = $TimeoutSeconds
+        Token = $CancellationToken
+        Receipts = @{}
     }
-
-    $installed = $receipt
-    $allTargets = @()
     foreach ($t in $targets) {
         if ($t.status -eq 'preserved') {
-            $allTargets += $t
+            $ffmpegSuiteContext.Receipts[$t.tool] = $t
         }
     }
-    foreach ($t in $installed) {
-        $allTargets += $t
+    $receipt = Invoke-WithFfmpegDownloadedArchive -RootDirectory $rootPath -Uri $plan.url -ExpectedSize $descriptor.archive_size -ExpectedSha256 $plan.sha256 -TimeoutSeconds $TimeoutSeconds -Handler $Handler -CancellationToken $CancellationToken -Action {
+        param($stream, $downloadReceipt)
+        foreach ($ffmpegSuiteTool in $ffmpegSuiteContext.Missing) {
+            $ffmpegSuiteContext.Token.ThrowIfCancellationRequested()
+            $receipt = Install-FfmpegArchiveExecutable -RootDirectory $ffmpegSuiteContext.Root -ArchiveStream $stream -ExpectedRootDirectory $ffmpegSuiteContext.ExpectedRoot -Tool $ffmpegSuiteTool -ExpectedBuildVersion $ffmpegSuiteContext.Build -Invoker $ffmpegSuiteContext.Invoker -TimeoutSeconds $ffmpegSuiteContext.Seconds -CancellationToken $ffmpegSuiteContext.Token
+            $ffmpegSuiteContext.Receipts[$ffmpegSuiteTool] = $receipt
+        }
     }
-
-    return @{root_path=$rootPath; targets=$allTargets}
+    return @{
+        root_path = $ffmpegSuiteContext.Root
+        targets = @(
+            $ffmpegSuiteContext.Receipts['ffmpeg'],
+            $ffmpegSuiteContext.Receipts['ffprobe']
+        )
+    }
 }
-
-
