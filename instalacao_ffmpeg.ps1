@@ -17,7 +17,8 @@ function Install-MissingFfmpegTools {
         [Parameter(Position=5)]
         [System.Net.Http.HttpMessageHandler]$Handler = $null,
         [Parameter(Position=6)]
-        [System.Threading.CancellationToken]$CancellationToken = [System.Threading.CancellationToken]::None
+        [System.Threading.CancellationToken]$CancellationToken = [System.Threading.CancellationToken]::None,
+        [Parameter(Position=7)][AllowNull()][object]$RequestedTools = @('ffmpeg','ffprobe')
     )
     if ($null -eq $RootDirectory) { throw "RootDirectory não pode ser nulo." }
     if ($RootDirectory -isnot [string]) { throw "RootDirectory deve ser uma string." }
@@ -28,13 +29,17 @@ function Install-MissingFfmpegTools {
     if ($Architecture -cnotin @('X64','Arm64')) { throw "Architecture deve ser 'X64' ou 'Arm64' (case-sensitive)." }
     if ($null -eq $Invoker) { throw "Invoker não pode ser nulo." }
     if ($Invoker -isnot [scriptblock]) { throw "Invoker deve ser um scriptblock." }
+    if ($RequestedTools -isnot [array] -or $RequestedTools.Count -lt 1 -or $RequestedTools.Count -gt 2) { throw 'RequestedTools deve ser array com1ou2 ferramentas.' }
+    foreach ($ffmpegSuiteChoice in $RequestedTools) { if ($ffmpegSuiteChoice -isnot [string] -or $ffmpegSuiteChoice -cnotin @('ffmpeg','ffprobe')) { throw 'Ferramenta selecionada inválida.' } }
+    if ($RequestedTools.Count -eq 2 -and $RequestedTools[0] -ceq $RequestedTools[1]) { throw 'Seleção duplicada.' }
+    $ffmpegSuiteRequested = @(foreach ($ffmpegSuiteChoice in @('ffmpeg','ffprobe')) { if ($RequestedTools -ccontains $ffmpegSuiteChoice) { $ffmpegSuiteChoice } })
     $CancellationToken.ThrowIfCancellationRequested()
     $rootItem = Get-Item -LiteralPath $RootDirectory -ErrorAction Stop
     if ($rootItem -isnot [IO.DirectoryInfo]) { throw "RootDirectory deve ser diretório." }
     $rootPath = $rootItem.FullName
     $targets = @()
     $missing = @()
-    foreach ($tool in @('ffmpeg','ffprobe')) {
+    foreach ($tool in $ffmpegSuiteRequested) {
         $path = Join-Path $rootPath ($tool + '.exe')
         if ([IO.Directory]::Exists($path)) {
             throw "O caminho especificado é um diretório, não um arquivo: $path"
@@ -57,6 +62,7 @@ function Install-MissingFfmpegTools {
     $ffmpegSuiteContext = @{
         Root = $rootPath
         Missing = @($missing)
+        Requested = @($ffmpegSuiteRequested)
         Build = $plan.build_version
         ExpectedRoot = $expectedRoot
         Invoker = $Invoker
@@ -79,9 +85,6 @@ function Install-MissingFfmpegTools {
     }
     return @{
         root_path = $ffmpegSuiteContext.Root
-        targets = @(
-            $ffmpegSuiteContext.Receipts['ffmpeg'],
-            $ffmpegSuiteContext.Receipts['ffprobe']
-        )
+        targets = @(foreach ($ffmpegSuiteChoice in $ffmpegSuiteContext.Requested) { $ffmpegSuiteContext.Receipts[$ffmpegSuiteChoice] })
     }
 }
