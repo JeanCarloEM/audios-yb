@@ -28,7 +28,7 @@ function Find-YtdlpExecutable {
     throw ('yt-dlp nativo ausente; sistema='+$Platform+'; arquitetura='+$Architecture+'; procurar '+($names -join ', ')+' junto ao script ou yt-dlp no PATH')
 }
 
-function Resolve-ScriptTools([string]$Root, [switch]$BootstrapYtdlp) {
+function Resolve-ScriptTools([string]$Root, [switch]$BootstrapYtdlp, [switch]$BootstrapFfmpeg) {
     # tool-inventory-resolver-integrated-v1: coleta todas as ausencias antes do diagnostico.
     $inventory=Get-ScriptToolInventory -Root $Root
     # resolver-ytdlp-bootstrap-v1: instalador local explicito, somente na ausencia do yt-dlp.
@@ -39,12 +39,24 @@ function Resolve-ScriptTools([string]$Root, [switch]$BootstrapYtdlp) {
         $bootstrap=Install-YtdlpDependency -Root $Root
         $inventory=Get-ScriptToolInventory -Root $Root
     }
+    # resolver-ffmpeg-bootstrap-v1: instalador local explicito, somente na ausencia de ffmpeg/ffprobe.
+    $ffmpegBootstrap=$null
+    if($BootstrapFfmpeg -and $IsWindows -and ($inventory.tools.Ffmpeg -ceq '' -or $inventory.tools.Ffprobe -ceq '')){
+        $moduleRoot=Split-Path -Parent $MyInvocation.MyCommand.ScriptBlock.File
+        . (Join-Path $moduleRoot 'instalacao_ffmpeg.ps1')
+        $requested=@()
+        if($inventory.tools.Ffmpeg -ceq ''){$requested+='ffmpeg'}
+        if($inventory.tools.Ffprobe -ceq ''){$requested+='ffprobe'}
+        $ffmpegBootstrap=Install-MissingFfmpegTools -RootDirectory ([IO.Path]::GetFullPath($Root)) -Architecture ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()) -RequestedTools $requested -Invoker {param($candidatePath,$versionArguments,$versionSeconds) Invoke-Ytdlp -Executable $candidatePath -Arguments $versionArguments -TimeoutSeconds $versionSeconds}
+        $inventory=Get-ScriptToolInventory -Root $Root
+    }
     if($inventory.required_missing.Count -gt 0){
         $names=@{Exe='yt-dlp';Ffmpeg='ffmpeg';Ffprobe='ffprobe'}
         $absent=@($inventory.required_missing|ForEach-Object {$names[$_]})
         throw ('Ferramentas obrigatorias ausentes: '+($absent -join ', ')+'.')
     }
     if($null -ne $bootstrap){$inventory.tools.YtdlpBootstrap=$bootstrap}
+    if($null -ne $ffmpegBootstrap){$inventory.tools.FfmpegBootstrap=$ffmpegBootstrap}
     return $inventory.tools
 }
 function Test-ScriptTools([hashtable]$Tools) {
