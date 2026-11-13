@@ -810,7 +810,7 @@ try {
     . (Join-Path $script:Root 'preflight_diretorios.ps1')
     $null = Initialize-OutputWriteAccess -Out $script:Out
     # ytdlp-bootstrap-startup-v1: preparo antes da validacao de versoes e do lote.
-    $tools = Resolve-ScriptTools -Root $script:Root -BootstrapYtdlp
+    $tools = Resolve-ScriptTools -Root $script:Root -BootstrapYtdlp -BootstrapFfmpeg
     $script:Exe = $tools.Exe
     $script:Ffmpeg = $tools.Ffmpeg
     $script:Ffprobe = $tools.Ffprobe
